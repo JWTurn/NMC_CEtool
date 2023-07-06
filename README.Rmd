@@ -3,8 +3,8 @@ title: "README"
 author: "Julie W. Turner"
 date: "2023-07-06"
 output: 
-  md_document: default
-  html_document: default
+  html_document: 
+    keep_md: yes
 ---
 
 ```{r setup, include=FALSE}
@@ -42,7 +42,13 @@ Old program that is now complete.
 
 ### Little Rancheria caribou
 
-Trans-boundary herd with B.C. I am still uploading this one, and there will likely be two studies, one for our collars and the other for the B.C. collars. Will be a live feed once set up.
+#### Little Rancheria caribou – B.C. collars NO SHARING
+
+his has all the BC owned collars. The “no sharing” part is more for us, so we do not share with anyone else in future unless we have permission from BC. This is mostly live feed, but there are 4 Lotek collars as well, one of which is still active.
+
+#### Little Rancheria caribou – Yukon collars
+
+These are all the Yukon owned collars, all live feed.
 
 ### Nahanni caribou
 
