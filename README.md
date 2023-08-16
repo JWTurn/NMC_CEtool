@@ -9,6 +9,9 @@ output:
 
 
 
+# Data extraction
+Data most recently downloaded 16 August 2023
+
 ## Summary of Data provided by Yukon
 Summary provided by Kristina Beckmann (Kristina.Beckmann@yukon.ca)
 
