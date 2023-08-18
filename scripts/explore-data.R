@@ -28,6 +28,8 @@ trk <- dat %>% make_track(x,y, datetime, crs = st_crs(3978), id = id) %>%
   nest(data = -"id")
 fixrate <- trk %>% mutate(sr = lapply(data, summarize_sampling_rate)) %>%
   dplyr::select(id, sr) %>% unnest(cols = c(sr))
+range(fixrate$mean)
+median(fixrate$mean)
 range(fixrate$median)
 median(fixrate$median)
 # 9 hours
