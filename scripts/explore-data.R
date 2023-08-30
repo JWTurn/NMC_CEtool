@@ -10,21 +10,24 @@ require('sf')
 
 
 ### Input data ----
-raw <- 'data/raw/'
-derived <- 'data/derived/'
+raw <- file.path('data','raw')
+derived <- file.path('data','derived')
 
-dat <- readRDS(file.path("data", 'derived', 'data_all.RDS'))
+dat <- readRDS(file.path(derived, 'prepDat_nmc.RDS'))
 
 ### check fix rates ####
 # check for duplicated time stamps
-dat[,any(duplicated(datetime)), by = id]
+dat[,any(duplicated(datetime)), by = .(id)]
 
 
 # We have some duplicated time stamps, these need to be removed prior to creating a track.
 dat <- unique(dat, by = c('id', 'datetime'))
+dat[,npts := .N, by = .(id)]
+range(dat$npts)
+dat3 <- dat[npts>=3]
 
-
-trk <- dat %>% make_track(x,y, datetime, crs = st_crs(3978), id = id) %>% 
+# limit to those with >3 pts
+trk <- dat3 %>% make_track(x,y, datetime, crs = st_crs(3978), id = id) %>% 
   nest(data = -"id")
 fixrate <- trk %>% mutate(sr = lapply(data, summarize_sampling_rate)) %>%
   dplyr::select(id, sr) %>% unnest(cols = c(sr))
