@@ -36,3 +36,5 @@ median(fixrate$mean)
 range(fixrate$median)
 median(fixrate$median)
 # 9 hours
+mean(fixrate$median)
+# 11
