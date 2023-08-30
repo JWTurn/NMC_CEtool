@@ -12,8 +12,9 @@ require('sf')
 raw <- 'data/raw/'
 derived <- 'data/derived/'
 
-cPath <- file.path(tempdir(), "cache")
+# cPath <- file.path(tempdir(), "cache")
 
+# YT DATA ----
 # This will have to be run once if first time using `move2`
 # movebank_store_credentials("myUserName", "myPassword")
 
@@ -62,9 +63,6 @@ move.combo <- rbindlist(lapply(1:length(hab), function(hh){
 )
 
 
-
-
-
 # gathering just the columns needed
 
 move.expand <- rbindlist(lapply(1:length(hab), function(hh){
@@ -81,4 +79,27 @@ move.clean <- move.expand[,.(area, id=as.character(individual_local_identifier),
 
 
 # save 'clean' data 
-saveRDS(move.clean, paste0(derived, 'data_all.RDS'))
+# saveRDS(move.clean, paste0(derived, 'data_all_yt.RDS'))
+
+# BC DATA ----
+bc <- fread(file.path(raw, 'BC_NMC_Telemetry.csv'))
+
+# convert from long/lat to NAD83/Canada Atlas Lambert (need units to be m)
+
+sfbc <- st_as_sf(bc, coords = c('longitude', 'latitude'),
+                  crs = crs)
+outbc <- st_transform(sfbc, outcrs)
+bc.trans <- setDT(sfheaders::sf_to_df(outbc, fill = T))
+bc.clean <- bc.trans[,.(prov = 'bc', area = population_unit, id=as.character(wlh_id), 
+                        mortality_status = mortality, 
+                        datetime = acquisition_date, x, y)]
+
+
+# COMBO DATA ----
+yt.clean <- readRDS(file.path(derived, 'data_all_yt.RDS'))
+yt.clean[,prov := 'yt']
+
+nmc.clean <- rbind(yt.clean, bc.clean, fill = T)
+
+# save combo 'clean' data 
+saveRDS(nmc.clean, file.path(derived, 'prepDat_nmc.RDS'))
