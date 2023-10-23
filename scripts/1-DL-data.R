@@ -62,7 +62,7 @@ move.combo <- data.table()
 
 # convert from long/lat to NAD83/Canada Atlas Lambert (need units to be m)
 crs <- st_crs(4326)$wkt
-outcrs <- st_crs(3978)
+outcrs <- st_crs(3979)
 
 move.combo <- rbindlist(lapply(1:length(hab), function(hh){
   move.combo[,.(area=hab[[hh]], dat=list(setDT(
