@@ -8,24 +8,80 @@ require('dplyr')
 require('tidyr')
 require('sf')
 require(ggplot2)
+#require(terra)
 
 
 ### Input data ----
 raw <- file.path('data','raw')
 derived <- file.path('data','derived')
+canada <- file.path('~/Dropbox', 'ActiveDocs', 'Git-local', 'Can_GIS_layers')
 
 dat.in <- readRDS(file.path(derived, 'prepDat_nmc.RDS'))
 
+# there are definitely outliers/wrong points
+range(dat.in$longitude, na.rm = T)
+# [1] -140.50307   13.53413
+range(dat.in$latitude, na.rm = T)
+# [1]  0.00000 65.17495
+
+
+crs <- st_crs(4326)$wkt
+outcrs <- st_crs(3154)
+# TRY
+# 3579 NAD83 (CSRS)/ Yukon Albers
+# 3154 NAD83 (CSRS)/ UTM zone 7N
+# didn't work
+# 3978, 3979
+
+canPoly <- st_read(file.path(canada, 'CanadaPoly', 'lpr_000b16a_e.shp'))
+ytbc <- nwt <- subset(canPoly, canPoly$PREABBR %in% c('B.C.', 'Y.T.'))
+ytbc.wgs <- st_transform(ytbc, crs)
+
+
+# make sure all have id, long, and lat
+dat.cc <- dat.in[complete.cases(id, longitude, latitude)]
+dat.sf <- st_as_sf(dat.cc, coords = c('longitude', 'latitude'),
+                  crs = crs)
+
+# filter data to be within the extent of YT/BC
+#dat.within <- st_filter(dat.sf, ytbc.wgs, .pred = st_within)
+dat.within <- st_join(dat.sf, ytbc.wgs, join = st_within)
+dat.filter <- filter(dat.within, !is.na(PREABBR))
+plot(dat.filter$geometry)
+
+DT.filter <- setDT(sfheaders::sf_to_df(dat.filter, fill = T))
+
+
+# convert from long/lat to NAD83/Canada Atlas Lambert (need units to be m)
+range(DT.filter$x, na.rm = T)
+# [1] -140.5031 -117.3002
+range(DT.filter$y, na.rm = T)
+# [1] 49.44640 65.17495
+quantile(DT.filter$y, na.rm = T)
+# 0%      25%      50%      75%     100% 
+# 49.44640 58.65384 60.10138 61.92756 65.17495 
+
+# filter out those that are from the office futher south
+DT.filter2 <- DT.filter[y>50]
+
+filter.sf <- st_as_sf(DT.filter2, coords = c('x', 'y'),
+                  crs = crs)
+plot(filter.sf$geometry)
+out.filter.sf <- st_transform(filter.sf, outcrs)
+dat.trans <- setDT(sfheaders::sf_to_df(out.filter.sf, fill = T))
+
+
+
 ### initial clean ####
 # remove old collars with infrequent fixes
-dat.gps <- dat.in[!(duty_cycle %in% c("1 fix every 1-7 d (varied by season see notes)", 
+dat.gps <- dat.trans[!(duty_cycle %in% c("1 fix every 1-7 d (varied by season see notes)", 
                                   "1 fix every 5 d", '23-hourly fixes'))]
 # check for duplicated time stamps
-dat[,any(duplicated(datetime)), by = .(id)]
+dat.gps[,any(duplicated(datetime)), by = .(id)]
 
 
 # We have some duplicated time stamps, these need to be removed prior to creating a track.
-dat <- unique(dat[complete.cases(x,y, datetime)], by = c('id', 'datetime'))
+dat <- unique(dat.gps[complete.cases(x,y, datetime)], by = c('id', 'datetime'))
 
 # check out dates before deployment or after - Good QC for YT prior to Movebank, who knows BC
 dat[,early := ifelse(datetime<deploy_on_timestamp, T, F)]
@@ -48,23 +104,17 @@ sum.pts <- dat3 %>%
 dat.ids <- dat3[!is.na(id)&id!=""]
 
 
-crs <- st_crs(3978)
+
 coords<- dat.ids%>%st_as_sf(coords = c('x','y'))%>%
-  st_set_crs(crs)
+  st_set_crs(outcrs)
 #st_write(coords, file.path(derived, 'prepped', 'NMCprepDat.shp'), append = F)
 
 plot(coords$geometry)
-# coordinates in Germany, in the gulf south of Ghana... etc. Need to clean up
 
-dat.clean <- dat.ids[between(x, -2170000, -1390000) & between(y, 1120000, 2460000)]
-coords.clean<- dat.clean%>%st_as_sf(coords = c('x','y'))%>%
-  st_set_crs(crs)
-plot(coords.clean$geometry)
-
-# ok major weirdos gone
+# ok major weirdos gone but still some likely not real points
 
 # Clean data for movement ----
-trk <- dat.clean %>%
+trk <- dat.ids %>%
   mk_track(.x = x,
            .y= y,
            .t = datetime,
@@ -105,7 +155,7 @@ trk3 <- trk %>%
 hist(trk3$gps_dop,
      ylim=c(0,50000))
 
-# Notice that most of our fixes are 0 - 5. 
+# Notice that most of our fixes are 0 - 6. 
 
 trk4 <- trk3 %>% 
   filter(as.numeric(gps_dop) < 10 |is.na(gps_dop)) # many don't have dop info, so keeping them, otherwise no bc
@@ -124,18 +174,25 @@ range(fixrate$median)
 median(fixrate$median)
 # 8 hours
 mean(fixrate$median)
-# 11.5
+# 11.3
+
+# quick check steps
+
+step.lengths <- unlist(map(trkid$data, step_lengths))
+hist(step.lengths, main="Histogram of step lengths", xlab="Step lengths", ylim = c(0,1000))
+
+median(step.lengths, na.rm = T)
 
 
 quantile(diff(trk4$t_))
 # Time differences in secs
-# 0%     25%     50%     75%    100% 
-# 0       0       0       1 6444000 
+# 0%    25%    50%    75%   100% 
+# 0      0      0      2 601200 
 
 #  For hourly data, much larger values are still safe.
 
 # making a toy dop col so can filter duplicates but keep unknown DOPs
-trk4$dop2 <- ifelse(is.na(trk4$gps_dop), 10, trk4$gps_dop)
+trk4$dop2 <- ifelse(is.na(trk4$gps_dop), 11, trk4$gps_dop)
 trk5 <- trk4 %>% 
   arrange(id, t_) %>% 
   nest(data = -id) %>%
@@ -148,7 +205,7 @@ head(trk5)
 trk5 %>% 
   filter(duplicate_)
 
-# You can see we did a good job of finding our "true" duplicates here.
+
 # Let's remove them.
 trk6 <- trk5 %>% 
   filter(!duplicate_) # removed a lot of duplicates, particularly from BC...
@@ -158,17 +215,17 @@ trk6 <- trk5 %>%
 # This is where we need to decide what "unreasonably fast" means.
 # Let's look at the data to help decide.
 hist(sdr(trk6, time_unit = "mins"), breaks = 100000,
-      xlim = range(0,1000000),
+      xlim = range(0,600000),
       ylim = range(0,10000),
      col = "red")
 
 
 
-# We see a big drop off by the time we get to SDR = 400000 Let's use that.
+# We see a big drop off by the time we get to SDR = 100000 Let's use that.
 trk7 <- trk6 %>% 
   arrange(id, t_) %>% 
   nest(data = -id) %>%
-  mutate(data = map(data, ~flag_fast_steps(.x, delta=400000))) %>%
+  mutate(data = map(data, ~flag_fast_steps(.x, delta=100000))) %>%
   unnest(data) 
 head(trk7)
 
@@ -190,7 +247,7 @@ plot(trk8,
 
 
 # ... 7. Fast roundtrips ----
-# We can use the delta (=400000) from before, but now we also have to decide on
+# We can use the delta (=100000) from before, but now we also have to decide on
 # epsilon. A good way to do this is to try a few different values and see
 # how many steps you flag.
 # ** as per discussion with Tal; Keep epsilon at 10 and change delta
@@ -204,15 +261,15 @@ plot(trk8,
 # delta = 400000:----
 trk8a <- trk8 %>% 
   nest(data = -id) %>%
-  mutate(data = map(data, ~flag_roundtrips(.x, delta = 400000, epsilon = 10))) %>%
+  mutate(data = map(data, ~flag_roundtrips(.x, delta = 100000, epsilon = 10))) %>%
   unnest(data)
 # How many?
 trk8a %>% 
-  filter(fast_roundtrip_) #7
+  filter(fast_roundtrip_) #68
 
 ## Get the entries where fast roundtrip == TRUE
 flagged.entries <- trk8a %>% 
-  filter(fast_roundtrip_) %>% #7 observations
+  filter(fast_roundtrip_) %>% #68 observations
   dplyr::mutate(flag.number = 1:n())
 
 ## Select defining columns of interest (we only want id*date combinations that had a fast roundtrip)
@@ -240,7 +297,7 @@ flagged.entries.data %>%
 
 
 trk8.remove <- trk8a %>% 
-  filter(!fast_roundtrip_) #observations from 1243795 down to 1243788 
+  filter(!fast_roundtrip_) 
 
 
 # ... 8. Defunct clusters ----
@@ -283,7 +340,8 @@ final.dt <- setDT(final)
 saveRDS(final.dt, file.path(derived, 'clean_NMC.RDS'))
 
 coords.final <- final.dt %>% st_as_sf(coords = c('x_','y_'))%>%
-  st_set_crs(crs)
+  st_set_crs(outcrs)
+plot(coords.final$geometry)
 st_write(coords.final, file.path(derived, "prepped", 'clean_NMC.shp'), append = F)
 
 
@@ -307,7 +365,8 @@ range(fixrate$median)
 median(fixrate$median)
 # 8 hours
 mean(fixrate$median)
-# 11.5
+# 11.3
+### steps ----
 steps <- final %>% make_track(x_,y_, t_, crs = crs, all_cols = T) %>%
   track_resample(rate = hours(13), tolerance = minutes(90)) %>%
   amt::filter_min_n_burst(min_n = 3) %>%
