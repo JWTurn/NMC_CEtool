@@ -1,4 +1,4 @@
-### Explore Data ====
+### Clean Data ====
 # Julie Turner
 # Started: August 16 2023
 
@@ -29,7 +29,7 @@ crs <- st_crs(4326)$wkt
 outcrs <- st_crs(3154)
 # TRY
 # 3579 NAD83 (CSRS)/ Yukon Albers
-# 3154 NAD83 (CSRS)/ UTM zone 7N
+# 3154 NAD83 (CSRS)/ UTM zone 7N ---- THIS ONE WORKING
 # didn't work
 # 3978, 3979
 
@@ -240,7 +240,7 @@ trk7 %>%
 
 # Get rid of them
 trk8 <- trk7 %>% 
-  filter(!fast_step_) # 544 steps
+  filter(!fast_step_) #
 
 plot(trk8,
      pch=16)
@@ -258,7 +258,7 @@ plot(trk8,
 
 
 
-# delta = 400000:----
+# delta = 100000:----
 trk8a <- trk8 %>% 
   nest(data = -id) %>%
   mutate(data = map(data, ~flag_roundtrips(.x, delta = 100000, epsilon = 10))) %>%
@@ -292,7 +292,7 @@ flagged.entries.data %>%
   theme_bw() +
   facet_wrap(~id*t_, scales = "free") +
   theme(strip.background = element_rect(fill = NA)) +
-  ggtitle("delta = 400000; epsilon = 10")
+  ggtitle("delta = 100000; epsilon = 10")
 # they all look like they'd be a fast roundtrip/jump between collar uses
 
 
@@ -323,8 +323,8 @@ lines(lasts)
 
 # Try zeta = 25, 50, 100
 trk9 <- trk8.remove %>% 
-  flag_defunct_clusters(zeta = 100,
-                        eta = 6,
+  flag_defunct_clusters(zeta = 200,
+                        eta = 3,
                         theta = hours(48))
 
 # not picking up any clusters
@@ -367,17 +367,21 @@ median(fixrate$median)
 mean(fixrate$median)
 # 11.3
 ### steps ----
-steps <- final %>% make_track(x_,y_, t_, crs = crs, all_cols = T) %>%
-  track_resample(rate = hours(13), tolerance = minutes(90)) %>%
-  amt::filter_min_n_burst(min_n = 3) %>%
-  steps_by_burst(keep_cols = 'end')
+steps <- 
+  final %>% 
+  nest(data = -id) %>% 
+  mutate(track = map(data, ~ mk_track(., x_, y_, t_, crs= outcrs)))
+step.lengths <- unlist(map(steps$track, step_lengths))
+hist(step.lengths, ylim = c(0, 1000), main="Histogram of step lengths", xlab="Step lengths")
 
-range(steps$sl_)
-quantile(steps$sl_)
-quantile(steps$sl_, probs = c(0.9, 0.95, 0.99))
-hist((steps$sl_/as.numeric(steps$dt_))/1000)
-steps$sl_/as.numeric(steps$dt_)
+range(step.lengths, na.rm = T)
+quantile(step.lengths, na.rm = T)
+# 0%          25%          50%          75%         100% 
+# 0.0000     134.7577     453.0335    1261.1896 1004079.8111 
+quantile(step.lengths, na.rm = T, probs = c(0.9, 0.95, 0.99))
+# 90%      95%      99% 
+# 2777.656 4302.666 9245.579
+mean(step.lengths, na.rm = T)
+# 1210.56
+
 # there are some REALLY big steps
-
-bigsteps <- setDT(steps)[sl_>30000]
-summary(as.factor(bigsteps$prov))

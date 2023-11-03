@@ -80,29 +80,29 @@ make_landforest_prop <- function(studyArea, crs, buff, startyr, endyr){
     propmixed <- focal(mixed, Buff, na.rm = TRUE, pad = TRUE, padValue = 0)
     
     # paths
-    p.water <- file.path('data', 'raw-data', 'prop_land',
+    p.water <- file.path('data', 'raw', 'prop_land',
                        paste0('prop_water_', yrs[[rr]], '.tif'))
-    p.snow <- file.path('data', 'raw-data', 'prop_land',
+    p.snow <- file.path('data', 'raw', 'prop_land',
                       paste0('prop_snow_', yrs[[rr]], '.tif'))
-    p.rock <- file.path('data', 'raw-data', 'prop_land',
+    p.rock <- file.path('data', 'raw', 'prop_land',
                         paste0('prop_rock_', yrs[[rr]], '.tif'))
-    p.barren <- file.path('data', 'raw-data', 'prop_land',
+    p.barren <- file.path('data', 'raw', 'prop_land',
                         paste0('prop_barrenland_', yrs[[rr]], '.tif'))
-    p.bryoids <- file.path('data', 'raw-data', 'prop_land', 
+    p.bryoids <- file.path('data', 'raw', 'prop_land', 
                          paste0('prop_bryoids_', yrs[[rr]], '.tif'))
-    p.shrub <- file.path('data', 'raw-data', 'prop_land',
+    p.shrub <- file.path('data', 'raw', 'prop_land',
                        paste0('prop_shrub_', yrs[[rr]], '.tif'))
-    p.wetland <- file.path('data', 'raw-data', 'prop_land',
+    p.wetland <- file.path('data', 'raw', 'prop_land',
                          paste0('prop_wetland_', yrs[[rr]], '.tif'))
-    p.wettreed <- file.path('data', 'raw-data', 'prop_land',
+    p.wettreed <- file.path('data', 'raw', 'prop_land',
                             paste0('prop_wet_treed_', yrs[[rr]], '.tif'))
-    p.herbs <- file.path('data', 'raw-data', 'prop_land',
+    p.herbs <- file.path('data', 'raw', 'prop_land',
                        paste0('prop_herbs_', yrs[[rr]], '.tif'))
-    p.needleleaf <- file.path('data', 'raw-data','prop_land', 
+    p.needleleaf <- file.path('data', 'raw','prop_land', 
                             paste0('prop_needleleaf_', yrs[[rr]], '.tif'))
-    p.deciduous <- file.path('data', 'raw-data', 'prop_land',
+    p.deciduous <- file.path('data', 'raw', 'prop_land',
                            paste0('prop_deciduous_', yrs[[rr]], '.tif'))
-    p.mixed <- file.path('data', 'raw-data', 'prop_land',
+    p.mixed <- file.path('data', 'raw', 'prop_land',
                        paste0('prop_mixed_', yrs[[rr]], '.tif'))
 
     
