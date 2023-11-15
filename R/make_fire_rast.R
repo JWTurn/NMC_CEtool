@@ -2,7 +2,7 @@
 #' @export
 #' @author Julie W. Turner
 #' 
-make_fire_rast <- function(layer, rast){
+make_fire_rast <- function(layer, rast, where2save){
   lyr <- vect(layer)
   raster <- rast(rast)
   yearsWithData <- unique(lyr[["YEAR"]])$YEAR
@@ -19,5 +19,5 @@ make_fire_rast <- function(layer, rast){
   historicFireStack <- rast(historicFireRasters)
   #saveRDS(historicFireRasters, file.path('data', 'raw-data', 'fire_nbac_1986_to_2020', 'fires_list.RDS'))
   fnames <- paste0("fires_", yearsWithData, ".tif")
-  writeRaster(historicFireStack, fnames)
+  writeRaster(historicFireStack, file.path(where2save, fnames))
 }
