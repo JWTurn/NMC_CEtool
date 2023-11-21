@@ -10,6 +10,10 @@ require('sf')
 require(ggplot2)
 require(terra)
 require(foreach)
+require(qgisprocess)
+
+# list of all qgis algorithms
+algs <- qgis_algorithms()
 
 lapply(dir('R', '*.R', full.names = TRUE), source)
 
@@ -19,6 +23,9 @@ derived <- file.path('data','derived')
 
 canada <- file.path('C:','Users', 'julie', 'Dropbox', 'ActiveDocs', 'Git-local', 'Can_GIS_layers')
 #canada <- file.path('~/Dropbox', 'ActiveDocs', 'Git-local', 'Can_GIS_layers')
+roads.bc <- file.path(canada, 'CA_rd_data', 'canvec', 'canvec_50K_BC_Transport_shp', 'canvec_50K_BC_Transport')
+roads.yt <- file.path(canada, 'CA_rd_data', 'canvec', 'canvec_50K_YT_Transport_shp', 'canvec_50K_YT_Transport')
+roads.nt <- file.path(canada, 'CA_rd_data', 'canvec', 'canvec_50K_NT_Transport_shp', 'canvec_50K_NT_Transport')
 
 dat <- readRDS(file.path(derived, 'clean_NMC.RDS'))
 sArea <- file.path(derived, 'prepped', 'clean_NMC_20kmBuff.shp')
@@ -42,12 +49,84 @@ make_landforest_prop(studyArea = sArea, crs, buff = buff.diam, startyr = minyr, 
 land <- file.path(raw, 'prop_land', '700', 'prop_mixed_2012.tif')
 
 ## ROADS ----
+### BC ----
+roadseg.bc <- file.path(roads.bc, 'road_segment_1.shp')
+trackseg.bc <- file.path(roads.bc, 'track_segment_1.shp')
+trail.bc <- file.path(roads.bc, 'trail_1.shp')
 
-roads <- st_read(file.path('data', 'raw-data', 'wbi_nrn.shp'))
-rail <- st_read(file.path('data', 'raw-data', 'wbi_rail.shp'))
+### YT ----
+roadseg.yt <- file.path(roads.yt, 'road_segment_1.shp')
+trackseg.yt <- file.path(roads.yt, 'track_segment_1.shp')
+trail.yt <- file.path(roads.yt, 'trail_1.shp')
 
-paved <- dplyr::filter(roads, PAVSTATUS %in% 'Paved')
-#writeVector(vect(paved), file.path('data', 'raw-data', 'wbi_pave_roads.shp'), overwrite = T)
+### NT ----
+# including for those near border
+# don't know what to do about the border of Alaska...
+roadseg.nt <- file.path(roads.nt, 'road_segment_1.shp')
+trackseg.nt <- file.path(roads.nt, 'track_segment_1.shp')
+trail.nt <- file.path(roads.nt, 'trail_1.shp')
+
+### ALL ----
+# use qgis algorithms to merge, then turn into `sf` object
+qgis_vectmerge <- qgis_function("native:mergevectorlayers")
+
+roadseg.qgis <- qgis_vectmerge(LAYERS = list(roadseg.bc, roadseg.yt, roadseg.nt))
+roadseg.all <- st_as_sf(roadseg.qgis)
+
+trackseg.qgis <- qgis_vectmerge(LAYERS = list(trackseg.bc, trackseg.yt, trackseg.nt))
+trackseg.all <- st_as_sf(trackseg.qgis)
+
+trail.qgis <- qgis_vectmerge(LAYERS = list(trail.bc, trail.yt, trail.nt))
+trail.all <- st_as_sf(trail.qgis)
+
+
+summary(as.factor(roadseg.all$surfdsc_en))
+# Dirt       Flexible         Gravel Not Identified          Rigid 
+# 84           4115           4065         273444             72 
+summary(as.factor(roadseg.all$ispaved_en))
+
+summary(as.factor(trackseg.all$classif_en))
+summary(as.factor(trackseg.all$mode_en))
+summary(as.factor(trackseg.all$use_en))
+
+summary(as.factor(trail.all$map_sel_en))
+
+
+gc()
+# convert to crs
+roadseg.proj <- st_transform(roadseg.all, crs)
+trackseg.proj <- st_transform(trackseg.all, crs)
+trail.proj <- st_transform(trail.all, crs)
+
+# save these
+st_write(roadseg.proj, file.path(raw, 'linear_features', 'roadseg.shp'), append = FALSE)
+st_write(trackseg.proj, file.path(raw, 'linear_features', 'trackseg.shp'), append = FALSE)
+st_write(trail.proj, file.path(raw, 'linear_features', 'trail.shp'), append = FALSE)
+
+
+# separate paved from unpaved roads
+paved.all <- dplyr::filter(roadseg.proj, ispaved_en == "True")
+unpaved.all <- dplyr::filter(roadseg.proj, ispaved_en == "False")
+
+st_write(paved.all, file.path(raw, 'linear_features', 'roadpaved.shp'), append = FALSE)
+st_write(unpaved.all, file.path(raw, 'linear_features', 'roadunpaved.shp'), append = FALSE)
+
+# combine paved/rail
+## TODO THIS ISN'T WORKING
+paved <- file.path(raw, 'linear_features', 'roadpaved.shp')
+rail <- file.path(raw, 'linear_features', 'trackseg.shp')
+roadrail.qgis <- qgis_vectmerge(LAYERS = list(paved, rail))
+roadrail <- st_as_sf(roadrail.qgis)
+st_write(roadrail, file.path(raw, 'linear_features', 'roadpaved_rail.shp'), append = FALSE)
+
+# combine unpaved/trails
+unpaved <- file.path(raw, 'linear_features', 'roadunpaved.shp')
+trail <- file.path(raw, 'linear_features', 'trail.shp')
+unpavedtrail.qgis <- qgis_vectmerge(LAYERS = list(unpaved, trail))
+unpavedtrail <- st_as_sf(unpavedtrail.qgis)
+st_write(unpavedtrail, file.path(raw, 'linear_features', 'roadunpaved_trail.shp'), append = FALSE)
+
+
 
 ## HARVEST ----
 harv <- rast(file.path(canada, 'CA_Forest_Harvest_1985-2020', 'CA_Forest_Harvest_1985-2020.tif'))
