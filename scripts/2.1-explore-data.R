@@ -51,6 +51,9 @@ steps.fr <- dat |>
 steps.fr |> select(id,  steps)|>
   unnest(cols = steps)|> 
   ggplot(aes(sl_)) + geom_density(alpha = 0.4)
+steps.fr |> select(id,  steps)|>
+  unnest(cols = steps)|> 
+  ggplot(aes(ta_)) + geom_density(alpha = 0.4)
 steps.id <- steps.fr |> select(id,  steps)|>
   unnest(cols = steps)
 quantile(steps.id$sl_)
@@ -74,6 +77,9 @@ steps.fr13 <- dat |>
 steps.fr13 |> select(id,  steps)|>
   unnest(cols = steps)|> 
   ggplot(aes(sl_)) + geom_density(alpha = 0.4)
+steps.fr13 |> select(id,  steps)|>
+  unnest(cols = steps)|> 
+  ggplot(aes(ta_)) + geom_density(alpha = 0.4)
 steps.id13 <- steps.fr13 |> select(id,  steps)|>
   unnest(cols = steps)
 # this one has more points
