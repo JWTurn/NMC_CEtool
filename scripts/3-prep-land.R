@@ -27,6 +27,8 @@ roads.bc <- file.path(canada, 'CA_rd_data', 'canvec', 'canvec_50K_BC_Transport_s
 roads.yt <- file.path(canada, 'CA_rd_data', 'canvec', 'canvec_50K_YT_Transport_shp', 'canvec_50K_YT_Transport')
 roads.nt <- file.path(canada, 'CA_rd_data', 'canvec', 'canvec_50K_NT_Transport_shp', 'canvec_50K_NT_Transport')
 
+resmgmt <- file.path(canada, 'Canvec-ResourceManagement', 'canvec_50K_CA_Res_MGT_shp', 'canvec_50K_CA_Res_MGT')
+
 dat <- readRDS(file.path(derived, 'clean_NMC.RDS'))
 sArea <- file.path(derived, 'prepped', 'clean_NMC_20kmBuff.shp')
 studyArea <- vect(sArea)
@@ -126,6 +128,38 @@ unpavedtrail.qgis <- qgis_vectmerge(LAYERS = list(unpaved, trail))
 unpavedtrail <- st_as_sf(unpavedtrail.qgis)
 st_write(unpavedtrail, file.path(raw, 'linear_features', 'roadunpaved_trail.shp'), append = FALSE)
 
+## POLYGONAL ANTHRO DISTURBANCE - CANVEC RESOURCE MANAGMENT ----
+aggr <- file.path(resmgmt, 'aggregate_2.shp') # poly
+oilgas <- file.path(resmgmt, 'oil_gas_site_0.shp') # point
+oilgas2 <- file.path(resmgmt, 'oil_gas_site_2.shp') # poly
+ore <- file.path(resmgmt, 'ore_0.shp') # point
+ore2 <- file.path(resmgmt, 'ore_2.shp') # poly
+peat <- file.path(resmgmt, 'peat_2.shp') # poly
+well <- file.path(resmgmt, 'petroleum_well_0.shp') # point
+
+anthropolys_qgis <- qgis_vectmerge(LAYERS = list(aggr, oilgas2, ore2, peat))
+anthropolys_sf <- st_as_sf(anthropolys_qgis) %>% st_transform(crs = crs)
+anthropolys.nmc <- crop(vect(anthropolys_sf), studyArea)
+writeVector(anthropolys.nmc, file.path(raw, 'anthroDisturbance', 'anthro_polys.shp'))
+
+commline <- file.path(resmgmt, 'communication_line_1.shp')
+pipeline <- file.path(resmgmt, 'pipeline_1.shp')
+powerline <- file.path(resmgmt, 'power_line_1.shp')
+
+anthrolines_qgis <- qgis_vectmerge(LAYERS = list(commline, pipeline, powerline))
+anthrolines_sf <- st_as_sf(anthrolines_qgis) %>% st_transform(crs = crs)
+anthrolines.nmc <- crop(vect(anthrolines_sf), studyArea)
+writeVector(anthrolines.nmc, file.path(raw, 'anthroDisturbance', 'antro_lines.shp'))
+
+
+# Polygonal disturbance Zone
+gc()
+Buff <- focalMat(rast(land), d=buff.diam, type = 'circle')
+# rasterize polys
+anthropolys.rast <- rasterize(anthropolys.nmc, rast(land))
+anthropolys.rast[is.na(anthropolys.rast)]<-0
+mean.anthropolys <- focal(anthropolys.rast, Buff, na.rm = TRUE, pad = TRUE, padValue = 0, fun = 'mean')
+writeRaster(mean.anthropolys, file.path(raw, 'anthroDisturbance', 'antro_polys_prop700.tif'))
 
 
 ## HARVEST ----
