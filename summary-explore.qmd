@@ -1,0 +1,460 @@
+---
+title: "NMC summary"
+author: "Julie Turner"
+format: html
+editor: visual
+execute: 
+  echo: false
+project:
+    execute-dir: project
+---
+
+# Summary
+
+## Data cleaning
+
+At this point, I've cleaned both YT and BC data to:
+
+1\) remove points that are not geographically feasible (in Germany, the ocean, etc)
+
+2\) remove any pre-/post-deployment points
+
+3\) remove first week of data (capture effect)
+
+4\) remove low quality steps: DOP \< 10 (if recorded)
+
+5\) remove duplicate points
+
+6\) remove unreasonably fast steps (preliminary)
+
+7\) remove fast round trips
+
+8\) remove defunct clusters (post death/fall off)
+
+9\) remove individuals with less than 3 points
+
+Now, we have a "clean" data set.
+
+## Exploring the data
+
+```{r}
+
+#| label: setup
+
+#| include: false
+
+require('data.table')
+
+require('amt')
+
+require('dplyr')
+
+require('tidyr')
+
+require('sf')
+
+require('terra')
+
+require('ggplot2')
+
+require('tidyterra')
+
+### Input data ----
+
+raw <- file.path('data','raw')
+
+derived <- file.path('data','derived')
+
+#canada <- file.path('~/Dropbox', 'ActiveDocs', 'Git-local', 'Can_GIS_layers')
+
+canada <- file.path('C:','Users', 'julie', 'Dropbox', 'ActiveDocs', 'Git-local', 'Can_GIS_layers')
+
+dat <- readRDS(file.path(derived, 'clean_NMC.RDS'))
+
+crs <- st_crs(3154)
+
+canPoly <- vect(file.path(canada, 'CanadaPoly', 'lpr_000b16a_e.shp'))
+
+```
+
+Now we're going to explore the clean data.
+
+```{r}
+
+#| echo: true
+
+sArea <- vect(file.path(derived, 'prepped', 'clean_NMC_20kmBuff.shp'))
+
+nmc.juris <- subset(canPoly, canPoly$PREABBR %in% c('B.C.', 'Y.T.'))
+
+nmc.juris <- project(nmc.juris, sArea)
+
+ggplot(nmc.juris) +
+
+  geom_spatvector(fill = NA) +
+
+  geom_spatvector(data = sArea, fill = 'blueviolet') +
+
+  ggtitle('Buffered clean locations') +
+
+  theme_bw() +
+
+  theme(plot.title=element_text(size=12,hjust = 0.05),axis.title = element_blank()) +
+
+  theme_void() +
+
+  coord_sf(crs = crs)
+
+```
+
+Clearly, still not perfectly clean, but it's a good starting point.
+
+At this point, there are `r nrow(dat)` in our cleaned data set.
+
+### Fix rates
+
+Now we're going to explore what the range of fix rates looks like across the whole data set
+
+```{r}
+
+#| echo: false
+
+fixrate.clean <- dat %>% make_track(x_,y_, t_, crs = crs, all_cols = T) %>% 
+
+  nest(data = -"id") %>% 
+
+  mutate(sr = lapply(data, summarize_sampling_rate)) %>%
+
+  dplyr::select(id, sr) %>% unnest(cols = c(sr))
+
+```
+
+c
+
+```{r}
+
+#| echo: false
+
+quantile(fixrate.clean$mean)
+
+```
+
+Quantiles of median fix rates by individual
+
+```{r}
+
+#| echo: false
+
+# quantile of median fix rates by individual
+
+quantile(fixrate.clean$median)
+
+```
+
+Mean of the median fix rates by individual
+
+```{r}
+
+#| echo: false
+
+mean(fixrate.clean$median)
+
+```
+
+### Steps
+
+#### 8 hour fix rate
+
+Let's explore the all the step regardless of fix rate
+
+```{r}
+
+#| echo: false
+
+steps <- 
+
+  dat %>% 
+
+  nest(data = -id) %>% 
+
+  mutate(track = map(data, ~ mk_track(., x_, y_, t_, crs= crs)))
+
+step.lengths <- unlist(map(steps$track, step_lengths))
+
+hist(step.lengths, ylim = c(0, 1000), main="Histogram of step lengths", xlab="Step lengths")
+
+```
+
+The median of median fix rates was 8 hours, so let's check out resampling to this fix rate
+
+```{r}
+
+#| echo: false
+
+trk.fr <- dat |> 
+
+  make_track(x_, y_, t_, all_cols = T, crs = crs) |> 
+
+  nest(data = -"id") |> 
+
+  mutate(resamp = map(data, function(x) 
+
+    x |> track_resample(rate = hours(8), tolerance = minutes(90))))
+
+# trk.fr %>% unnest(steps) %>%
+
+#   inspect(cluster=FALSE)
+
+trk.fr %>% unnest(resamp) %>%
+
+  plot(main = "8 hour fix rate")
+
+```
+
+Step length distribution
+
+```{r}
+
+#| echo: false
+
+steps.fr <- trk.fr |> mutate(steps = map(resamp, function(x)
+
+  x |> steps_by_burst()))
+
+steps.fr |> select(id,  steps)|>
+
+  unnest(cols = steps)|> 
+
+  ggplot(aes(sl_)) + geom_density(alpha = 0.4)
+
+```
+
+This is a typical distribution, though it looks like there are still a few unnaturally long steps. So let's check the quantiles.
+
+```{r}
+
+#| echo: false
+
+steps.id <- steps.fr |> select(id,  steps)|>
+
+  unnest(cols = steps)
+
+quantile(steps.id$sl_)
+
+```
+
+At the extremes:
+
+```{r}
+
+#| echo: false
+
+quantile(steps.id$sl_, probs = c(0.9, 0.95, 0.99))
+
+```
+
+So, looks like we could filter out the top 99% of steps if we need to remove the unrealistically long 34 km step taken in within 8 hours...
+
+Now, lets check out the turn angles
+
+```{r}
+
+#| echo: false
+
+#| warning: false
+
+steps.fr |> select(id,  steps)|>
+
+  unnest(cols = steps)|> 
+
+  ggplot(aes(ta_)) + geom_density(alpha = 0.4)
+
+```
+
+That's a nice looking von Mises distribution, so looks good.
+
+However, this fix rate leads to us only having `r nrow(steps.id)` out of the original `r nrow(dat)` observations. Not terrible, but let's check another fix rate.
+
+#### 13 hour fix rate
+
+The 75% quantile of median fix rates was 13 hours, so we'll try that next.
+
+```{r}
+
+#| echo: false
+
+trk.fr13 <- dat |> 
+
+  make_track(x_, y_, t_, all_cols = T, crs = crs) |> 
+
+  nest(data = -"id") |> 
+
+  mutate(resamp = map(data, function(x) 
+
+    x |> track_resample(rate = hours(13), tolerance = minutes(90))))
+
+# trk.fr %>% unnest(steps) %>%
+
+#   inspect(cluster=FALSE)
+
+trk.fr13 %>% unnest(resamp) %>%
+
+  plot(main = "13 hour fix rate")
+
+```
+
+Let's check the step length distribution:
+
+```{r}
+
+#| echo: false
+
+steps.fr13 <- trk.fr13 |> mutate(steps = map(resamp, function(x)
+
+  x |> steps_by_burst()))
+
+steps.fr13 |> select(id,  steps)|>
+
+  unnest(cols = steps)|> 
+
+  ggplot(aes(sl_)) + geom_density(alpha = 0.4)
+
+```
+
+Again, this looks good but has some unrealistically long step lengths, so let's explore deeper.
+
+```{r}
+
+#| echo: false
+
+steps.id13 <- steps.fr13 |> select(id,  steps)|>
+
+  unnest(cols = steps)
+
+quantile(steps.id13$sl_)
+
+```
+
+And, at the extremes:
+
+```{r}
+
+#| echo: false
+
+quantile(steps.id13$sl_, probs = c(0.9, 0.95, 0.99))
+
+```
+
+Again, looks like we could filter out the top 99% of steps if we need to remove the unrealistically long 66 km step taken in within 13 hours...
+
+Let's check the turn angles:
+
+```{r}
+
+#| echo: false
+
+#| warning: false
+
+steps.fr13 |> select(id,  steps)|>
+
+  unnest(cols = steps)|> 
+
+  ggplot(aes(ta_)) + geom_density(alpha = 0.4)
+
+```
+
+This also looks good.
+
+Now, this fix rate leads to us having `r nrow(steps.id13)` out of the original `r nrow(dat)` observations. So, this is better than the `r nrow(steps.id)` observations at the 8 hour fix rate.
+
+#### 25 hour fix rate
+
+Let's try a 25 hour fix rate to see if we can get more data. This comes with the trade off of our inferences from movement parameters being very coarse.
+
+```{r}
+
+#| echo: false
+
+trk.fr25 <- dat |> 
+
+  make_track(x_, y_, t_, all_cols = T, crs = crs) |> 
+
+  nest(data = -"id") |> 
+
+  mutate(resamp = map(data, function(x) 
+
+    x |> track_resample(rate = hours(25), tolerance = minutes(120))))
+
+# trk.fr %>% unnest(steps) %>%
+
+#   inspect(cluster=FALSE)
+
+trk.fr25 %>% unnest(resamp) %>%
+
+  plot(main = "25 hour fix rate")
+
+```
+
+Let's check the step length distribution:
+
+```{r}
+
+#| echo: false
+
+steps.fr25 <- trk.fr25 |> mutate(steps = map(resamp, function(x)
+
+  x |> steps_by_burst()))
+
+steps.fr25 |> select(id,  steps)|>
+
+  unnest(cols = steps)|> 
+
+  ggplot(aes(sl_)) + geom_density(alpha = 0.4)
+
+```
+
+Again, this looks good. Let's explore deeper.
+
+```{r}
+
+#| echo: false
+
+steps.id25 <- steps.fr25 |> select(id,  steps)|>
+
+  unnest(cols = steps)
+
+quantile(steps.id25$sl_)
+
+```
+
+And, at the extremes:
+
+```{r}
+
+#| echo: false
+
+quantile(steps.id25$sl_, probs = c(0.9, 0.95, 0.99))
+
+```
+
+Again, looks like we could filter out the top 99% of steps if we needed. Is 80 km unrealistically long in 25 hours? Probably?
+
+Let's check the turn angles:
+
+```{r}
+
+#| echo: false
+
+#| warning: false
+
+steps.fr25 |> select(id,  steps)|>
+
+  unnest(cols = steps)|> 
+
+  ggplot(aes(ta_)) + geom_density(alpha = 0.4)
+
+```
+
+That's a nice looking von Mises distribution, so looks good.
+
+Now, this fix rate leads to us having `r nrow(steps.id25)` out of the original `r nrow(dat)` observations. So, this is better than the `r nrow(steps.id)` observations at the 8 hour fix rate and less than the `r nrow(steps.id13)` observations at the 13 hour fix rate. The 13 hour fix rate is probably our sweet spot
