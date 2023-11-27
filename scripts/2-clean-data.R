@@ -14,7 +14,8 @@ require(ggplot2)
 ### Input data ----
 raw <- file.path('data','raw')
 derived <- file.path('data','derived')
-canada <- file.path('~/Dropbox', 'ActiveDocs', 'Git-local', 'Can_GIS_layers')
+#canada <- file.path('~/Dropbox', 'ActiveDocs', 'Git-local', 'Can_GIS_layers')
+canada <- file.path('C:','Users', 'julie', 'Dropbox', 'ActiveDocs', 'Git-local', 'Can_GIS_layers')
 
 dat.in <- readRDS(file.path(derived, 'prepDat_nmc.RDS'))
 
@@ -34,8 +35,10 @@ outcrs <- st_crs(3154)
 # 3978, 3979
 
 canPoly <- st_read(file.path(canada, 'CanadaPoly', 'lpr_000b16a_e.shp'))
-ytbc <- nwt <- subset(canPoly, canPoly$PREABBR %in% c('B.C.', 'Y.T.'))
+# really using YT, BC, and NWT because of transboundary herds
+ytbc <- subset(canPoly, canPoly$PREABBR %in% c('B.C.', 'Y.T.', 'N.W.T'))
 ytbc.wgs <- st_transform(ytbc, crs)
+ytbc.ext <- st_bbox(ytbc.wgs)
 
 
 # make sure all have id, long, and lat
@@ -45,11 +48,14 @@ dat.sf <- st_as_sf(dat.cc, coords = c('longitude', 'latitude'),
 
 # filter data to be within the extent of YT/BC
 #dat.within <- st_filter(dat.sf, ytbc.wgs, .pred = st_within)
-dat.within <- st_join(dat.sf, ytbc.wgs, join = st_within)
-dat.filter <- filter(dat.within, !is.na(PREABBR))
-plot(dat.filter$geometry)
+#dat.within <- st_join(dat.sf, ytbc.wgs, join = st_within)
+# dat.filter <- filter(dat.within, !is.na(PREABBR))
+# plot(dat.filter$geometry)
+dat.within <- st_crop(dat.sf, ytbc.ext)
+plot(dat.within$geometry)
 
-DT.filter <- setDT(sfheaders::sf_to_df(dat.filter, fill = T))
+
+DT.filter <- setDT(sfheaders::sf_to_df(dat.within, fill = T))
 
 
 # convert from long/lat to NAD83/Canada Atlas Lambert (need units to be m)
@@ -61,7 +67,7 @@ quantile(DT.filter$y, na.rm = T)
 # 0%      25%      50%      75%     100% 
 # 49.44640 58.65384 60.10138 61.92756 65.17495 
 
-# filter out those that are from the office futher south
+# filter out those that are from the office further south
 DT.filter2 <- DT.filter[y>50]
 
 filter.sf <- st_as_sf(DT.filter2, coords = c('x', 'y'),
@@ -118,7 +124,7 @@ trk <- dat.ids %>%
   mk_track(.x = x,
            .y= y,
            .t = datetime,
-           crs=crs,
+           crs=outcrs,
            all_cols = T) 
 # Now we plot it
 plot(trk, main = "All Data")
@@ -221,11 +227,11 @@ hist(sdr(trk6, time_unit = "mins"), breaks = 100000,
 
 
 
-# We see a big drop off by the time we get to SDR = 100000 Let's use that.
+# We see a big drop off by the time we get to SDR = 200000 Let's use that.
 trk7 <- trk6 %>% 
   arrange(id, t_) %>% 
   nest(data = -id) %>%
-  mutate(data = map(data, ~flag_fast_steps(.x, delta=100000))) %>%
+  mutate(data = map(data, ~flag_fast_steps(.x, delta=200000))) %>%
   unnest(data) 
 head(trk7)
 
@@ -265,7 +271,7 @@ trk8a <- trk8 %>%
   unnest(data)
 # How many?
 trk8a %>% 
-  filter(fast_roundtrip_) #68
+  filter(fast_roundtrip_) #93
 
 ## Get the entries where fast roundtrip == TRUE
 flagged.entries <- trk8a %>% 
