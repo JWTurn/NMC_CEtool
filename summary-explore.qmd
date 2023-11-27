@@ -38,9 +38,7 @@ Now, we have a "clean" data set.
 ## Exploring the data
 
 ```{r}
-
 #| label: setup
-
 #| include: false
 
 require('data.table')
@@ -80,8 +78,7 @@ canPoly <- vect(file.path(canada, 'CanadaPoly', 'lpr_000b16a_e.shp'))
 Now we're going to explore the clean data.
 
 ```{r}
-
-#| echo: true
+#| echo: false
 
 sArea <- vect(file.path(derived, 'prepped', 'clean_NMC_20kmBuff.shp'))
 
@@ -116,7 +113,6 @@ At this point, there are `r nrow(dat)` in our cleaned data set.
 Now we're going to explore what the range of fix rates looks like across the whole data set
 
 ```{r}
-
 #| echo: false
 
 fixrate.clean <- dat %>% make_track(x_,y_, t_, crs = crs, all_cols = T) %>% 
@@ -129,10 +125,9 @@ fixrate.clean <- dat %>% make_track(x_,y_, t_, crs = crs, all_cols = T) %>%
 
 ```
 
-c
+Quantiles of mean fix rates by individual
 
 ```{r}
-
 #| echo: false
 
 quantile(fixrate.clean$mean)
@@ -142,7 +137,6 @@ quantile(fixrate.clean$mean)
 Quantiles of median fix rates by individual
 
 ```{r}
-
 #| echo: false
 
 # quantile of median fix rates by individual
@@ -163,8 +157,6 @@ mean(fixrate.clean$median)
 
 ### Steps
 
-#### 8 hour fix rate
-
 Let's explore the all the step regardless of fix rate
 
 ```{r}
@@ -184,6 +176,9 @@ step.lengths <- unlist(map(steps$track, step_lengths))
 hist(step.lengths, ylim = c(0, 1000), main="Histogram of step lengths", xlab="Step lengths")
 
 ```
+
+
+#### 8 hour fix rate
 
 The median of median fix rates was 8 hours, so let's check out resampling to this fix rate
 
@@ -258,9 +253,7 @@ So, looks like we could filter out the top 99% of steps if we need to remove the
 Now, lets check out the turn angles
 
 ```{r}
-
 #| echo: false
-
 #| warning: false
 
 steps.fr |> select(id,  steps)|>
@@ -350,9 +343,7 @@ Again, looks like we could filter out the top 99% of steps if we need to remove 
 Let's check the turn angles:
 
 ```{r}
-
 #| echo: false
-
 #| warning: false
 
 steps.fr13 |> select(id,  steps)|>
@@ -442,9 +433,7 @@ Again, looks like we could filter out the top 99% of steps if we needed. Is 80 k
 Let's check the turn angles:
 
 ```{r}
-
 #| echo: false
-
 #| warning: false
 
 steps.fr25 |> select(id,  steps)|>

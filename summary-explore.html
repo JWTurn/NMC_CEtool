@@ -85,94 +85,6 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="exploring-the-data" class="level2">
 <h2 class="anchored" data-anchor-id="exploring-the-data">Exploring the data</h2>
-<div class="cell">
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: data.table</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: amt</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'amt'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:stats':
-
-    filter</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: dplyr</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'dplyr'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:data.table':
-
-    between, first, last</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:stats':
-
-    filter, lag</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following objects are masked from 'package:base':
-
-    intersect, setdiff, setequal, union</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: tidyr</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: sf</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Linking to GEOS 3.11.2, GDAL 3.6.2, PROJ 9.2.0; sf_use_s2() is TRUE</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: terra</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>terra 1.7.46</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'terra'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:tidyr':
-
-    extract</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:data.table':
-
-    shift</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: ggplot2</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Loading required package: tidyterra</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'tidyterra'</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:amt':
-
-    as_sf</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>The following object is masked from 'package:stats':
-
-    filter</code></pre>
-</div>
-</div>
 <p>Now we’re going to explore the clean data.</p>
 <div class="cell">
 <div class="cell-output-display">
@@ -180,15 +92,15 @@ Attaching package: 'tidyterra'</code></pre>
 </div>
 </div>
 <p>Clearly, still not perfectly clean, but it’s a good starting point.</p>
-<p>At this point, there are 1064786 in our cleaned data set.</p>
+<p>At this point, there are 1223218 in our cleaned data set.</p>
 <section id="fix-rates" class="level3">
 <h3 class="anchored" data-anchor-id="fix-rates">Fix rates</h3>
 <p>Now we’re going to explore what the range of fix rates looks like across the whole data set</p>
-<p>c</p>
+<p>Quantiles of mean fix rates by individual</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
 <pre><code>        0%        25%        50%        75%       100% 
-  1.062915   5.852275   9.426313  15.305364 597.211240 </code></pre>
+  1.062915   5.841326   9.129221  14.907460 573.909190 </code></pre>
 </div>
 </div>
 <p>Quantiles of median fix rates by individual</p>
@@ -201,20 +113,20 @@ Attaching package: 'tidyterra'</code></pre>
 <p>Mean of the median fix rates by individual</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 11.06563</code></pre>
+<pre><code>[1] 11.02585</code></pre>
 </div>
 </div>
 </section>
 <section id="steps" class="level3">
 <h3 class="anchored" data-anchor-id="steps">Steps</h3>
-<section id="hour-fix-rate" class="level4">
-<h4 class="anchored" data-anchor-id="hour-fix-rate">8 hour fix rate</h4>
 <p>Let’s explore the all the step regardless of fix rate</p>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="summary-explore_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
+<section id="hour-fix-rate" class="level4">
+<h4 class="anchored" data-anchor-id="hour-fix-rate">8 hour fix rate</h4>
 <p>The median of median fix rates was 8 hours, so let’s check out resampling to this fix rate</p>
 <div class="cell">
 <div class="cell-output-display">
@@ -231,28 +143,25 @@ Attaching package: 'tidyterra'</code></pre>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
 <pre><code>         0%         25%         50%         75%        100% 
-    0.00000    73.15349   360.33912  1055.95952 34554.88582 </code></pre>
+    0.00000    88.30026   366.36013  1069.28278 35276.71324 </code></pre>
 </div>
 </div>
 <p>At the extremes:</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
 <pre><code>     90%      95%      99% 
-2366.798 3690.058 7940.462 </code></pre>
+2412.400 3784.069 8145.762 </code></pre>
 </div>
 </div>
 <p>So, looks like we could filter out the top 99% of steps if we need to remove the unrealistically long 34 km step taken in within 8 hours…</p>
 <p>Now, lets check out the turn angles</p>
 <div class="cell">
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: Removed 43064 rows containing non-finite values (`stat_density()`).</code></pre>
-</div>
 <div class="cell-output-display">
 <p><img src="summary-explore_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 <p>That’s a nice looking von Mises distribution, so looks good.</p>
-<p>However, this fix rate leads to us only having 176057 out of the original 1064786 observations. Not terrible, but let’s check another fix rate.</p>
+<p>However, this fix rate leads to us only having 224397 out of the original 1223218 observations. Not terrible, but let’s check another fix rate.</p>
 </section>
 <section id="hour-fix-rate-1" class="level4">
 <h4 class="anchored" data-anchor-id="hour-fix-rate-1">13 hour fix rate</h4>
@@ -271,29 +180,26 @@ Attaching package: 'tidyterra'</code></pre>
 <p>Again, this looks good but has some unrealistically long step lengths, so let’s explore deeper.</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code>       0%       25%       50%       75%      100% 
-    0.000   257.667   716.164  1686.861 66248.619 </code></pre>
+<pre><code>        0%        25%        50%        75%       100% 
+    0.0000   252.7824   707.2508  1684.1485 82427.1468 </code></pre>
 </div>
 </div>
 <p>And, at the extremes:</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code>     90%      95%      99% 
-3377.296 5033.502 9918.429 </code></pre>
+<pre><code>      90%       95%       99% 
+ 3401.805  5088.366 10092.753 </code></pre>
 </div>
 </div>
 <p>Again, looks like we could filter out the top 99% of steps if we need to remove the unrealistically long 66 km step taken in within 13 hours…</p>
 <p>Let’s check the turn angles:</p>
 <div class="cell">
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: Removed 26282 rows containing non-finite values (`stat_density()`).</code></pre>
-</div>
 <div class="cell-output-display">
 <p><img src="summary-explore_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 <p>This also looks good.</p>
-<p>Now, this fix rate leads to us having 458567 out of the original 1064786 observations. So, this is better than the 176057 observations at the 8 hour fix rate.</p>
+<p>Now, this fix rate leads to us having 507417 out of the original 1223218 observations. So, this is better than the 224397 observations at the 8 hour fix rate.</p>
 </section>
 <section id="hour-fix-rate-2" class="level4">
 <h4 class="anchored" data-anchor-id="hour-fix-rate-2">25 hour fix rate</h4>
@@ -312,29 +218,26 @@ Attaching package: 'tidyterra'</code></pre>
 <p>Again, this looks good. Let’s explore deeper.</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code>       0%       25%       50%       75%      100% 
-    0.000   448.965  1219.065  2768.559 80674.315 </code></pre>
+<pre><code>         0%         25%         50%         75%        100% 
+     0.0000    448.4574   1218.8832   2784.8482 129362.9226 </code></pre>
 </div>
 </div>
 <p>And, at the extremes:</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
 <pre><code>      90%       95%       99% 
- 5366.415  7767.141 14511.985 </code></pre>
+ 5424.577  7882.267 14914.276 </code></pre>
 </div>
 </div>
 <p>Again, looks like we could filter out the top 99% of steps if we needed. Is 80 km unrealistically long in 25 hours? Probably?</p>
 <p>Let’s check the turn angles:</p>
 <div class="cell">
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: Removed 21163 rows containing non-finite values (`stat_density()`).</code></pre>
-</div>
 <div class="cell-output-display">
 <p><img src="summary-explore_files/figure-html/unnamed-chunk-22-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 <p>That’s a nice looking von Mises distribution, so looks good.</p>
-<p>Now, this fix rate leads to us having 286552 out of the original 1064786 observations. So, this is better than the 176057 observations at the 8 hour fix rate and less than the 458567 observations at the 13 hour fix rate. The 13 hour fix rate is probably our sweet spot</p>
+<p>Now, this fix rate leads to us having 311242 out of the original 1223218 observations. So, this is better than the 224397 observations at the 8 hour fix rate and less than the 507417 observations at the 13 hour fix rate. The 13 hour fix rate is probably our sweet spot</p>
 </section>
 </section>
 </section>
