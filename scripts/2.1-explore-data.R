@@ -7,7 +7,7 @@ require('amt')
 require('dplyr')
 require('tidyr')
 require('sf')
-require(ggplot2)
+require('ggplot2')
 
 
 ### Input data ----
@@ -43,11 +43,21 @@ step.lengths <- unlist(map(steps$track, step_lengths))
 hist(step.lengths, ylim = c(0, 1000), main="Histogram of step lengths", xlab="Step lengths")
 
 
-steps.fr <- dat |> 
-  make_track(x_, y_, t_, all_cols = T) |> 
+
+trk.fr <- dat |> 
+  make_track(x_, y_, t_, all_cols = T, crs = crs) |> 
   nest(data = -"id") |> 
-  mutate(steps = map(data, function(x) 
-    x |> track_resample(rate = hours(8), tolerance = minutes(90)) |> steps_by_burst()))
+  mutate(resamp = map(data, function(x) 
+    x |> track_resample(rate = hours(8), tolerance = minutes(90))))
+
+# trk.fr %>% unnest(steps) %>%
+#   inspect(cluster=FALSE)
+
+trk.fr %>% unnest(resamp) %>%
+  plot(main = "8 hour fix rate")
+
+steps.fr <- trk.fr |> mutate(steps = map(resamp, function(x)
+  x |> steps_by_burst()))
 steps.fr |> select(id,  steps)|>
   unnest(cols = steps)|> 
   ggplot(aes(sl_)) + geom_density(alpha = 0.4)
@@ -56,6 +66,7 @@ steps.fr |> select(id,  steps)|>
   ggplot(aes(ta_)) + geom_density(alpha = 0.4)
 steps.id <- steps.fr |> select(id,  steps)|>
   unnest(cols = steps)
+
 quantile(steps.id$sl_)
 # 0%         25%         50%         75%        100% 
 # 0.00000    73.15349   360.33912  1055.95952 34554.88582 
@@ -68,12 +79,23 @@ median(steps.id$sl_)
 # [1] 360.3391
 
 
+
 # trying a bigger fixrate
-steps.fr13 <- dat |> 
-  make_track(x_, y_, t_, all_cols = T) |> 
+trk.fr13 <- dat |> 
+  make_track(x_, y_, t_, all_cols = T, crs = crs) |> 
   nest(data = -"id") |> 
-  mutate(steps = map(data, function(x) 
-    x |> track_resample(rate = hours(13), tolerance = minutes(90), all_cols = T) |> steps_by_burst()))
+  mutate(resamp = map(data, function(x) 
+    x |> track_resample(rate = hours(13), tolerance = minutes(90))))
+
+# trk.fr %>% unnest(steps) %>%
+#   inspect(cluster=FALSE)
+
+trk.fr13 %>% unnest(resamp) %>%
+  plot(main = "13 hour fix rate")
+
+steps.fr13 <- trk.fr13 |> mutate(steps = map(resamp, function(x)
+  x |> steps_by_burst()))
+
 steps.fr13 |> select(id,  steps)|>
   unnest(cols = steps)|> 
   ggplot(aes(sl_)) + geom_density(alpha = 0.4)
