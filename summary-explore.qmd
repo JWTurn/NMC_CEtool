@@ -1,7 +1,11 @@
 ---
 title: "NMC summary"
 author: "Julie Turner"
-format: html
+date: last-modified
+toc: true
+format: 
+  pdf: default
+  html: default
 editor: visual
 execute: 
   echo: false
