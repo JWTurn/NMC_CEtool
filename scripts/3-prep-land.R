@@ -10,7 +10,7 @@ require('sf')
 require(ggplot2)
 require(terra)
 require(foreach)
-require(qgisprocess)
+#require(qgisprocess)
 
 # list of all qgis algorithms
 algs <- qgis_algorithms()
@@ -21,11 +21,16 @@ lapply(dir('R', '*.R', full.names = TRUE), source)
 raw <- file.path('data','raw')
 derived <- file.path('data','derived')
 
-canada <- file.path('C:','Users', 'julie', 'Dropbox', 'ActiveDocs', 'Git-local', 'Can_GIS_layers')
-#canada <- file.path('~/Dropbox', 'ActiveDocs', 'Git-local', 'Can_GIS_layers')
-roads.bc <- file.path(canada, 'CA_rd_data', 'canvec', 'canvec_50K_BC_Transport_shp', 'canvec_50K_BC_Transport')
-roads.yt <- file.path(canada, 'CA_rd_data', 'canvec', 'canvec_50K_YT_Transport_shp', 'canvec_50K_YT_Transport')
+#canada <- file.path('C:','Users', 'julie', 'Dropbox', 'ActiveDocs', 'Git-local', 'Can_GIS_layers')
+canada <- file.path('~/Dropbox', 'ActiveDocs', 'Git-local', 'Can_GIS_layers')
+# roads.bc <- file.path(canada, 'CA_rd_data', 'canvec', 'canvec_50K_BC_Transport_shp', 'canvec_50K_BC_Transport')
+# roads.yt <- file.path(canada, 'CA_rd_data', 'canvec', 'canvec_50K_YT_Transport_shp', 'canvec_50K_YT_Transport')
+roads.bc <- file.path(raw, 'disturbances', 'bc', 'BC_CEF_Integrated_Roads_2021.gdb', 'BC_CE_Integrated_Roads_2021_20210805.gdb')
+roads.yt <- file.path(raw, 'disturbances', 'yukon', 'Surface_Disturbance_Linear_Features.shp', 'Surface_Disturbance_Linear_Features.shp')
 roads.nt <- file.path(canada, 'CA_rd_data', 'canvec', 'canvec_50K_NT_Transport_shp', 'canvec_50K_NT_Transport')
+
+polys.bc <- file.path(raw, 'disturbances', 'bc', 'BC_CEF_Human_Disturbance_2021.gdb', 'BC_CEF_Human_Disturbance_2021.gdb')
+polys.yt <- file.path(raw, 'disturbances', 'yukon', 'Surface_Disturbance_Areal_Features.shp', 'Surface_Disturbance_Areal_Features.shp')
 
 resmgmt <- file.path(canada, 'Canvec-ResourceManagement', 'canvec_50K_CA_Res_MGT_shp', 'canvec_50K_CA_Res_MGT')
 
@@ -51,6 +56,30 @@ make_landforest_prop(studyArea = sArea, crs, buff = buff.diam, startyr = minyr, 
 land <- file.path(raw, 'prop_land', '700', 'prop_mixed_2012.tif')
 
 ## ROADS ----
+### jurisdictional data ----
+bc.roads.layers <- st_layers(roads.bc)
+bc.roads <- st_read(roads.bc, layer = 'integrated_roads_2021')
+unique(as.factor(bc.roads$DRA_ROAD_CLASS))
+unique(as.factor(bc.roads$DRA_ROAD_SURFACE))
+
+bc.disturb.layers <- st_layers(polys.bc)
+bc.disturb <- st_read(polys.bc)
+bc.disturb.rail <- filter(bc.disturb, CEF_DISTURB_GROUP_RANK %in% c(2) &
+                          CEF_DISTURB_SUB_GROUP_RANK %in% c(1, 2))
+
+
+bc.disturb.lf <- filter(bc.disturb, CEF_DISTURB_GROUP_RANK %in% c(3, 4, 5, 8) &
+                          CEF_DISTURB_SUB_GROUP_RANK %in% c(1, 2))
+bc.disturb.oil <- filter(bc.disturb, CEF_DISTURB_GROUP_RANK %in% c(3, 8) &
+                          CEF_DISTURB_SUB_GROUP_RANK %in% c(1))
+
+plot(bc.disturb.lf$Shape)
+bc.disturb.lf
+
+yt.lf <- st_read(roads.yt)
+yt.lf.ls <- summary(as.factor(yt.lf$DISTURB))
+
+############
 ### BC ----
 roadseg.bc <- file.path(roads.bc, 'road_segment_1.shp')
 trackseg.bc <- file.path(roads.bc, 'track_segment_1.shp')
