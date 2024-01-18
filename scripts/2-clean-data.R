@@ -36,7 +36,7 @@ outcrs <- st_crs(3154)
 
 canPoly <- st_read(file.path(canada, 'CanadaPoly', 'lpr_000b16a_e.shp'))
 # really using YT, BC, and NWT because of transboundary herds
-ytbc <- subset(canPoly, canPoly$PREABBR %in% c('B.C.', 'Y.T.', 'N.W.T'))
+ytbc <- subset(canPoly, canPoly$PREABBR %in% c('B.C.', 'Y.T.', 'N.W.T.'))
 ytbc.wgs <- st_transform(ytbc, crs)
 ytbc.ext <- st_bbox(ytbc.wgs)
 
