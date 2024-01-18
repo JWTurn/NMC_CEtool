@@ -6,6 +6,7 @@
 .DS_Store
 
 data
+_targets/
 summary-explore_files/figure-html/
 
 summary-explore_files/figure-pdf/
