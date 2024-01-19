@@ -46,7 +46,7 @@ prop_needleleaf <- file.path('data', 'raw','prop_land', '700', 'prop_needleleaf'
 prop_deciduous <- file.path('data', 'raw', 'prop_land', '700', 'prop_deciduous')
 prop_mixed <- file.path('data', 'raw', 'prop_land', '700', 'prop_mixed')
 
-fires <- file.path('data', 'raw', 'fire_nbac_1986_to_2020', 'fires')
+fires <- file.path('data', 'raw', 'fires', 'fires')
 
 
 id <- 'id'
