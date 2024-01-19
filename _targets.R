@@ -74,7 +74,7 @@ sl.interval <- 50 # to round by 50m intervals
 rate <- hours(13)
 
 # Tolerance
-tolerance <- minutes(150)
+tolerance <- minutes(90)
 
 
 # Targets: prep -----------------------------------------------------------------
