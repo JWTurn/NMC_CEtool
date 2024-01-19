@@ -215,7 +215,7 @@ writeRaster(mean.fage, file.path(raw, 'nmc_forestage_meanbuff700_2019.tif'), ove
 ## FIRES #####
 ## this has been run already
 # combine nbac (which seems to be more error checked) with older fires from NFDB
-fires <- vect(file.path(canada, 'fire_nbac_1986_to_2020', 'nbac_1986_to_2020_20210810.shp'))
+fires <- vect(file.path(canada, 'fire_nbac_1986_to_2022', 'nbac_1986_to_2022_20230630.shp'))
 fires.proj <- project(fires, crs)
 fires.old <- vect(file.path(canada, 'NFDB_poly', 'NFDB_poly_20210707.shp'))
 fires.old.proj <- project(fires.old, crs)
@@ -238,12 +238,12 @@ nmc.fires.all$YEAR <- ifelse(!is.na(nmc.fires.all$year_burn), nmc.fires.all$year
 # NOTE: there are still some years that = -9999 that only have a decade associated with them
 ## current plan is to set them to NA in analysis since it's unknown and not too many
 
-writeVector(nmc.fires.all, file.path(raw, 'fires', 'fires_1920_2020.shp'), overwrite = T)
+writeVector(nmc.fires.all, file.path(raw, 'fires', 'fires_1920_2022.shp'), overwrite = T)
 
 # make rasters from polygonal fires by year
 gc()
 
-make_fire_rast(layer = file.path(raw, 'fires', 'fires_1920_2020.shp'),
+make_fire_rast(layer = file.path(raw, 'fires', 'fires_1920_2022.shp'),
                rast = land, minyr = minyr,
                where2save = file.path(raw, 'fires'))
 
