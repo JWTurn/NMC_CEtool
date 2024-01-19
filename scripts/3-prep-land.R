@@ -53,7 +53,7 @@ buff.diam <- 700
 make_landforest_prop(studyArea = sArea, crs, buff = buff.diam, startyr = minyr, endyr = 2019)
 
 # template for future rasterizations
-land <- file.path(raw, 'prop_land', '700', 'prop_mixed_2012.tif')
+land <- file.path(raw, 'prop_land', '700', 'prop_needleleaf_2012.tif')
 
 ## ROADS ----
 ### jurisdictional data ----
@@ -193,8 +193,9 @@ writeRaster(mean.anthropolys, file.path(raw, 'anthroDisturbance', 'antro_polys_p
 
 ## HARVEST ----
 harv <- rast(file.path(canada, 'CA_Forest_Harvest_1985-2020', 'CA_Forest_Harvest_1985-2020.tif'))
-harv <- project(harv, rast(land), method = 'near')
-harv.crop <- crop(harv, ext(studyArea))
+rland <- rast(land)
+harv.proj <- project(harv, rland, method = 'near')
+harv.crop <- crop(harv.proj, ext(studyArea))
 harv.crop[harv.crop==0]<-NA
 writeRaster(harv.crop, file.path(raw, 'nmc_harv_1985-2020.tif'), overwrite =T)
 
@@ -215,10 +216,29 @@ writeRaster(mean.fage, file.path(raw, 'nmc_forestage_meanbuff700_2019.tif'), ove
 ## this has been run already
 fires <- vect(file.path(canada, 'fire_nbac_1986_to_2020', 'nbac_1986_to_2020_20210810.shp'))
 fires.proj <- project(fires, crs)
-writeVector(fires.proj, file.path(raw, 'fire_nbac_1986_to_2020', 'fires_1986_2020.shp'))
+fires.old <- vect(file.path(canada, 'NFDB_poly', 'NFDB_poly_20210707.shp'))
+fires.old.proj <- project(fires.old, crs)
+fires.pre <- subset(fires.old.proj, fires.old.proj$YEAR<1986)
+nmc.fires.proj <- crop(fires.proj, rland)
+nmc.fires.pre <- crop(fires.pre, rland)
+gc()
+nmc.fires.all <- union(nmc.fires.pre, nmc.fires.proj)
+gc()
+d.fires.all <- as.data.frame(nmc.fires.all)
+nmc.fires.all$year_burn <- nmc.fires.all$YEAR
+nmc.fires.all$REP_YEAR <- as.integer(gsub("/.*$", "", nmc.fires.all$REP_DATE))
+nmc.fires.all$YEAR <- ifelse(!is.na(nmc.fires.all$year_burn), nmc.fires.all$year_burn,
+                             nmc.fires.all$REP_YEAR)
+
+writeVector(nmc.fires.all, file.path(raw, 'fires', 'fires_1920_2020.shp'), overwrite = T)
 
 # make rasters from polygonal fires by year
 gc()
-make_fire_rast(file.path(canada, 'fire_nbac_1986_to_2020', 'nbac_1986_to_2020_20210810.shp'),
-               land)
+layer <- file.path(raw, 'fires', 'fires_1920_2020.shp')
+rast <- land
+where2save <-file.path(raw, 'fires')
+
+make_fire_rast(layer = file.path(raw, 'fires', 'fires_1920_2020.shp'),
+               rast = land, minyr = minyr,
+               where2save = file.path(raw, 'fires'))
 
