@@ -84,6 +84,9 @@ Now we're going to explore the clean data.
 ```{r}
 #| echo: false
 
+
+yrs = 2019
+land <- file.path(canada, 'Landcover_1984-2019', paste0('CA_forest_VLCE2_', yrs), paste0('CA_forest_VLCE2_', yrs, '.tif'))
 sArea <- vect(file.path(derived, 'prepped', 'clean_NMC_20kmBuff.shp'))
 
 nmc.juris <- subset(canPoly, canPoly$PREABBR %in% c('B.C.', 'Y.T.'))
