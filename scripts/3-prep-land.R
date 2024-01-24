@@ -45,6 +45,13 @@ minyr <- lubridate::year(min(dat$t_, na.rm = T))
 buff.diam <- 700
 
 ## LAND ----
+# make a static cropped landcover for plotting purposes
+yrs = 2019
+land <- rast(file.path(canada, 'Landcover_1984-2019', paste0('CA_forest_VLCE2_', yrs), 
+                  paste0('CA_forest_VLCE2_', yrs, '.tif')))
+land.proj <- project(land, crs, method = 'near')
+land.crop <- crop(land.proj, sArea)
+writeRaster(land.crop, file.path(raw, 'nmc_landcover_2019.tif'))
 # median SL 453, so buffer rounded down -- this was before I fixed a couple things in data cleaning
 # median sl w/ 13hr fix rate 716, round down to 700
 # median SL for all data not rareified 453.0335 
