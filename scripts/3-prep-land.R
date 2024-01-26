@@ -80,11 +80,17 @@ bc.disturb.lf <- filter(bc.disturb, CEF_DISTURB_GROUP_RANK %in% c(3, 4, 5, 8) &
 bc.disturb.oil <- filter(bc.disturb, CEF_DISTURB_GROUP_RANK %in% c(3, 8) &
                           CEF_DISTURB_SUB_GROUP_RANK %in% c(1))
 
+
 plot(bc.disturb.lf$Shape)
 bc.disturb.lf
 
 yt.lf <- st_read(roads.yt)
 yt.lf.ls <- summary(as.factor(yt.lf$DISTURB))
+
+yt.poly <- st_read(polys.yt)
+yt.poly.ls <- list(unique(yt.poly$DISTURB))
+summary(as.factor(yt.poly$DISTURB))
+yt.poly.ls
 
 ############
 ### BC ----
