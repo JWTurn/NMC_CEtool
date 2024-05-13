@@ -1,0 +1,247 @@
+---
+title: "NMC habitat availability summary"
+author: "Julie Turner"
+date: last-modified
+toc: true
+format: 
+  pdf: default
+  html: default
+editor: visual
+execute: 
+  cache: true
+  echo: false
+project:
+    execute-dir: project
+---
+
+## Habitat data
+
+The habitat data that I have already prepared is proportion of different landcover types from the [NTEMS yearly land cover](https://opendata.nfis.org/mapserver/nfis-change_eng.html) (1984 - 2019). The **major pro** of this is I can line up the steps with the yearly data rather than a less dynamic data source. The **major con** is that it only goes through 2019.
+
+For fires, I have compiled the [1986-2022 National Burned Area Composite](https://cwfis.cfs.nrcan.gc.ca/datamart/download/nbac) (NBAC) and the the [National Fire Database](https://cwfis.cfs.nrcan.gc.ca/datamart/download/nfdbpoly) (NFDB). The NFDB goes back to 1917 to 1965, depending on the jurisdiction, but it has not been updated to 2022 for all jurisdictions, and is not QAQC'd like the NBAC due to the different data collection process. So we only used NFDB from the earliest date through 1985 to back fill the NBAC as well as possible. I will update the fires when the 2023 data is posted.
+
+## Caribou GPS data
+
+Based on our exploration of the combined Yukon and BC Northern Mountain Caribou GPS data, we rarified all the data to 13 hour fix rates. In preparation for the coming iSSA, we created 10 random steps for each observed step. These random steps define availability of different landscape features.
+
+```{r}
+#| label: setup
+#| include: false
+#| echo: false
+
+require('targets')
+
+require('data.table')
+
+require('amt')
+
+require('dplyr')
+
+require('tidyr')
+
+require('sf')
+
+require('terra')
+
+require('ggplot2')
+
+require('tidyterra')
+
+require('ggthemes')
+require('viridis')
+
+se <- function(x, na.rm){
+  sd(x, na.rm = na.rm)/ sqrt(length(na.omit(x)))
+}
+
+```
+
+```{r}
+#| label: data
+#| include: false
+#| echo: false
+#| cache-lazy: false
+
+
+### Input data ----
+raw <- file.path('data','raw')
+
+derived <- file.path('data','derived')
+
+dat <- tar_read(stepID)
+
+# set unknown time since fire to mean forest age
+dat[ts_fires_start == 100, ts_fires_start:= 76]
+dat[ts_fires_end == 100, ts_fires_end:= 76]
+dat[ts_fires_end > 10000, ts_fires_end:= 25] # setting this to 20 for now because most were in 1990-2000, but I'll need to figure out something later
+```
+
+Since we only have landcover and fires data setup at this stage, that's what we'll explore.
+
+```{r}
+#| label: map
+#| echo: false
+
+
+canada <- file.path('~/Dropbox', 'ActiveDocs', 'Git-local', 'Can_GIS_layers')
+crs <- st_crs(3154)
+
+canPoly <- vect(file.path(canada, 'CanadaPoly', 'lpr_000b16a_e.shp'))
+
+sArea <- vect(file.path(derived, 'prepped', 'clean_NMC_20kmBuff.shp'))
+
+nmc.juris <- subset(canPoly, canPoly$PREABBR %in% c('B.C.', 'Y.T.'))
+
+nmc.juris <- project(nmc.juris, sArea)
+nmc.juris <- crop(nmc.juris, ext(sArea))
+
+land <- rast(file.path(raw, 'nmc_landcover_2019.tif'))
+land[land==0] <- NA
+fires <- vect(file.path(raw, 'fires', 'fires_1920_2022.shp'))
+
+
+ggplot() +
+  geom_spatraster(data = as.numeric(land), show.legend = F) +
+  scale_fill_gradient(low = 'lightblue', high = 'darkgreen', na.value = NA) +
+  geom_spatvector(data = sArea, fill = 'blueviolet') +
+  geom_spatvector(data = fires, color = 'darkorange', fill = NA, alpha = 0.01) +
+  geom_spatvector(data = nmc.juris, fill = NA, color = 'black', linewidth = 0.75) +
+  ggtitle('WIP: ugly map of data') +
+  theme_bw() +
+  theme(plot.title=element_text(size=12,hjust = 0.05),axis.title = element_blank()) +
+  theme_void() +
+  coord_sf(crs = crs)
+```
+
+So, here we have the landscape layer superimposed with the buffered caribou data (purple) and fires (orange).
+
+## Landcover availability
+
+Mean proportion of habitat available:
+
+```{r}
+#| label: hab_avail_tab
+
+dat[,.(water = mean(prop_water_end, na.rm = T), snow = mean(prop_snow_end, na.rm = T),
+       rock = mean(prop_rock_end, na.rm = T), barren = mean(prop_barren_end, na.rm = T),
+       bryoids = mean(prop_bryoids_end, na.rm = T), shrub = mean(prop_shrub_end, na.rm = T),
+       wetland = mean(prop_wetland_end, na.rm = T), wettreed = mean(prop_wettreed_end, na.rm = T), 
+       herbs = mean(prop_herbs_end, na.rm = T), needle =mean(prop_needleleaf_end, na.rm = T),
+       decid = mean(prop_deciduous_end, na.rm = T),mixed = mean(prop_mixed_end, na.rm = T))]
+
+```
+
+```{r}
+#| label: hab_avail_plot
+#| echo: FALSE
+#| cache-lazy: false
+
+#making names nicer
+hab.dat <- dat[,.(id, prov, area, water = prop_water_end, 
+       snow = prop_snow_end, rock = prop_rock_end, barren = prop_barren_end,
+       bryoids = prop_bryoids_end, shrub = prop_shrub_end,
+       wetland = prop_wetland_end, wet_treed = prop_wettreed_end, 
+       herbs = prop_herbs_end, needleleaf = prop_needleleaf_end,
+       deciduous = prop_deciduous_end, mixed = prop_mixed_end, 
+       ts_fires_end)]
+
+hab <- melt(hab.dat, 
+       id.vars = c('id', 'prov', 'area'), 
+                  variable.name = 'variable', value.name = 'value')
+hab.avail <- hab[,.(mean = mean(value, na.rm = T), se = se(value, na.rm = T)), by = .(variable)]
+hab.avail[,`:=`(lower = mean-se*1.96, upper = mean+se*1.96)]
+
+ggplot(hab.avail[!(variable %like% 'ts_')], aes(variable, mean)) +
+  geom_point(aes(color = variable), show.legend = F) + 
+  geom_errorbar(aes(ymin = lower, ymax = upper, color = variable), width = 0, show.legend = F) +
+  geom_hline(yintercept = 0.01, lty = 'dashed') +
+  # facet_wrap(~variable) + 
+  xlab('Landcover type') +
+  ylab('Mean proportion available') +
+  theme_bw() + 
+  scale_color_viridis_d(option = 'turbo') +
+ # scale_fill_viridis() +
+  coord_flip()
+
+hab_open <- round((mean(hab.dat$barren, na.rm = T) + mean(hab.dat$rock, na.rm = T) + mean(hab.dat$snow, na.rm = T) + mean(hab.dat$water, na.rm = T))*100)
+
+```
+
+Generally, variables that have availability less that 1% are too rare for model convergence. In the plot above, that would be variables to the left of the dashed line. So, in modelling, we generally either do not include these variables or lump them into a broader category. For instance, we could combine `barren`, `rock`, `snow`, and `water` into an `open` category that would have an availability `r hab_open`%. Other grouping options could be `non-needleleaf trees` and/or `other vegetation`. What we choose can be informed by:
+
+-   modeling objectives (predictive vs. inferential)
+
+-   what end users think could be most useful in a tool (what will help make management decisions?)
+
+-   model complexity (what are we able to model and get convergence?)
+
+## Cumulative effects
+
+The bread and butter of what this tool is supposed to be about.
+
+### Availability of recent burns
+
+In the model, we will include time since fire based on the year of the GPS point and related year's fire data. Clearly, the whole landscape hasn't been burned in recent records, so there a lot of areas with no fire data. This is a problem because 1) we can't assume the area hasn't been burned just because there is no data, especially prior to 1986, and 2) so much missing data is a problem for modelling. So we set, the areas without burn data to the mean forest age in the study extent based on [NTEMS Forest Age](https://opendata.nfis.org/mapserver/nfis-change_eng.html) dataset. For this area, the average forest age was 76 years. When we get to the modeling stage, this variable will be log-transformed because we expect the influence of burn to decay with time.
+
+For now, when we extracted time since fire for the observed and random data, we find that different quantiles for time since fire available were:
+
+```{r}
+#| label: tsfire_avail_tab
+
+quantile(dat$ts_fires_end, probs = c(0.01, 0.05, 0.1, 0.15, 0.25, 0.5, 0.75, 1))
+
+```
+
+Fires are still pretty rare on this landscape (less than 1% of the available steps are less than `r quantile(dat$ts_fires_end, probs = c(0.01))[[1]]` years since fires), especially where caribou are, so the time since fire is 76 most of the place that caribou have available.
+
+### Human footprint features
+
+The can of worms...
+
+Yukon has their [surface disturbance dataset](https://open.yukon.ca/search/field_information_type/open-data-16083?query=surface+disturbance&sort_by=search_api_relevance&sort_order=DESC), and BC has their [Cumulative Effects Framework](https://www2.gov.bc.ca/gov/content/environment/natural-resource-stewardship/cumulative-effects-framework/cef-data#:~:text=The%20BC%20CEF%20Integrated%20Roads,cumulative%20effects%20assessment%20and%20analysis.) (CEF). These, unsurprisingly, are not equivalent. I've been trying to figure out how to [reconcile](https://docs.google.com/spreadsheets/d/1PbW4tAuvpjE20SqQ21l04vZmyX64QWawtlik_6b18ls/edit?usp=sharing) these datasets and get around the buffered linear features in BC.
+
+#### Polygonal disturbances
+
+We'll start with the "easy" human footprint types - the polygonal disturbances. These are not *too* dissimilar. There are some oddities with CEF buffering things, but it's at a small enough scale that I don't think it matters in this case.
+
+But how do we want to treat them in the model?
+
+1\) Keep them as one group or split them up in some way?
+
+2\) Treat them as they are, buffered, distance to, or something else?
+
+They are still relatively rare on the landscape, so we need to think carefully about how we model them to get model convergence and useful answers from a CE tool.
+
+Problem: Oil and gas features are oddly combined in the CEF, combining polygonal and linear features, so I'm trying to go to the source to get the values, but easier said than done since one of the source links in the metadata doesn't work. The other does, but I think things have changed names or minimally there are different names in the source data than the metadata. This problem applies to linear features too.
+
+#### Linear features
+
+Linear features are generally considered differently than polygonal disturbances because of how they're used by humans and other animals. This different use is especially important for caribou because linear features are linked to higher predation risks.
+
+The linear features are even more of a problem between the jurisdictions than polygonal features. They are classified differently, which will cause issues trying to regroup them. So, some questions arise:
+
+1\) Should we break down linear feature types?
+
+2\) How should we break them down (i.e., roads vs. other linear features, paved vs. not, activity/use level)?
+
+## Steps forward
+
+At this point, we're nearing the formal analysis stage... once we figure out the disturbance data and finalize modelling objectives.
+
+Questions:
+
+1\) What do we need to make this an effective cumulative effects tool to the jurisdictions? (i.e., what variables, what aspect of the variables will inform management \[distance to XX potentially getting at zone of influence, %YY within a caribou's step, etc.\])
+
+2\) What is a cumulative effects tool (i.e., what are expected outcomes of a model)?
+
+3\) Are we doing predictive vs. inferential modeling (predicting into the future vs. understanding ecological importance/relationships)
+
+4\) Are there any other variables that should be included?
+
+5\) Any model can easily become too complicated - what is critical in the model?
+
+6\) What about NWT?
+
+-   Disturbance data - use a national product or some other local product? Both come with new caveats of merging the data into consistent layers across the NMC range.
+
+-   Will we include their caribou data?

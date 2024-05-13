@@ -10,3 +10,17 @@ _targets/
 summary-explore_files/figure-html/
 
 summary-explore_files/figure-pdf/
+
+summary-availability_cache/html/
+
+summary-availability_cache/pdf/
+
+summary-availability_files/figure-html/
+
+summary-availability_files/figure-pdf/
+
+summary-availability_files/libs/bootstrap/
+
+summary-availability_files/libs/clipboard/
+
+summary-availability_files/libs/quarto-html/
