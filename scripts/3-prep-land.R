@@ -13,7 +13,7 @@ require(foreach)
 #require(qgisprocess)
 
 # list of all qgis algorithms
-algs <- qgis_algorithms()
+#algs <- qgis_algorithms()
 
 lapply(dir('R', '*.R', full.names = TRUE), source)
 
@@ -36,7 +36,16 @@ resmgmt <- file.path(canada, 'Canvec-ResourceManagement', 'canvec_50K_CA_Res_MGT
 
 dat <- readRDS(file.path(derived, 'clean_NMC.RDS'))
 sArea <- file.path(derived, 'prepped', 'clean_NMC_20kmBuff.shp')
-studyArea <- vect(sArea)
+studyPts <- vect(sArea)
+herds <- vect(file.path(raw, 'NMC_herds', 'nmc_herds_all.shp'))
+plot(herds)
+# neeed 50km more east and 120 km more south
+herd.ext <- ext(herds)
+# copy herd ext and adjust east and south bounds (xmin, xmax, ymin, ymax)
+herds.plus <- ext(c(407570.036466947, 1608648.39373763 + 50000, 6325864.05963461 - 120000, 7312174.16133225))
+studyArea <- crop(studyPts, herds.plus)
+plot(studyArea)
+writeVector(studyArea, file.path(derived, 'prepped', 'clean_NMC_20kmBuff_crop.shp'))
 
 ## PREP ----
 crs <- st_crs(3154)$wkt
