@@ -18,7 +18,7 @@ project:
 
 The habitat data that I have already prepared is proportion of different landcover types from the [NTEMS yearly land cover](https://opendata.nfis.org/mapserver/nfis-change_eng.html) (1984 - 2019). The **major pro** of this is I can line up the steps with the yearly data rather than a less dynamic data source. The **major con** is that it only goes through 2019.
 
-For fires, I have compiled the [1986-2022 National Burned Area Composite](https://cwfis.cfs.nrcan.gc.ca/datamart/download/nbac) (NBAC) and the the [National Fire Database](https://cwfis.cfs.nrcan.gc.ca/datamart/download/nfdbpoly) (NFDB). The NFDB goes back to 1917 to 1965, depending on the jurisdiction, but it has not been updated to 2022 for all jurisdictions, and is not QAQC'd like the NBAC due to the different data collection process. So we only used NFDB from the earliest date through 1985 to back fill the NBAC as well as possible. I will update the fires when the 2023 data is posted.
+For fires, I have compiled the [1972-2023 National Burned Area Composite](https://cwfis.cfs.nrcan.gc.ca/datamart/download/nbac) (NBAC) and the the [National Fire Database](https://cwfis.cfs.nrcan.gc.ca/datamart/download/nfdbpoly) (NFDB). The NFDB goes back to 1917 to 1965, depending on the jurisdiction, but it has not been updated since 2021 for all jurisdictions, and is not QAQC'd like the NBAC due to the different data collection process. So we only used NFDB from the earliest date through 1985 to back fill the NBAC as well as possible. I will update the fires when the 2023 data is posted.
 
 ## Caribou GPS data
 
@@ -71,15 +71,16 @@ derived <- file.path('data','derived')
 dat <- tar_read(stepID)
 
 # set unknown time since fire to mean forest age
-dat[ts_fires_start == 100, ts_fires_start:= 76]
-dat[ts_fires_end == 100, ts_fires_end:= 76]
+# dat[ts_fires_start == 100, ts_fires_start:= 76]
+# dat[ts_fires_end == 100, ts_fires_end:= 76]
 dat[ts_fires_end > 10000, ts_fires_end:= 25] # setting this to 20 for now because most were in 1990-2000, but I'll need to figure out something later
 ```
 
-Since we only have landcover and fires data setup at this stage, that's what we'll explore.
+First, we'll look at natural disturbances.
+WIP currently updating landcover to 2022
 
 ```{r}
-#| label: map
+#| label: fires_map
 #| echo: false
 
 
@@ -88,7 +89,7 @@ crs <- st_crs(3154)
 
 canPoly <- vect(file.path(canada, 'CanadaPoly', 'lpr_000b16a_e.shp'))
 
-sArea <- vect(file.path(derived, 'prepped', 'clean_NMC_20kmBuff.shp'))
+sArea <- vect(file.path(derived, 'prepped', 'clean_NMC_20kmBuff_crop.shp'))
 
 nmc.juris <- subset(canPoly, canPoly$PREABBR %in% c('B.C.', 'Y.T.'))
 
@@ -97,7 +98,8 @@ nmc.juris <- crop(nmc.juris, ext(sArea))
 
 land <- rast(file.path(raw, 'nmc_landcover_2019.tif'))
 land[land==0] <- NA
-fires <- vect(file.path(raw, 'fires', 'fires_1920_2022.shp'))
+fires <- vect(file.path(raw, 'fires', 'fires_1920_2023.shp'))
+
 
 
 ggplot() +
@@ -106,7 +108,7 @@ ggplot() +
   geom_spatvector(data = sArea, fill = 'blueviolet') +
   geom_spatvector(data = fires, color = 'darkorange', fill = NA, alpha = 0.01) +
   geom_spatvector(data = nmc.juris, fill = NA, color = 'black', linewidth = 0.75) +
-  ggtitle('WIP: ugly map of data') +
+  ggtitle('WIP: ugly map of data with fires') +
   theme_bw() +
   theme(plot.title=element_text(size=12,hjust = 0.05),axis.title = element_blank()) +
   theme_void() +
@@ -114,6 +116,81 @@ ggplot() +
 ```
 
 So, here we have the landscape layer superimposed with the buffered caribou data (purple) and fires (orange).
+
+Next, let's look at the anthropogenic disturbance
+
+```{r}
+#| label: anthrodist_map
+#| echo: false
+
+anthropolys <- crop(vect(file.path('data', 'raw', 'polygonal_features', 'anthropolys.shp')), ext(sArea))
+miningpolys.yt <- crop(vect(file.path('data', 'raw', 'polygonal_features', 'mining_nmc_yt.shp')), ext(sArea))
+lf_paved<- crop(vect(file.path('data', 'raw', 'linear_features', 'roadpaved.shp')), ext(sArea))
+lf_unpaved <- crop(vect(file.path('data', 'raw', 'linear_features', 'roadunpaved.shp')), ext(sArea))
+lf_other <- crop(vect(file.path('data', 'raw', 'linear_features', 'lfother.shp')), ext(sArea))
+
+ggplot() +
+  geom_spatraster(data = as.numeric(land), show.legend = F) +
+  scale_fill_gradient(low = 'lightblue', high = 'darkgreen', na.value = NA) +
+  geom_spatvector(data = sArea, fill = 'blueviolet') +
+  geom_spatvector(data = lf_paved, color = 'darkorange', fill = 'darkorange') +
+  geom_spatvector(data = lf_unpaved, color = 'orange', fill = 'orange') +
+  geom_spatvector(data = lf_other, color = 'yellow', fill = 'yellow') +
+  geom_spatvector(data = anthropolys, color = 'darkblue', fill = NA, alpha = 0.01) +
+  geom_spatvector(data = miningpolys.yt, color = 'grey', fill = NA, alpha = 0.01) +
+  geom_spatvector(data = nmc.juris, fill = NA, color = 'black', linewidth = 0.75) +
+  ggtitle('WIP: ugly map of data with anthropogenic disturbances') +
+  theme_bw() +
+  theme(plot.title=element_text(size=12,hjust = 0.05),axis.title = element_blank()) +
+  theme_void() +
+  coord_sf(crs = crs)
+```
+
+## Disturbance availability
+```{r}
+#| label: dist_avail_tab
+
+dat[,.(distto_paved = mean(distpaved_end, na.rm = T), distto_unpaved = mean(distunpaved_end, na.rm = T),
+       distto_lfother = mean(distlf_other_end, na.rm = T), distto_anthro = mean(distanthro_end, na.rm =T),
+       distto_mining = mean(distmining_end, na.rm = T))]
+
+dat[prov == 'yt', .(distto_placer = mean(distplacer_end, na.rm = T), distto_quartz = mean(distquartz_end, na.rm = T))]
+
+dat[,.(distto_paved = min(distpaved_end, na.rm = T), distto_unpaved = min(distunpaved_end, na.rm = T),
+       distto_lfother = min(distlf_other_end, na.rm = T), distto_anthro = min(distanthro_end, na.rm =T),
+       distto_mining = min(distmining_end, na.rm = T))]
+
+dat[prov == 'yt', .(distto_placer = min(distplacer_end, na.rm = T), distto_quartz = min(distquartz_end, na.rm = T))]
+
+```
+
+
+```{r}
+#| label: anthro_avail_plot
+#| echo: FALSE
+#| cache-lazy: false
+
+#making names nicer
+anthro.dat <- dat[,.(id, prov, area, paved = distpaved_end, unpaved = distunpaved_end, lf_other = distlf_other_end, 
+                     polygonal = distanthro_end, mining = distmining_end, placer = distplacer_end, quartz = distquartz_end)]
+
+anthro.long <- melt(anthro.dat, 
+       id.vars = c('id', 'prov', 'area'), 
+                  variable.name = 'variable', value.name = 'value')
+anthro.avail <- anthro.long[,.(mean = mean(value, na.rm = T), sd = sd(value, na.rm = T)), by = .(variable)]
+anthro.avail[,`:=`(lower = mean-sd, upper = mean+sd)]
+
+ggplot(anthro.long, aes(variable, value/1000)) +
+  geom_boxplot(aes(color = prov),show.legend = T) + 
+  #geom_jitter(alpha = 0.2) +
+  # facet_wrap(~variable) + 
+  xlab('Disturbance type') +
+  ylab('Distance (km) to disturbance available') +
+  theme_bw() + 
+  scale_color_viridis_d(option = 'turbo') +
+  scale_fill_viridis(option = 'turbo') +
+  coord_flip()
+```
 
 ## Landcover availability
 
@@ -148,8 +225,8 @@ hab.dat <- dat[,.(id, prov, area, water = prop_water_end,
 hab <- melt(hab.dat, 
        id.vars = c('id', 'prov', 'area'), 
                   variable.name = 'variable', value.name = 'value')
-hab.avail <- hab[,.(mean = mean(value, na.rm = T), se = se(value, na.rm = T)), by = .(variable)]
-hab.avail[,`:=`(lower = mean-se*1.96, upper = mean+se*1.96)]
+hab.avail <- hab[,.(mean = mean(value, na.rm = T), sd = sd(value, na.rm = T)), by = .(variable)]
+hab.avail[,`:=`(lower = mean-sd, upper = mean+sd)]
 
 ggplot(hab.avail[!(variable %like% 'ts_')], aes(variable, mean)) +
   geom_point(aes(color = variable), show.legend = F) + 
