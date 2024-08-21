@@ -5,7 +5,7 @@
 make_landforest_prop <- function(studyArea, crs, buff, startyr, endyr, where2save){
   yrs <- startyr:endyr
   # TODO this is inelegant -> fix
-  ls_loc <- c(file.path(canada, 'Landcover_1984-2019', paste0('CA_forest_VLCE2_', yrs), 
+  ls_loc <- c(file.path(canada, 'Landcover_1984-2022', paste0('CA_forest_VLCE2_', yrs), 
                      paste0('CA_forest_VLCE2_', yrs, '.tif')))
   names(ls_loc) <- as.character(yrs)
 
@@ -141,7 +141,7 @@ make_landforest_prop <- function(studyArea, crs, buff, startyr, endyr, where2sav
                          paste0('prop_mixed_', yrs[[rr]], '.tif'))
     writeRaster(propmixed, p.mixed)
     print('mixed')
-    print('done')
+    print(paste0('finished ', yrs[[rr]]))
     
   }
     
