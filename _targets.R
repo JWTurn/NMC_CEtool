@@ -22,7 +22,8 @@ lapply(dir('R', '*.R', full.names = TRUE), source)
 
 # Options -----------------------------------------------------------------
 tar_option_set(format = 'qs', 
-               workspace_on_error = T)
+               workspace_on_error = T,
+               error = 'null')
 
 
 # Variables ---------------------------------------------------------------
@@ -47,7 +48,13 @@ prop_deciduous <- file.path('data', 'raw', 'prop_land', '700', 'prop_deciduous')
 prop_mixed <- file.path('data', 'raw', 'prop_land', '700', 'prop_mixed')
 
 fires <- file.path('data', 'raw', 'fires', 'fires')
-
+anthropolys <- file.path('data', 'raw', 'polygonal_features', 'anthropolys.shp')
+miningpolys <- file.path('data', 'raw', 'polygonal_features', 'miningpolys.shp')
+miningpolys.yt <- file.path('data', 'raw', 'polygonal_features', 'mining_nmc_yt.shp')
+anthropolys.rast <- file.path('data', 'raw', 'anthroDisturbance', 'mining_polys_prop700.tif')
+lf_paved<- file.path('data', 'raw', 'linear_features', 'roadpaved.shp')
+lf_unpaved <- file.path('data', 'raw', 'linear_features', 'roadunpaved.shp')
+lf_other <- file.path('data', 'raw', 'linear_features', 'lfother.shp')
 
 id <- 'id'
 datetime <- 't_'
@@ -92,23 +99,41 @@ targets_prep <- c(
   ),
   
   
-  # # load linear features
-  # tar_target(
-  #   lf,
-  #   load_sf(linfeat, crs)
-  # ),
-  # 
-  # # load other linear features
-  # tar_target(
-  #   lf_other_2010,
-  #   load_sf(linfeat_other_2010, crs)
-  # ),
-  # 
-  # # load other linear features
-  # tar_target(
-  #   lf_other_2015,
-  #   load_sf(linfeat_other_2015, crs)
-  # ),
+  # load paved linear features
+  tar_target(
+    paved.sf,
+    load_sf(lf_paved, crs)
+  ),
+
+  # load unpaved linear features
+  tar_target(
+    unpaved.sf,
+    load_sf(lf_unpaved, crs)
+  ),
+
+  # load other linear features
+  tar_target(
+    lf_other.sf,
+    load_sf(lf_other, crs)
+  ),
+  
+  # load anthropolys
+  tar_target(
+    anthropolys.sf,
+    load_sf(anthropolys, crs)
+  ),
+  
+  # load miningpolys
+  tar_target(
+    miningpolys.sf,
+    load_sf(miningpolys, crs)
+  ),
+  
+  # load miningpolys for just Yukon
+  tar_target(
+    miningpolys.yt.sf,
+    load_sf(miningpolys.yt, crs)
+  ),
 
   
   # Set up split -- these are our iteration units
@@ -197,73 +222,116 @@ targets_tracks <- c(
 # Targets: extract ------------------------------------------------------------------
 ## Proportion of land ----
 
-targets_propland <- c(
+# targets_propland <- c(
+#   tar_target(
+#     buffer,
+#     plyr::round_any(median(addyear$sl_, na.rm = T), sl.interval, floor)
+#   ),
+#   
+#   tar_target(
+#     extr_propwater,
+#     extract_by_year(addyear, var = prop_water, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+#   ),
+#   
+#   tar_target(
+#     extr_propsnow,
+#     extract_by_year(extr_propwater, var = prop_snow, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+#   ),
+#   
+#   tar_target(
+#     extr_proprock,
+#     extract_by_year(extr_propsnow, var = prop_rock, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+#   ),
+#   
+#   tar_target(
+#     extr_propbarren,
+#     extract_by_year(extr_proprock, var = prop_barren, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+#   ),
+#   
+#   tar_target(
+#     extr_propbryoids,
+#     extract_by_year(extr_propbarren, var = prop_bryoids, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+#   ),
+#   
+#   tar_target(
+#     extr_propshrub,
+#     extract_by_year(extr_propbryoids, var = prop_shrub, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+#   ),
+#   
+#   tar_target(
+#     extr_propwetland,
+#     extract_by_year(extr_propshrub, var = prop_wetland, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+#   ),
+#   
+#   tar_target(
+#     extr_propwettreed,
+#     extract_by_year(extr_propwetland, var = prop_wettreed, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+#   ),
+#   
+#   tar_target(
+#     extr_propherbs,
+#     extract_by_year(extr_propwettreed, var = prop_herbs, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+#   ),
+#   
+#   tar_target(
+#     extr_propneedle,
+#     extract_by_year(extr_propherbs, var = prop_needleleaf, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+#   ),
+#   
+#   tar_target(
+#     extr_propdecid,
+#     extract_by_year(extr_propneedle, var = prop_deciduous, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+#   ),
+#   
+#   tar_target(
+#     extr_propmixed,
+#     extract_by_year(extr_propdecid, var = prop_mixed, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+#   )
+# )
+
+## anthro disturbance ----
+targets_disturbance <- c(     
+  # Calculate distance to linear features
   tar_target(
-    buffer,
-    plyr::round_any(median(addyear$sl_, na.rm = T), sl.interval, floor)
+    dist_paved,
+    extract_distto(addyear, paved.sf, 'paved', where = 'both', crs)
   ),
   
   tar_target(
-    extr_propwater,
-    extract_by_year(addyear, var = prop_water, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+    dist_unpaved,
+    extract_distto(dist_paved, unpaved.sf, 'unpaved', where = 'both', crs)
   ),
   
   tar_target(
-    extr_propsnow,
-    extract_by_year(extr_propwater, var = prop_snow, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+    dist_other,
+    extract_distto(dist_unpaved, lf_other.sf, 'lf_other', where = 'both', crs)
   ),
   
   tar_target(
-    extr_proprock,
-    extract_by_year(extr_propsnow, var = prop_rock, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+    dist_anthropolys,
+    extract_distto(dist_other, anthropolys.sf, 'anthro', where = 'both', crs)
   ),
   
   tar_target(
-    extr_propbarren,
-    extract_by_year(extr_proprock, var = prop_barren, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+    dist_miningpolys,
+    extract_distto(dist_anthropolys, miningpolys.sf, 'mining', where = 'both', crs)
   ),
   
   tar_target(
-    extr_propbryoids,
-    extract_by_year(extr_propbarren, var = prop_bryoids, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+    dist_placer,
+    extract_distto(dist_miningpolys, dplyr::filter(miningpolys.yt.sf, RC_Disturb == 'Placer Mining'), 'placer', where = 'both', crs)
   ),
   
   tar_target(
-    extr_propshrub,
-    extract_by_year(extr_propbryoids, var = prop_shrub, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+    dist_quartz,
+    extract_distto(dist_placer, dplyr::filter(miningpolys.yt.sf, RC_Disturb == 'Quartz Mining'), 'quartz', where = 'both', crs)
   ),
   
   tar_target(
-    extr_propwetland,
-    extract_by_year(extr_propshrub, var = prop_wetland, startyr = minyr, endyr = 2019, maxyr, where = 'both')
-  ),
-  
-  tar_target(
-    extr_propwettreed,
-    extract_by_year(extr_propwetland, var = prop_wettreed, startyr = minyr, endyr = 2019, maxyr, where = 'both')
-  ),
-  
-  tar_target(
-    extr_propherbs,
-    extract_by_year(extr_propwettreed, var = prop_herbs, startyr = minyr, endyr = 2019, maxyr, where = 'both')
-  ),
-  
-  tar_target(
-    extr_propneedle,
-    extract_by_year(extr_propherbs, var = prop_needleleaf, startyr = minyr, endyr = 2019, maxyr, where = 'both')
-  ),
-  
-  tar_target(
-    extr_propdecid,
-    extract_by_year(extr_propneedle, var = prop_deciduous, startyr = minyr, endyr = 2019, maxyr, where = 'both')
-  ),
-  
-  tar_target(
-    extr_propmixed,
-    extract_by_year(extr_propdecid, var = prop_mixed, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+    extr_anthropolys.prop,
+    extract_pt(dist_quartz, anthropolys.rast, 'prop_disturbance', where = 'both')
   )
 )
-
 
 
 ## time since ----
@@ -282,14 +350,14 @@ targets_timesince <- c(
   
   # Extract fires
   tar_target(
-    extrfires,
-    extract_by_year(extr_propmixed, fires, startyr = minyr, endyr =2020, maxyr = maxyr, where = 'both')
+    extr_fires,
+    extract_by_year(extr_anthropolys.prop, fires, startyr = minyr, endyr = 2023, maxyr = maxyr, where = 'both')
   ),
   
   # calculate time since fire
   tar_target(
     tsfire,
-    calc_ts(extrfires, var = 'fires', where = 'both', no.data=100) 
+    calc_ts(extr_fires, var = 'fires', where = 'both', no.data=200) 
   )
 )
 
