@@ -1,6 +1,6 @@
 # === Targets workflow: iSSA with amt -------------------------------------
 # Julie Turner
-# adapted from code by Alec L. Robitaille
+# adapted from code developed with Alec L. Robitaille
 
 
 # Packages ----------------------------------------------------------------
@@ -34,6 +34,7 @@ derived <- file.path('data','derived')
 path <- file.path(derived, 'clean_NMC.RDS')
 canada <- file.path('~/Dropbox', 'ActiveDocs', 'Git-local', 'Can_GIS_layers')
 
+prop700 <- file.path('data', 'raw', 'prop_land', '700')
 prop_water <- file.path('data', 'raw', 'prop_land', '700', 'prop_water')
 prop_snow <- file.path('data', 'raw', 'prop_land', '700', 'prop_snow')
 prop_rock <- file.path('data', 'raw', 'prop_land', '700', 'prop_rock')
@@ -48,6 +49,8 @@ prop_deciduous <- file.path('data', 'raw', 'prop_land', '700', 'prop_deciduous')
 prop_mixed <- file.path('data', 'raw', 'prop_land', '700', 'prop_mixed')
 
 fires <- file.path('data', 'raw', 'fires', 'fires')
+harv <- file.path('data', 'raw', 'nmc_harv_1985-2020.tif')
+for.age <- file.path('data', 'raw', 'nmc_forestage_meanbuff700_2019.tif')
 anthropolys <- file.path('data', 'raw', 'polygonal_features', 'anthropolys.shp')
 miningpolys <- file.path('data', 'raw', 'polygonal_features', 'miningpolys.shp')
 miningpolys.yt <- file.path('data', 'raw', 'polygonal_features', 'mining_nmc_yt.shp')
@@ -86,10 +89,16 @@ tolerance <- minutes(90)
 
 # Targets: prep -----------------------------------------------------------------
 targets_prep <- c(
+  # set up path to track
+  tar_target(
+    input.path,
+    path,
+    format = 'file'
+  ),
   # Read input data
   tar_target(
     input,
-    readRDS(path)
+    readRDS(input.path)
   ),
   
   # Remove duplicated and incomplete observations
@@ -101,40 +110,102 @@ targets_prep <- c(
   
   # load paved linear features
   tar_target(
+    lf_paved.path,
+    lf_paved,
+    format = 'file'
+  ),
+  tar_target(
     paved.sf,
-    load_sf(lf_paved, crs)
+    load_sf(lf_paved.path, crs)
   ),
 
   # load unpaved linear features
   tar_target(
+    lf_unpaved.path,
+    lf_unpaved,
+    format = 'file'
+  ),
+  tar_target(
     unpaved.sf,
-    load_sf(lf_unpaved, crs)
+    load_sf(lf_unpaved.path, crs)
   ),
 
   # load other linear features
   tar_target(
+    lf_other.path,
+    lf_other,
+    format = 'file'
+  ),
+  tar_target(
     lf_other.sf,
-    load_sf(lf_other, crs)
+    load_sf(lf_other.path, crs)
   ),
   
   # load anthropolys
   tar_target(
+    anthropolys.path,
+    anthropolys,
+    format = 'file'
+  ),
+  tar_target(
     anthropolys.sf,
-    load_sf(anthropolys, crs)
+    load_sf(anthropolys.path, crs)
+  ),
+  tar_target(
+    anthropolys.rast.path,
+    anthropolys.rast,
+    format = 'file'
   ),
   
   # load miningpolys
   tar_target(
+    miningpolys.path,
+    miningpolys,
+    format = 'file'
+  ),
+  tar_target(
     miningpolys.sf,
-    load_sf(miningpolys, crs)
+    load_sf(miningpolys.path, crs)
   ),
   
   # load miningpolys for just Yukon
   tar_target(
+    miningpolys.yt.path,
+    miningpolys.yt,
+    format = 'file'
+  ),
+  tar_target(
     miningpolys.yt.sf,
-    load_sf(miningpolys.yt, crs)
+    load_sf(miningpolys.yt.path, crs)
   ),
 
+  # load harvest
+  tar_target(
+    harv.path,
+    harv,
+    format = 'file'
+  ),
+  
+  # load fires
+  tar_target(
+    fires.path,
+    fires,
+    format = 'file'
+  ),
+ 
+  # load forest age
+  tar_target(
+    for.age.path,
+    for.age,
+    format = 'file'
+  ),
+  
+  # track prop land
+  tar_target(
+    prop700.path,
+    prop700,
+    format = 'file'
+  ),
   
   # Set up split -- these are our iteration units
   tar_target(
@@ -222,79 +293,79 @@ targets_tracks <- c(
 # Targets: extract ------------------------------------------------------------------
 ## Proportion of land ----
 
-# targets_propland <- c(
-#   tar_target(
-#     buffer,
-#     plyr::round_any(median(addyear$sl_, na.rm = T), sl.interval, floor)
-#   ),
-#   
-#   tar_target(
-#     extr_propwater,
-#     extract_by_year(addyear, var = prop_water, startyr = minyr, endyr = 2019, maxyr, where = 'both')
-#   ),
-#   
-#   tar_target(
-#     extr_propsnow,
-#     extract_by_year(extr_propwater, var = prop_snow, startyr = minyr, endyr = 2019, maxyr, where = 'both')
-#   ),
-#   
-#   tar_target(
-#     extr_proprock,
-#     extract_by_year(extr_propsnow, var = prop_rock, startyr = minyr, endyr = 2019, maxyr, where = 'both')
-#   ),
-#   
-#   tar_target(
-#     extr_propbarren,
-#     extract_by_year(extr_proprock, var = prop_barren, startyr = minyr, endyr = 2019, maxyr, where = 'both')
-#   ),
-#   
-#   tar_target(
-#     extr_propbryoids,
-#     extract_by_year(extr_propbarren, var = prop_bryoids, startyr = minyr, endyr = 2019, maxyr, where = 'both')
-#   ),
-#   
-#   tar_target(
-#     extr_propshrub,
-#     extract_by_year(extr_propbryoids, var = prop_shrub, startyr = minyr, endyr = 2019, maxyr, where = 'both')
-#   ),
-#   
-#   tar_target(
-#     extr_propwetland,
-#     extract_by_year(extr_propshrub, var = prop_wetland, startyr = minyr, endyr = 2019, maxyr, where = 'both')
-#   ),
-#   
-#   tar_target(
-#     extr_propwettreed,
-#     extract_by_year(extr_propwetland, var = prop_wettreed, startyr = minyr, endyr = 2019, maxyr, where = 'both')
-#   ),
-#   
-#   tar_target(
-#     extr_propherbs,
-#     extract_by_year(extr_propwettreed, var = prop_herbs, startyr = minyr, endyr = 2019, maxyr, where = 'both')
-#   ),
-#   
-#   tar_target(
-#     extr_propneedle,
-#     extract_by_year(extr_propherbs, var = prop_needleleaf, startyr = minyr, endyr = 2019, maxyr, where = 'both')
-#   ),
-#   
-#   tar_target(
-#     extr_propdecid,
-#     extract_by_year(extr_propneedle, var = prop_deciduous, startyr = minyr, endyr = 2019, maxyr, where = 'both')
-#   ),
-#   
-#   tar_target(
-#     extr_propmixed,
-#     extract_by_year(extr_propdecid, var = prop_mixed, startyr = minyr, endyr = 2019, maxyr, where = 'both')
-#   )
-# )
+targets_propland <- c(
+  tar_target(
+    buffer,
+    plyr::round_any(median(addyear$sl_, na.rm = T), sl.interval, floor)
+  ),
+
+  tar_target(
+    extr_propwater,
+    extract_by_year(addyear, var = prop_water, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+  ),
+
+  tar_target(
+    extr_propsnow,
+    extract_by_year(extr_propwater, var = prop_snow, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+  ),
+
+  tar_target(
+    extr_proprock,
+    extract_by_year(extr_propsnow, var = prop_rock, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+  ),
+
+  tar_target(
+    extr_propbarren,
+    extract_by_year(extr_proprock, var = prop_barren, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+  ),
+
+  tar_target(
+    extr_propbryoids,
+    extract_by_year(extr_propbarren, var = prop_bryoids, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+  ),
+
+  tar_target(
+    extr_propshrub,
+    extract_by_year(extr_propbryoids, var = prop_shrub, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+  ),
+
+  tar_target(
+    extr_propwetland,
+    extract_by_year(extr_propshrub, var = prop_wetland, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+  ),
+
+  tar_target(
+    extr_propwettreed,
+    extract_by_year(extr_propwetland, var = prop_wettreed, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+  ),
+
+  tar_target(
+    extr_propherbs,
+    extract_by_year(extr_propwettreed, var = prop_herbs, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+  ),
+
+  tar_target(
+    extr_propneedle,
+    extract_by_year(extr_propherbs, var = prop_needleleaf, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+  ),
+
+  tar_target(
+    extr_propdecid,
+    extract_by_year(extr_propneedle, var = prop_deciduous, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+  ),
+
+  tar_target(
+    extr_propmixed,
+    extract_by_year(extr_propdecid, var = prop_mixed, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+  )
+)
 
 ## anthro disturbance ----
 targets_disturbance <- c(     
-  # Calculate distance to linear features
+  # Calculate distance to anthropogenic disturbances
   tar_target(
     dist_paved,
-    extract_distto(addyear, paved.sf, 'paved', where = 'both', crs)
+    extract_distto(extr_propmixed, paved.sf, 'paved', where = 'both', crs)
   ),
   
   tar_target(
@@ -327,36 +398,44 @@ targets_disturbance <- c(
     extract_distto(dist_placer, dplyr::filter(miningpolys.yt.sf, RC_Disturb == 'Quartz Mining'), 'quartz', where = 'both', crs)
   ),
   
+  # extract point in disturbances
   tar_target(
     extr_anthropolys.prop,
-    extract_pt(dist_quartz, anthropolys.rast, 'prop_disturbance', where = 'both')
+    extract_pt(dist_quartz, anthropolys.rast.path, 'prop_disturbance', where = 'both')
   )
 )
 
 
 ## time since ----
-targets_timesince <- c(    
-  # # Extract harvest
-  # tar_target(
-  #   extrharv,
-  #   extract_pt(extr_propmixed, harv, 'harv', where = 'both')
-  # ),
-  # 
-  # # calculate time since harvest
-  # tar_target(
-  #   tsharv,
-  #   calc_ts(extrharv, var = 'harv', where = 'both', no.data=100) 
-  # ),
+targets_timesince <- c(   
+  # Extract forest age
+  tar_target(
+    extr_for.age,
+    extract_pt(extr_anthropolys.prop, for.age.path, 'for.age', where = 'both')
+  ),
+  
+  # TODO can't get tracked files to work for these two yet...it may have just been the fires path 
+  # Extract harvest
+  tar_target(
+    extr_harv,
+    extract_pt(extr_for.age, harv, 'harv', where = 'both')
+  ),
+
+  # calculate time since harvest
+  tar_target(
+    ts_harv,
+    calc_ts(extr_harv, var = 'harv', where = 'both', no.data=100)
+  ),
   
   # Extract fires
   tar_target(
     extr_fires,
-    extract_by_year(extr_anthropolys.prop, fires, startyr = minyr, endyr = 2023, maxyr = maxyr, where = 'both')
+    extract_by_year(ts_harv, fires, startyr = minyr, endyr = 2023, maxyr = maxyr, where = 'both')
   ),
   
   # calculate time since fire
   tar_target(
-    tsfire,
+    ts_fire,
     calc_ts(extr_fires, var = 'fires', where = 'both', no.data=200) 
   )
 )
@@ -370,7 +449,7 @@ targets_stepID <- c(
   # create step ID across individuals
   tar_target(
     stepID,
-    setDT(tsfire)[,indiv_step_id := paste(id, step_id_, sep = '_')]
+    setDT(ts_fire)[,indiv_step_id := paste(id, step_id_, sep = '_')]
   )
 )
 
