@@ -1,4 +1,4 @@
-#' @title make proportion layers from yearly CA_forest
+#' @title make moving window proportion layers from yearly CA_forest
 #' @export
 #' @author Julie W. Turner
 #' 
