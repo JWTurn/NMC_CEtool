@@ -10,7 +10,7 @@ require('sf')
 require(ggplot2)
 require(terra)
 require(foreach)
-require(qgisprocess)
+#require(qgisprocess)
 
 # list of all qgis algorithms
 #algs <- qgis_algorithms()
@@ -21,8 +21,8 @@ lapply(dir('R', '*.R', full.names = TRUE), source)
 raw <- file.path('data','raw')
 derived <- file.path('data','derived')
 
-#canada <- file.path('C:','Users', 'julie', 'Dropbox', 'ActiveDocs', 'Git-local', 'Can_GIS_layers')
-canada <- file.path('~/Dropbox', 'ActiveDocs', 'Git-local', 'Can_GIS_layers')
+canada <- file.path('C:','Users', 'julie', 'Dropbox', 'ActiveDocs', 'Git-local', 'Can_GIS_layers')
+#canada <- file.path('~/Dropbox', 'ActiveDocs', 'Git-local', 'Can_GIS_layers')
 roads.bc <- file.path(canada, 'CA_rd_data', 'canvec', 'canvec_50K_BC_Transport_shp', 'canvec_50K_BC_Transport')
 # roads.yt <- file.path(canada, 'CA_rd_data', 'canvec', 'canvec_50K_YT_Transport_shp', 'canvec_50K_YT_Transport')
 #roads.bc <- file.path(raw, 'disturbances', 'bc', 'BC_CEF_Integrated_Roads_2021.gdb', 'BC_CE_Integrated_Roads_2021_20210805.gdb')
@@ -80,6 +80,12 @@ writeRaster(land.crop, file.path(raw, 'nmc_landcover_2019.tif'))
 # 2022 is still the last year of landcover data (updated summer 2024)
 make_landforest_prop(studyArea = sArea.ext, crs, buff = buff.diam, startyr = minyr, endyr = 2022, 
                      where2save = file.path(raw, 'prop_land'))
+
+# bigger grid prop land for yearly land forest dataset
+trast500 <- rast(ext(vect(sArea.ext)), res = 500, crs = crs)
+aggregate_landforest(path= file.path(canada, 'Landcover_1984-2022'), trast = trast500, 
+                     startyr = 2013, endyr = 2022, crs = crs, where2save= file.path(derived, 'prop_land', '500grid'))
+
 
 # template for future rasterizations
 land <- file.path(raw, 'prop_land', '700', 'prop_needleleaf_2012.tif')
@@ -207,9 +213,17 @@ writeVector(miningpolys.yt, file.path(raw, 'polygonal_features', 'mining_nmc_yt.
 gc()
 Buff <- focalMat(rast(land), d=buff.diam, type = 'circle')
 # rasterize polys
-anthropolys.rast <- rasterize(anthropolys.all, rast(land))
+anthropolys.rast <- rasterize(rast(file.path(raw, 'polygonal_features', 'anthropolys.shp')), rast(land))
 anthropolys.rast[is.na(anthropolys.rast)]<-0
 mean.anthropolys <- focal(anthropolys.rast, Buff, na.rm = TRUE, pad = TRUE, padValue = 0, fun = 'mean')
+writeRaster(mean.anthropolys, file.path(raw, 'anthroDisturbance', 'antro_polys_prop700.tif'), overwrite = T)
+
+land.crop <- crop(land.proj, trast500)
+anthropolys.rast500 <- rasterize(rast(file.path(raw, 'polygonal_features', 'anthropolys.shp')), land.crop)
+anthropolys.rast500[is.na(anthropolys.rast500)]<-0
+anthropolys01 <- classify(anthropolys.rast500,cbind(from = c(TRUE, FALSE), to = c(1, 0)))
+anthropolysagg <- resample(anthropolys01, trast, method ='average')
+
 writeRaster(mean.anthropolys, file.path(raw, 'anthroDisturbance', 'antro_polys_prop700.tif'), overwrite = T)
 
 
