@@ -75,15 +75,20 @@ dat.issa <- dat[,.(id, area, prov, x1_, y1_, x2_, y2_, sl_, ta_, burst_, t1_, t2
                    distlf_end = pmin(distpaved_end, distunpaved_end, distlf_other_end, na.rm = T),
                    distanthro_start, distanthro_end, distmining_start, distmining_end,
                    distplacer_start, distplacer_end, distquartz_start, distquartz_end,
+                   distanthrodistubance_start = pmin(distpaved_start, distunpaved_start, distlf_other_start, distanthro_start,
+                                                     distplacer_start, distquartz_start, na.rm = T), 
+                   distanthrodistubance_end = pmin(distpaved_end, distunpaved_end, distlf_other_end, distanthro_end,
+                                                     distplacer_end, distquartz_end, na.rm = T), 
                    prop_disturbance_start, prop_disturbance_end, for.age_start, for.age_end,
                    ts_harv_start, ts_harv_end, ts_fires_start, ts_fires_end)]
 
 sumdat <- dat.issa[,.(prov, year, prop_veg_start, prop_veg_end,
-            for.age_start, for.age_end,
+            for.age_start, for.age_end, prop_forest_start, prop_forest_end,
             distpaved_start, distpaved_end, distunpaved_start, distunpaved_end, 
             distroad_end, distlf_other_start, distlf_other_end, distlf_end,
             distanthro_start, distanthro_end, distmining_start, distmining_end,
             distplacer_start, distplacer_end, distquartz_start, distquartz_end,
+            distanthrodistubance_start, distanthrodistubance_end,
             prop_disturbance_start, prop_disturbance_end,
             ts_harv_start, ts_harv_end, ts_fires_start, ts_fires_end)] %>%
   group_by(prov) %>%
@@ -135,6 +140,39 @@ m.full <- glmmTMB(case_ ~ -1 +
 summary(m.full)
 #saveRDS(m.nwt, file.path(derived, 'mod_selmove_nwt.RDS'))
 
+
+# full RSF ----
+m.rsf.full <- glmmTMB(case_ ~ -1 +
+                    scale(for.age_end) +
+                    prop_veg_end +
+                    I(log(ts_fires_end+1)) + 
+                    I(log(ts_harv_end+1)) + 
+                    I(log((distpaved_end/1000)+1)) + 
+                    I(log((distunpaved_end/1000)+1)) + 
+                    I(log((distlf_other_end/1000)+1)) + 
+                    I(log((distanthro_end/1000)+1)) + 
+                    
+                    (1|id) +
+                    (0 + scale(for.age_end)|id) + 
+                    (0 + prop_veg_end|id) +
+                    (0 + (I(log(ts_fires_end+1)))|id) +
+                    (0 + (I(log(ts_harv_end+1)))|id) + 
+                    (0 + I(log((distpaved_end/1000)+1))|id) + 
+                    (0 + I(log((distunpaved_end/1000)+1))|id) + 
+                    (0 + I(log((distlf_other_end/1000)+1))|id) +
+                    (0 + I(log((distanthro_end/1000)+1))|id) + 
+                    
+                    (1|year),
+                  family = binomial(), data = dat.issa[,`:=`(year = as.factor(year),
+                                                            id = as.factor(id))],
+                  map= list(theta = factor(c(NA,1:9))),
+                  start = list(theta =c(log(1000), seq(0,0, length.out = 9)))
+)
+
+summary(m.rsf.full)
+check_model(m.rsf.full)
+saveRDS(m.rsf.full, file.path(derived, 'mods', 'rsf_full.RDS'))
+
 # combine roads iSSA ----
 m.roads <- glmmTMB(case_ ~ -1 +
                     I(log(sl_+1)) +
@@ -179,3 +217,99 @@ m.roads <- glmmTMB(case_ ~ -1 +
 
 
 summary(m.roads)
+
+
+# iSSA only near disturbance ----
+# filter to only those near a disturbance
+dat.issa.disturbance <- dat.issa[indiv_step_id %in% (dat.issa[case_==T & (distanthro_start < 30000 | distanthro_end < 30000)]$indiv_step_id)]
+m.disturbance <- glmmTMB(case_ ~ -1 +
+                    I(log(sl_+1)) +
+                    I(cos(ta_)) +
+                    I(log(sl_+1)):I(cos(ta_)) +
+                    for.age_start:I(log(sl_+1)) + 
+                    prop_veg_start:I(log(sl_+1)) + 
+                    for.age_end +
+                    prop_veg_end +
+                    I(log(ts_fires_end+1)) + 
+                    I(log(ts_harv_end+1)) + 
+                    I(log((distpaved_end/1000)+1)) + 
+                    I(log((distunpaved_end/1000)+1)) + 
+                    I(log((distlf_other_end/1000)+1)) + 
+                    I(log((distanthro_end/1000)+1)) + 
+                    
+                    (1|indiv_step_id) +
+                    (0 + I(log(sl_ +1))|id) +
+                    (0 + I(cos(ta_))|id) +
+                    (0 + I(log(sl_+1)):I(cos(ta_))|id) +
+                    (0 + for.age_start:I(log(sl_+1))|id) + 
+                    (0 + prop_veg_start:I(log(sl_+1))|id) + 
+                    (0 + for.age_end|id) + 
+                    (0 + prop_veg_end|id) +
+                    (0 + (I(log(ts_fires_end+1)))|id) +
+                    (0 + (I(log(ts_harv_end+1)))|id) + 
+                    (0 + I(log((distpaved_end/1000)+1))|id) + 
+                    (0 + I(log((distunpaved_end/1000)+1))|id) + 
+                    (0 + I(log((distlf_other_end/1000)+1))|id) +
+                    (0 + I(log((distanthro_end/1000)+1))|id) + 
+                    
+                    (1|year),
+                  family = poisson(), data = dat.issa.disturbance[,`:=`(year = as.factor(year), 
+                                                            indiv_step_id = as.factor(indiv_step_id),
+                                                            id = as.factor(id))],
+                  map= list(theta = factor(c(NA,1:14))),
+                  start = list(theta =c(log(1000), seq(0,0, length.out = 14)))
+)
+
+summary(m.disturbance)
+check_model(m.disturbance)
+
+gc()
+dat.issa.mines <- dat.issa[prov == 'yt' & indiv_step_id %in% (dat.issa[case_==T & (distmining_start < 30000 | distmining_end < 30000)]$indiv_step_id)]
+
+m.disturbance2 <- glmmTMB(case_ ~ -1 +
+                           I(log(sl_+1)) +
+                           I(cos(ta_)) +
+                           I(log(sl_+1)):I(cos(ta_)) +
+                           prop_needleleaf_start:I(log(sl_+1)) + 
+                           prop_veg_start:I(log(sl_+1)) + 
+                           prop_needleleaf_end +
+                           prop_veg_end +
+                           I(log(ts_fires_end+1)) + 
+                           #I(log(ts_harv_end+1)) + 
+                           I(log((distpaved_end/1000)+1)) + 
+                           I(log((distunpaved_end/1000)+1)) + 
+                           I(log((distlf_other_end/1000)+1)) + 
+                           #I(log((distanthro_end/1000)+1)) + 
+                            I(log((distplacer_end/1000)+1)) +
+                            I(log((distquartz_end/1000)+1)) +
+                           
+                           (1|indiv_step_id) +
+                           (0 + I(log(sl_ +1))|id) +
+                           (0 + I(cos(ta_))|id) +
+                           (0 + I(log(sl_+1)):I(cos(ta_))|id) +
+                           (0 + prop_needleleaf_start:I(log(sl_+1))|id) + 
+                           (0 + prop_veg_start:I(log(sl_+1))|id) + 
+                           (0 + prop_needleleaf_end|id) + 
+                           (0 + prop_veg_end|id) +
+                           (0 + (I(log(ts_fires_end+1)))|id) +
+                           #(0 + (I(log(ts_harv_end+1)))|id) + 
+                           (0 + I(log((distpaved_end/1000)+1))|id) + 
+                           (0 + I(log((distunpaved_end/1000)+1))|id) + 
+                           (0 + I(log((distlf_other_end/1000)+1))|id) +
+                           #(0 + I(log((distanthro_end/1000)+1))|id) +
+                            (0 + I(log((distplacer_end/1000)+1))|id) +
+                            (0 + I(log((distquartz_end/1000)+1))|id) +
+                            
+                           (1|year),
+                         family = poisson(), data = dat.issa.mines[,`:=`(year = as.factor(year), 
+                                                                               indiv_step_id = as.factor(indiv_step_id),
+                                                                               id = as.factor(id))],
+                         map= list(theta = factor(c(NA,1:14))),
+                         start = list(theta =c(log(1000), seq(0,0, length.out = 14)))
+)
+
+summary(m.disturbance2)
+check_model(m.disturbance2)
+
+saveRDS(m.disturbance2, file.path(derived, 'mods', 'iSSA_yt_mines.RDS'))
+
