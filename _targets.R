@@ -22,8 +22,8 @@ lapply(dir('R', '*.R', full.names = TRUE), source)
 
 # Options -----------------------------------------------------------------
 tar_option_set(format = 'qs', 
-               workspace_on_error = T,
-               error = 'null')
+               error = 'null',
+               workspace_on_error = T)
 
 
 # Variables ---------------------------------------------------------------
@@ -33,6 +33,7 @@ derived <- file.path('data','derived')
 
 path <- file.path(derived, 'clean_NMC.RDS')
 canada <- file.path('~/Dropbox', 'ActiveDocs', 'Git-local', 'Can_GIS_layers')
+studyArea <- file.path(derived, 'prepped', 'clean_NMC_20kmBuff_crop.shp')
 
 prop700 <- file.path('data', 'raw', 'prop_land', '700')
 prop_water <- file.path('data', 'raw', 'prop_land', '700', 'prop_water')
@@ -49,6 +50,7 @@ prop_deciduous <- file.path('data', 'raw', 'prop_land', '700', 'prop_deciduous')
 prop_mixed <- file.path('data', 'raw', 'prop_land', '700', 'prop_mixed')
 
 fires <- file.path('data', 'raw', 'fires', 'fires')
+fire_path <- file.path('data', 'raw', 'fires')
 harv <- file.path('data', 'raw', 'nmc_harv_1985-2020.tif')
 for.age <- file.path('data', 'raw', 'nmc_forestage_meanbuff700_2019.tif')
 anthropolys <- file.path('data', 'raw', 'polygonal_features', 'anthropolys.shp')
@@ -66,6 +68,7 @@ longlat = FALSE
 long <- 'x_'
 lat <- 'y_'
 crs <- st_crs(3154)$wkt
+n_rand <- 30 # number of random steps to generate
 
 # minimum year we want to pull data for
 minyr <- 2012
@@ -185,13 +188,16 @@ targets_prep <- c(
     harv,
     format = 'file'
   ),
+  tar_target(
+    harv.sf,
+    make_harv_sf(harv.path)
+  ),
   
   # load fires
-  tar_target(
-    fires.path,
-    fires,
-    format = 'file'
-  ),
+  # tar_files(
+  #   fires.path,
+  #   list.files(path = fires_path, full.names = T)
+  # ),
  
   # load forest age
   tar_target(
@@ -201,16 +207,21 @@ targets_prep <- c(
   ),
   
   # track prop land
+  # tar_files(
+  #   prop700.path,
+  #   list.files(path = prop700, full.names = T)
+  # ),
+  
+  # filter out points outside study area
   tar_target(
-    prop700.path,
-    prop700,
-    format = 'file'
+    crop.pts,
+    crop_pts(mkunique, studyArea, crs)
   ),
   
   # Set up split -- these are our iteration units
   tar_target(
     splits,
-    mkunique[, tar_group := .GRP, by = splitBy],
+    crop.pts[, tar_group := .GRP, by = splitBy],
     iteration = 'group'
   ),
   
@@ -263,7 +274,7 @@ targets_tracks <- c(
   # create random steps and extract covariates
   tar_target(
     randsteps,
-    make_random_steps(resamples, sl_distr, ta_distr),
+    make_random_steps(resamples, n_rand = n_rand, sl_distr, ta_distr),
     pattern = map(resamples)
   ),
   
@@ -398,10 +409,15 @@ targets_disturbance <- c(
     extract_distto(dist_placer, dplyr::filter(miningpolys.yt.sf, RC_Disturb == 'Quartz Mining'), 'quartz', where = 'both', crs)
   ),
   
+  tar_target(
+    dist_harv,
+    extract_recent(dist_quartz, var = harv.sf, name = 'harv', method = 'distto', where = 'both') #, time_recent = 0
+  ),
+  
   # extract point in disturbances
   tar_target(
     extr_anthropolys.prop,
-    extract_pt(dist_quartz, anthropolys.rast.path, 'prop_disturbance', where = 'both')
+    extract_pt(dist_harv, anthropolys.rast.path, 'prop_disturbance', where = 'both')
   )
 )
 
