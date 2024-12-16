@@ -213,24 +213,56 @@ writeVector(miningpolys.yt, file.path(raw, 'polygonal_features', 'mining_nmc_yt.
 gc()
 Buff <- focalMat(rast(land), d=buff.diam, type = 'circle')
 # rasterize polys
-anthropolys.rast <- rasterize(rast(file.path(raw, 'polygonal_features', 'anthropolys.shp')), rast(land))
+anthropolys.rast <- rasterize(vect(file.path(raw, 'polygonal_features', 'anthropolys.shp')), rast(land))
 anthropolys.rast[is.na(anthropolys.rast)]<-0
 mean.anthropolys <- focal(anthropolys.rast, Buff, na.rm = TRUE, pad = TRUE, padValue = 0, fun = 'mean')
 writeRaster(mean.anthropolys, file.path(raw, 'anthroDisturbance', 'antro_polys_prop700.tif'), overwrite = T)
 
-land.crop <- crop(land.proj, trast500)
-anthropolys.rast500 <- rasterize(rast(file.path(raw, 'polygonal_features', 'anthropolys.shp')), land.crop)
-anthropolys.rast500[is.na(anthropolys.rast500)]<-0
-anthropolys01 <- classify(anthropolys.rast500,cbind(from = c(TRUE, FALSE), to = c(1, 0)))
-anthropolysagg <- resample(anthropolys01, trast, method ='average')
-
-writeRaster(mean.anthropolys, file.path(raw, 'anthroDisturbance', 'antro_polys_prop700.tif'), overwrite = T)
 
 
 miningpolys.rast <- rasterize(miningpolys.all, rast(land))
 miningpolys.rast[is.na(miningpolys.rast)]<-0
 mean.miningpolys <- focal(miningpolys.rast, Buff, na.rm = TRUE, pad = TRUE, padValue = 0, fun = 'mean')
 writeRaster(mean.miningpolys, file.path(raw, 'anthroDisturbance', 'mining_polys_prop700.tif'), overwrite = T)
+
+
+###
+land.crop <- crop(land.proj, trast500)
+anthropolys.rast500 <- rasterize(vect(file.path(raw, 'polygonal_features', 'anthropolys.shp')), land.crop)
+anthropolys.rast500[is.na(anthropolys.rast500)]<-0
+anthropolys01 <- classify(anthropolys.rast500,cbind(from = c(TRUE, FALSE), to = c(1, 0)))
+anthropolysagg <- resample(anthropolys01, trast, method ='average')
+
+make_prop_use <- function(dat, crs, trast){
+  #dat.sub <- dat[case_==TRUE]
+  dat.coords<- vect(cbind(dat$x2_, dat$y2_), crs =crs, type = 'points')
+  res <- res(trast)[[1]]
+  rast<- rasterize(dat.coords, trast, fun = 'sum')/(res*res)
+  return(rast)
+}
+
+unpaved <- vect(file.path(raw, 'linear_features', 'roadunpaved.shp'))
+paved <- vect(file.path(raw, 'linear_features', 'roadpaved.shp'))
+roads <- union(paved, unpaved)
+anthropolys <- vect(file.path(raw, 'polygonal_features', 'anthropolys.shp'))
+anthro.all <- c(roads, anthropolys)
+
+anthropolys.rast500 <- rasterize(vect(file.path(raw, 'polygonal_features', 'anthropolys.shp')), trast500)
+roads.rast500 <- rasterize(roads, trast500)
+anthro.all.rast500 <- merge(anthropolys.rast500, roads.rast500)
+
+prop.use <- make_prop_use(dat = dat, crs = crs, trast = trast500)
+#writeRaster(prop.use, file.path(derived, 'test', 'prop_use.tif'), overwrite = T)
+sum.use <- prop.use*500*500
+anthropolys.use <- mask(prop.use, anthro.all.rast500)
+
+dat.issa <- targets::tar_read(stepID)
+prop.issa <- make_prop_use(dat = dat.issa, crs = crs, trast = trast500)
+#writeRaster(prop.issa, file.path(derived, 'test', 'prop_issa.tif'), overwrite = T)
+
+anthropolys.issa <- mask(prop.issa, anthro.all.rast500)
+
+#writeRaster(anthropolys.issa, file.path(derived, 'test', 'anthro_use_issa.tif'), overwrite = T)
 
 
 ## HARVEST ----

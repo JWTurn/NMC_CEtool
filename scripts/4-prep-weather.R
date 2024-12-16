@@ -108,8 +108,8 @@ canada <- rnaturalearth::ne_states(country = 'canada')
 nmc <- filter(canada, name %in% c("Yukon", "British Columbia"))
 
 #ee_Initialize(user = 'julwturner@gmail.com', drive = TRUE) 
-ee_Initialize(drive = TRUE) 
-dem <- ee$Image("USGS/SRTMGL1_003")
+# ee_Initialize(drive = TRUE) 
+# dem <- ee$Image("USGS/SRTMGL1_003")
 
 studyArea.temp <- st_read(sArea) %>%
   st_transform(crs.lonlat) %>%
@@ -123,7 +123,7 @@ ggplot()+
 
 dem <- elevatr::get_elev_raster(studyArea.temp, z =12, override_size_check = TRUE, neg_to_na = T)
 
-dem <- aoi_geom_save_tif_matches(sf_or_file = studyArea.temp,
+dem <- CopernicusDEM::aoi_geom_save_tif_matches(sf_or_file = studyArea.temp,
                                  dir_save_tifs = raw,
                                  resolution = 30,
                                  crs_value = crs.lonlat,

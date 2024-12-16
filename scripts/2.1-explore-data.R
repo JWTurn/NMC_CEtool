@@ -8,6 +8,7 @@ require('dplyr')
 require('tidyr')
 require('sf')
 require('ggplot2')
+require('readxl')
 
 
 ### Input data ----
@@ -15,10 +16,30 @@ raw <- file.path('data','raw')
 derived <- file.path('data','derived')
 canada <- file.path('~/Dropbox', 'ActiveDocs', 'Git-local', 'Can_GIS_layers')
 
+dat.in <- readRDS(file.path(derived, 'prepDat_nmc.RDS'))
 dat <- readRDS(file.path(derived, 'clean_NMC.RDS'))
-
+mort <- setDT(read_excel(file.path(raw, "Mortality Tracker NEW_20240429.xlsx"), sheet = 'Caribou Mort Tracker'))
 
 crs <- st_crs(3154)
+
+# some exploration
+# quick clean of raw data
+dat.cc <- unique(dat.in[!is.na(id)&id!=""&complete.cases(latitude, longitude, datetime)], by = c('id', 'datetime'))
+
+
+dat.cc[!is.na(id),uniqueN(id), by = prov]
+
+dat.cc[!is.na(id),.(min = min(datetime, na.rm = T), max = max(datetime, na.rm = T)), by = prov]
+
+
+dat[,uniqueN(id), by = prov]
+
+dat[,.(min = min(t_, na.rm = T), max = max(t_, na.rm = T)), by = prov]
+
+mort[,uniqueN(ANIM_ID), by = `ANIMAL FATE/ COLLAR STATUS`]
+
+mort[ANIM_ID %in% unique(dat$id),uniqueN(ANIM_ID), by = `ANIMAL FATE/ COLLAR STATUS`]
+mort[ANIM_ID %in% unique(dat.cc$id),uniqueN(ANIM_ID), by = `ANIMAL FATE/ COLLAR STATUS`]
 
 # checking fix rate now clean
 fixrate.clean <- dat %>% make_track(x_,y_, t_, crs = crs, all_cols = T) %>% 
