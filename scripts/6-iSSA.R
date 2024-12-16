@@ -52,7 +52,7 @@ quantile(dat$ts_fires_end, probs = c(0.01, 0.05, 0.1, 0.15, 0.25, 0.5, 0.75, 1))
 
 quantile(dat$ts_harv_end, probs = c(0.01, 0.05, 0.1, 0.15, 0.25, 0.5, 0.75, 1))
 
-dat$prop_veg_end = dat$prop_bryoids_end + dat$prop_herbs_end + dat$prop_shrub_end + dat$prop_wetland_end
+dat$prop_veg_end = dat$prop_bryoids_end + dat$prop_herbs_end + dat$prop_shrub_end #+ dat$prop_wetland_end
 mean(dat$prop_veg_end, na.rm = T)
 dat$prop_veg_start = dat$prop_bryoids_start + dat$prop_herbs_start + dat$prop_shrub_start + dat$prop_wetland_start
 mean(dat$prop_veg_start, na.rm = T)
@@ -94,6 +94,10 @@ sumdat <- dat.issa[,.(prov, year, prop_veg_start, prop_veg_end,
   group_by(prov) %>%
   summarise_all(mean, na.rm = T)
 
+dat.issa[case_ ==TRUE,mean(prop_veg_end, na.rm = T), by = .(prov, year)]
+dat.issa[case_ ==TRUE,mean(prop_forest_end, na.rm = T), by = .(prov, year)]
+dat.issa[case_ ==TRUE,mean(prop_needleleaf_end, na.rm = T), by = .(prov, year)]
+dat.issa[case_ ==TRUE,mean(for.age_end, na.rm = T), by = .(prov, year)]
 
 
 # full iSSA ----
@@ -312,4 +316,5 @@ summary(m.disturbance2)
 check_model(m.disturbance2)
 
 saveRDS(m.disturbance2, file.path(derived, 'mods', 'iSSA_yt_mines.RDS'))
-
+m.disturbance2 <- readRDS(file.path(derived, 'mods', 'iSSA_yt_mines.RDS'))
+summary(m.disturbance2)
