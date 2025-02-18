@@ -409,6 +409,7 @@ targets_disturbance <- c(
     extract_distto(dist_placer, dplyr::filter(miningpolys.yt.sf, RC_Disturb == 'Quartz Mining'), 'quartz', where = 'both', crs)
   ),
   
+  # TODO fix to work for a range of years
   tar_target(
     dist_harv,
     extract_recent(dist_quartz, var = harv.sf, name = 'harv', method = 'distto', where = 'both') #, time_recent = 0
