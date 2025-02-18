@@ -15,22 +15,22 @@ extract_recent <- function(DT, var, name, method = 'distto', where){ #time_recen
   if(method=='distto'){
     if(where== 'start'){
       DT[!is.na(x1_)&!is.na(y1_), paste0('dist_', object_name, '_start') := distance_to(st_as_sf(.SD, coords = coords_start, crs = crs),
-                                                                                        filter(var, year %in% .BY[[1]])),
+                                                                                        filter(var, abs(year - .BY[[1]]) == min(abs(year - .BY[[1]])))),
          by = year]
     }
     
     if(where== 'end'){
       DT[!is.na(x2_)&!is.na(y2_), paste0('dist_', object_name, '_end') := distance_to(st_as_sf(.SD, coords = coords_end, crs = crs),
-                                                                                      filter(var, year %in% .BY[[1]])),
+                                                                                      filter(var, abs(year - .BY[[1]]) == min(abs(year - .BY[[1]])))),
          by = year]
     }
     
     if(where== 'both'){
       DT[!is.na(x1_)&!is.na(y1_), paste0('dist_', object_name, '_start') := distance_to(st_as_sf(.SD, coords = coords_start, crs = crs),
-                                                                                        filter(var, year %in% .BY[[1]])),
+                                                                                        filter(var, abs(year - .BY[[1]]) == min(abs(year - .BY[[1]])))),
          by = year]
       DT[!is.na(x2_)&!is.na(y2_), paste0('dist_', object_name, '_end') := distance_to(st_as_sf(.SD, coords = coords_end, crs = crs),
-                                                                                      filter(var, year %in% .BY[[1]])),
+                                                                                      filter(var, abs(year - .BY[[1]]) == min(abs(year - .BY[[1]])))),
          by = year]
     }
     # if(where== 'start'){
