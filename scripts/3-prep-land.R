@@ -64,6 +64,7 @@ ytbc <- subset(canPoly, canPoly$PREABBR %in% c('B.C.', 'Y.T.', 'N.W.T.'))
 ytbc.wgs <- st_transform(ytbc, crs)
 
 bcnt <- vect(subset(ytbc.wgs, ytbc.wgs$PREABBR %in% c('B.C.', 'N.W.T.')))
+nt <- vect(subset(ytbc.wgs, ytbc.wgs$PREABBR %in% c('N.W.T.')))
 
 ## LAND ----
 # make a static cropped landcover for plotting purposes
@@ -92,6 +93,61 @@ land <- file.path(raw, 'prop_land', '700', 'prop_needleleaf_2012.tif')
 
 ## ROADS ----
 ### jurisdictional data ----
+bc.hfi.path <- file.path(raw, 'disturbances', "HFI_BC_V1.gdb")
+bc.hfi.ls <- st_layers(bc.hfi.path)
+
+# 
+# hfi.codes <- setDT(unique(as.data.frame(bc.hfi.int) %>%select(FEATURE_DESC, FEATURE_TY)))
+# fwrite(hfi.codes, file.path(raw, 'disturbances', 'hfi_codes.csv'))
+# sa.bcproj <- project(vect(sArea.ext), crs(bc.hfi.int))
+# bc.hfi.sa <- crop(bc.hfi.int, ext(sa.bcproj))
+
+hfi.codes <- fread(file.path(raw, 'disturbances', 'hfi_codes.csv'))
+
+bc.roads <- st_read(bc.hfi.path, layer = 'o03_Roads_CenterLines_HFI')
+bc.rail <- st_read(bc.hfi.path, layer = 'o04_Railways_CenterLines_HFI')
+bc.tl <- st_read(bc.hfi.path, layer = 'o13_TransmissionLines_CenterLines_HFI')
+bc.pipeline <- st_read(bc.hfi.path, layer = 'o19_Pipelines_CenterLines_HFI')
+bc.trail <- st_read(bc.hfi.path, layer = 'o20_SeismicLines_and_Trails_CenterLines_HFI')
+
+bc.roads <- merge(bc.roads, hfi.codes, by = 'FEATURE_TY')
+summary(as.factor(bc.roads$FEATURE_DESC))
+bc.paved <- filter(bc.roads, bc.roads$FEATURE_DESC %like% 'ROAD-PAVED'|bc.roads$FEATURE_DESC %like% 'ROAD-GRAVEL')
+bc.unpaved <- filter(bc.roads, bc.roads$FEATURE_DESC %in% c('ROAD-VEGETATED', 'ROAD-WINTER')|bc.roads$FEATURE_DESC %like% 'ROAD-GRAVEL')
+
+bc.rail <- merge(bc.rail, hfi.codes, by = 'FEATURE_TY')
+bc.tl <- merge(bc.tl, hfi.codes, by = 'FEATURE_TY')
+bc.pipeline <- merge(bc.pipeline, hfi.codes, by = 'FEATURE_TY')
+bc.trail <- merge(bc.trail, hfi.codes, by = 'FEATURE_TY')
+
+bc.paved.proj <- project(vect(bc.paved), crs)
+bc.unpaved.proj <- project(vect(bc.unpaved), crs)
+bc.rail.proj <- project(vect(bc.rail), crs)
+
+bc.tl.proj <- project(vect(bc.tl), crs)
+bc.pipeline.proj <- project(vect(bc.pipeline), crs)
+bc.trail.proj <- project(vect(bc.trail), crs)
+
+bc.paved.rail <- union(bc.paved.proj, bc.rail.proj)
+
+bc.other <- union(union(bc.tl.proj, bc.pipeline.proj), bc.trail.proj)
+
+gc()
+bc.hfi.int <- st_read(bc.hfi.path, layer = 'HFI_Integrated')
+
+bc.mines <- filter(bc.hfi.int, bc.hfi.int$FEATURE_DESC %like% 'MINE')
+bc.mines.proj <- project(vect(bc.mines), crs)
+
+bc.polys <- filter(bc.hfi.int, !(bc.hfi.int$FEATURE_DESC %like% "ROAD") & 
+                     !(bc.hfi.int$FEATURE_DESC %like% "LINE") &
+                     !(bc.hfi.int$FEATURE_DESC %like% "HARVEST") &
+                     !(bc.hfi.int$FEATURE_DESC %like% "SEISMIC") &
+                     !(bc.hfi.int$FEATURE_DESC %like% "MINE") &
+                     !(bc.hfi.int$FEATURE_DESC %like% "TRACK") &
+                     !(bc.hfi.int$FEATURE_DESC %like% "VEGETATED"))
+bc.polys.proj <- project(vect(bc.polys), crs)
+
+gc()
 # bc.roads.layers <- st_layers(roads.bc)
 # bc.roads <- st_read(roads.bc, layer = 'integrated_roads_2021')
 # unique(as.factor(bc.roads$DRA_ROAD_CLASS))
@@ -114,7 +170,7 @@ land <- file.path(raw, 'prop_land', '700', 'prop_needleleaf_2012.tif')
 
 yt.lf <- st_read(roads.yt)
 yt.lf.ls <- summary(as.factor(yt.lf$DISTURB))
-
+yt.lf.ls
 yt.poly <- st_read(polys.yt)
 yt.poly.ls <- list(unique(yt.poly$RC_Disturb))
 summary(as.factor(yt.poly$RC_Disturb))
@@ -122,9 +178,9 @@ yt.poly.ls
 
 #### National data ----
 ### BC ----
-roadseg.bc <- file.path(roads.bc, 'road_segment_1.shp')
-trackseg.bc <- file.path(roads.bc, 'track_segment_1.shp')
-trail.bc <- file.path(roads.bc, 'trail_1.shp')
+# roadseg.bc <- file.path(roads.bc, 'road_segment_1.shp')
+# trackseg.bc <- file.path(roads.bc, 'track_segment_1.shp')
+# trail.bc <- file.path(roads.bc, 'trail_1.shp')
 
 ### YT ----
 # roadseg.yt <- file.path(roads.yt, 'road_segment_1.shp')
@@ -139,75 +195,79 @@ trackseg.nt <- file.path(roads.nt, 'track_segment_1.shp')
 trail.nt <- file.path(roads.nt, 'trail_1.shp')
 
 ### Combine BC and NT ----
-roadseg.bcnt <- rbind(vect(roadseg.bc), vect(roadseg.nt))
-trackseg.bcnt <- rbind(vect(trackseg.bc), vect(trackseg.nt))
-trail.bcnt <- rbind(vect(trail.bc), vect(trail.nt))
+# roadseg.bcnt <- rbind(vect(roadseg.bc), vect(roadseg.nt))
+# trackseg.bcnt <- rbind(vect(trackseg.bc), vect(trackseg.nt))
+# trail.bcnt <- rbind(vect(trail.bc), vect(trail.nt))
 
 # convert to crs
-roadseg.proj <- project(roadseg.bcnt, crs)
-trackseg.proj <- project(trackseg.bcnt, crs)
-trail.proj <- project(trail.bcnt, crs)
+roadseg.proj <- project(vect(roadseg.nt), crs)
+trackseg.proj <- project(vect(trackseg.nt), crs)
+trail.proj <- project(vect(trail.nt), crs)
 
 summary(as.factor(roadseg.proj$ispaved_en))
 summary(as.factor(trackseg.proj$classif_en))
 summary(as.factor(trackseg.proj$mode_en))
 summary(as.factor(trackseg.proj$use_en))
 
-paved.bcnt <- subset(roadseg.proj, roadseg.proj$ispaved_en == 'True')
-unpaved.bcnt <- subset(roadseg.proj, roadseg.proj$ispaved_en == 'False')
+paved.nt <- subset(roadseg.proj, roadseg.proj$ispaved_en == 'True')
+nt.paved.rail <- union(trackseg.proj, paved.nt)
+unpaved.nt <- subset(roadseg.proj, roadseg.proj$ispaved_en == 'False')
 
-other.bcnt <- union(trail.proj, trackseg.proj)
+other.nt <- trail.proj
 
 
-paved.yt <- project(vect(dplyr::filter(yt.lf, LF_TYPE == 'Highway')), crs)
-paved.all <- rbind(paved.yt, paved.bcnt)
-writeVector(paved.all, file.path(raw, 'linear_features', 'roadpaved.shp'))
+paved.yt <- project(vect(dplyr::filter(yt.lf, RECLS_DIST %in% c('Highway', 'Railway'))), crs)
+paved.rail.all <- rbind(paved.yt, paved.nt, bc.paved.rail)
+writeVector(paved.rail.all, file.path(raw, 'linear_features', 'roadpaved.shp'))
 
 unpaved.yt <- project(vect(dplyr::filter(yt.lf, LF_TYPE == 'Unpaved Road')), crs)
-unpaved.all <- rbind(unpaved.yt, unpaved.bcnt)
+unpaved.all <- rbind(unpaved.yt, unpaved.nt, bc.unpaved.proj)
 writeVector(unpaved.all, file.path(raw, 'linear_features', 'roadunpaved.shp'))
 
+gc()
 # other LFs
 commline <- project(vect(file.path(resmgmt, 'communication_line_1.shp')), crs)
 pipeline <- project(vect(file.path(resmgmt, 'pipeline_1.shp')), crs)
 powerline <- project(vect(file.path(resmgmt, 'power_line_1.shp')), crs)
 
-# right now doing this for the full area since so rare in YT
-commline.crop <- crop(commline, ext(vect(sArea.ext)))
-pipeline.crop <- crop(pipeline, ext(vect(sArea.ext)))
-powerline.crop <- crop(powerline, ext(vect(sArea.ext)))
+# right now doing this NT where we dont have data
+commline.crop <- crop(commline, nt)
+pipeline.crop <- crop(pipeline, nt)
+powerline.crop <- crop(powerline, nt)
 
 resmgmt.lf <- union(union(union(commline.crop, pipeline.crop), powerline.crop))
-lf.resmgmt.trail <- union(resmgmt.lf, other.bcnt)
-other.yt <- project(vect(dplyr::filter(yt.lf, LF_TYPE == 'Other LF')), crs)
-other.all <- union(other.yt, lf.resmgmt.trail)
+lf.resmgmt.trail <- union(resmgmt.lf, other.nt)
+other.yt <- project(vect(dplyr::filter(yt.lf, LF_TYPE == 'Other LF' & RECLS_DIST != 'Railway')), crs)
+other.all <- rbind(other.yt, lf.resmgmt.trail, bc.other)
 writeVector(other.all, file.path(raw, 'linear_features', 'lfother.shp'), overwrite = T)
 
-
+gc()
 ## POLYGONAL ANTHRO DISTURBANCE - CANVEC RESOURCE MANAGMENT ----
 aggr <- vect(file.path(resmgmt, 'aggregate_2.shp')) # poly
-oilgas <- vect(file.path(resmgmt, 'oil_gas_site_0.shp')) # point
+#oilgas <- vect(file.path(resmgmt, 'oil_gas_site_0.shp')) # point
 oilgas2 <- vect(file.path(resmgmt, 'oil_gas_site_2.shp')) # poly
-ore <- vect(file.path(resmgmt, 'ore_0.shp')) # point
+#ore <- vect(file.path(resmgmt, 'ore_0.shp')) # point
 ore2 <- vect(file.path(resmgmt, 'ore_2.shp')) # poly
 peat <- vect(file.path(resmgmt, 'peat_2.shp')) # poly
-well <- vect(file.path(resmgmt, 'petroleum_well_0.shp')) # point
+#well <- vect(file.path(resmgmt, 'petroleum_well_0.shp')) # point
 
-anthropolys <- union(union(union(aggr, oilgas2), ore2), peat)
+rsmgt.mines <- union(aggr, ore2)
+nt.mines <- crop(project(rsmgt.mines, crs), nt)
+rsmgt.otherpolys <- union(peat, oilgas2)
+nt.otherpolys <- crop(project(rsmgt.otherpolys, crs), nt)
 
-anthropolys.bcnt <- crop(project(anthropolys, crs), bcnt)
-
-yt.poly.proj <- project(vect(yt.poly), crs)
-anthropolys.all <- rbind(yt.poly.proj, anthropolys.bcnt)
-writeVector(anthropolys.all, file.path(raw, 'polygonal_features', 'anthropolys.shp'))
-
-
-miningpolys <- union(aggr, ore2)
-miningpolys.bcnt <- crop(project(miningpolys, crs), bcnt)
+#yt.poly.proj <- project(vect(yt.poly), crs)
 miningpolys.yt <- project(vect(dplyr::filter(yt.poly, RC_Disturb %in% c('Quartz Mining', 'Placer Mining'))), crs)
-miningpolys.all <- rbind(miningpolys.yt, miningpolys.bcnt)
+miningpolys.all <- rbind(miningpolys.yt, nt.mines, bc.mines.proj)
 writeVector(miningpolys.all, file.path(raw, 'polygonal_features', 'miningpolys.shp'), overwrite = T)
 writeVector(miningpolys.yt, file.path(raw, 'polygonal_features', 'mining_nmc_yt.shp'), overwrite = T)
+
+yt.otherpolys <- project(vect(dplyr::filter(yt.poly, !(RC_Disturb %in% c('Quartz Mining', 'Placer Mining',
+                                                                         'Harvest')))), crs)
+anthropolys.all <- rbind(yt.otherpolys, nt.otherpolys, bc.polys.proj)
+writeVector(anthropolys.all, file.path(raw, 'polygonal_features', 'anthropolys.shp'), overwrite = T)
+
+
 
 #### Polygonal disturbance Zone ----
 gc()
