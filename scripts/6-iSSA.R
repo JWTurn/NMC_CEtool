@@ -221,9 +221,11 @@ m.full <- glmmTMB(case_ ~ -1 +
 
 
 summary(m.full)
-saveRDS(m.full, file.path(derived, 'mod_road_lfother_mining_anthroother_lf10poly15.RDS'))
+# save model output
+saveRDS(m.full, file.path(derived, 'mod_road_lfother_mining_anthroother_lf20poly20.RDS'))
 
-m.full <- readRDS(file.path(derived, 'mod_road_lfother_anthro.RDS'))
+# read back in if needed
+m.full <- readRDS(file.path(derived, 'mod_road_lfother_mining_anthroother_lf10poly20.RDS'))
 m.full.indiv <- coef(m.full)$cond$id %>% rownames_to_column("id") %>%
   pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
   mutate(method = "ME")
