@@ -167,19 +167,22 @@ dat.issa.20 <- dat.issa[,.SD[1:21], by = .(indiv_step_id)]
 dat.issa.15 <- dat.issa[,.SD[1:16], by = .(indiv_step_id)]
 dat.issa.10 <- dat.issa[,.SD[1:11], by = .(indiv_step_id)]
 
+head(dat.issa)
+
+
 # full iSSA ----
 gc()
 m.full <- glmmTMB(case_ ~ -1 +
                    I(log((sl_+1)/1000)) +
                    #I(cos(ta_)) +
-                   I(log((sl_+1)/1000)):I(cos(ta_)) +
-                   #scale(for.age_start):I(log(sl_+1)) + 
-                   #  prop_forest_start:I(log(sl_+1)) +
-                   # prop_veg_start:I(log(sl_+1)) + 
-                  # scale(for.age_end) + scale(for.age_end):scale(for.age_avail) +
+                   I(log((sl_+1)/1000)):I(cos(ta_)) + #turn angle
+                   #scale(for.age_start):I(log(sl_+1)) + #forest age at start of step
+                   #  prop_forest_start:I(log(sl_+1)) + #proportion of forest within buffer of start of step
+                   # prop_veg_start:I(log(sl_+1)) + #prop
+                  # scale(for.age_end) + scale(for.age_end):scale(for.age_avail) + #fine scale functional response - forest age available
                    prop_forest_end + prop_forest_end:prop_forest_avail +
-                    prop_veg_end + prop_veg_end:prop_veg_avail +
-                   I(log(ts_fires_end+1)) + I(log(ts_fires_end+1)):I(log(ts_fires_avail+1)) +
+                    prop_veg_end + prop_veg_end:prop_veg_avail + #this is modelling the selection
+                   I(log(ts_fires_end+1)) + I(log(ts_fires_end+1)):I(log(ts_fires_avail+1)) + #ts is time since fires, ds is dintance to
                   # I(log(ts_harv_end+1)) + I(log(ts_harv_end+1)):I(log(ts_harv_avail+1)) +
                    # I(log((dist_paved_end_adj/1000)+1)) + I(log((dist_paved_end_adj/1000)+1)):I(log((dist_paved_avail/1000)+1)) +
                    #  I(log((dist_unpaved_end_adj/1000)+1)) + I(log((dist_unpaved_end_adj/1000)+1)):I(log((dist_unpaved_avail/1000)+1)) +
@@ -189,7 +192,7 @@ m.full <- glmmTMB(case_ ~ -1 +
                     I(log((dist_mining_end_adj+1)/1000)) +# I(log((dist_mining_end_adj/1000)+1)):I(log((dist_mining_avail/1000)+1)) +
                     I(log((dist_otherdisturbance_end_adj+1)/1000)) + #I(log((dist_otherdisturbance_end_adj/1000)+1)):I(log((dist_otherdisturbance_avail/1000)+1)) +
                     
-                   (1|indiv_step_id) +
+                   (1|indiv_step_id) + #
                    (0 + I(log((sl_ +1)/1000))|id) +
                    #(0 + I(cos(ta_))|id) +
                    (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
@@ -214,7 +217,7 @@ m.full <- glmmTMB(case_ ~ -1 +
                                                            indiv_step_id = as.factor(indiv_step_id),
                                                            id = as.factor(id))],
                  map= list(theta = factor(c(NA,1:10))),
-                 start = list(theta =c(log(1000), seq(0,0, length.out = 10))), 
+                 start = list(theta =c(log(1000), seq(0,0, length.out = 10))), #set variance high for clusters
                  verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
 ## 
@@ -245,7 +248,7 @@ ggplot(data = pop[!(term %like% 'dist')], aes(x =term, y = estimate)) +
   geom_hline(aes(yintercept = 0), lty = 'dashed') +
   coord_flip() 
 
-ggplot(data = indivs[(term %like% 'dist')], aes(x =term, y = estimate)) +
+ggplot(data = indivs[(term %like% 'dist')], aes(x =term, y = estimate)) + #This one
   geom_boxplot()+
   geom_jitter() +
   #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
