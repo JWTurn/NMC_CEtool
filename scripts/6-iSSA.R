@@ -167,7 +167,18 @@ dat.issa.20 <- dat.issa[,.SD[1:21], by = .(indiv_step_id)]
 dat.issa.15 <- dat.issa[,.SD[1:16], by = .(indiv_step_id)]
 dat.issa.10 <- dat.issa[,.SD[1:11], by = .(indiv_step_id)]
 
-head(dat.issa)
+# Separate seasons into diff datasets
+dat.issa.10$monthday <- format(as.Date(dat.issa.10$t1_, format="%Y/%m/%d"),"%m/%d") #Create new column that isolates the month and day out of t1_
+dat.issa.10$monthday #Confirming that the new column was created correctly
+names(dat.issa.10) #Confirming that the new column exists
+
+dat.issa.10[monthday >= '11/01' | monthday <= '04/15', season:="winter"] #Create new season column, with Nov to mid-April being called Winter
+dat.issa.10.winter <- dat.issa.10[dat.issa.10$season == 'winter',] #Assign to new winter dataframe
+
+
+dat.issa.10[monthday >= '07/01' & monthday <= '09/30', season:="summer"] #Create summer season
+dat.issa.10.summer <- dat.issa.10[dat.issa.10$season == 'summer',] #Assign to new summer dataframe
+
 
 
 # full iSSA ----
