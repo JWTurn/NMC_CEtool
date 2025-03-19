@@ -520,6 +520,40 @@ ggplot(data = indivs[(term %like% 'dist')], aes(x =term, y = estimate)) + #This 
   coord_flip() 
 
 
+#Testing correlations between each unique distance-to variables
+cor(dat.issa.10$dist_paved_end, dat.issa.10$dist_unpaved_end, use = "complete.obs") #0.71
+cor(dat.issa.10$dist_paved_end, dat.issa.10$dist_lf_other_end, use = "complete.obs") #-0.005
+cor(dat.issa.10$dist_paved_end, dat.issa.10$dist_placer_end, use = "complete.obs") #-0.13
+cor(dat.issa.10$dist_paved_end, dat.issa.10$dist_quartz_end, use = "complete.obs") #-0.30
+cor(dat.issa.10$dist_paved_end, dat.issa.10$dist_harv_end, use = "complete.obs") #0.24
+cor(dat.issa.10$dist_paved_end, dat.issa.10$dist_anthro_end, use = "complete.obs") #0.41
+cor(dat.issa.10$dist_unpaved_end, dat.issa.10$dist_lf_other_end, use = "complete.obs") #0.29
+cor(dat.issa.10$dist_unpaved_end, dat.issa.10$dist_placer_end, use = "complete.obs") #0.05
+cor(dat.issa.10$dist_unpaved_end, dat.issa.10$dist_quartz_end, use = "complete.obs") #-0.12
+cor(dat.issa.10$dist_unpaved_end, dat.issa.10$dist_harv_end, use = "complete.obs") #0.47
+cor(dat.issa.10$dist_unpaved_end, dat.issa.10$dist_anthro_end, use = "complete.obs") #0.75
+cor(dat.issa.10$dist_lf_other_end, dat.issa.10$dist_placer_end, use = "complete.obs") #0.29
+cor(dat.issa.10$dist_lf_other_end, dat.issa.10$dist_quartz_end, use = "complete.obs") #0.32
+cor(dat.issa.10$dist_lf_other_end, dat.issa.10$dist_harv_end, use = "complete.obs") #0.02
+cor(dat.issa.10$dist_lf_other_end, dat.issa.10$dist_anthro_end, use = "complete.obs") #0.57
+cor(dat.issa.10$dist_placer_end, dat.issa.10$dist_quartz_end, use = "complete.obs") #0.91
+cor(dat.issa.10$dist_placer_end, dat.issa.10$dist_harv_end, use = "complete.obs") #0.04
+cor(dat.issa.10$dist_placer_end, dat.issa.10$dist_anthro_end, use = "complete.obs") #0.22
+cor(dat.issa.10$dist_quartz_end, dat.issa.10$dist_harv_end, use = "complete.obs") #-0.16
+cor(dat.issa.10$dist_quartz_end, dat.issa.10$dist_anthro_end, use = "complete.obs") #0.09
+cor(dat.issa.10$dist_harv_end, dat.issa.10$dist_anthro_end, use = "complete.obs") #0.33
+
+
+cor_df <- dat.issa.10 %>% select('dist_paved_end', 'dist_unpaved_end', 'dist_lf_other_end', 'dist_placer_end', 'dist_quartz_end', 'dist_harv_end', 'dist_anthro_end') #create new df with the variables I want
+library(corrplot)
+M = cor(cor_df, use = "complete.obs") #produce plot of correlations
+corrplot(M, method = 'number')
+
+cor_df2 <- dat.issa.10 %>% select('dist_road_end', 'dist_mining_end', 'dist_anthro_end', 'dist_lf_other_end')
+N = cor(cor_df2, use = "complete.obs") #produce plot of correlations
+corrplot(N, method = 'number')
+
+
 
 # full iSSA ----
 gc()
