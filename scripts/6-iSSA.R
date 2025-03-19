@@ -488,6 +488,37 @@ m.closedisturbance <- glmmTMB(case_ ~ -1 +
                               verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
 
+summary(m.closedisturbance)
+# save model output
+saveRDS(m.closedisturbance, file.path(derived, 'm.closed.disturbance.mod_road_lfother_mining_anthroother_lf20poly20.RDS'))
+
+
+m.closedisturbance.indiv <- coef(m.closedisturbance)$cond$id %>% rownames_to_column("id") %>%
+  pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
+  mutate(method = "ME")
+indivs <- setDT(m.closedisturbance.indiv)[term!='(Intercept)']
+pop <- setDT(tidy(m.closedisturbance, effects = 'fixed'))
+
+
+require(ggplot2)
+ggplot(data = pop[term %like% 'dist'], aes(x =term, y = estimate)) +
+  geom_point()+
+  geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+ggplot(data = pop[!(term %like% 'dist')], aes(x =term, y = estimate)) +
+  geom_point()+
+  geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+
+ggplot(data = indivs[(term %like% 'dist')], aes(x =term, y = estimate)) + #This one
+  geom_boxplot()+
+  geom_jitter() +
+  #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+
 
 
 # full iSSA ----
