@@ -614,8 +614,8 @@ m.large <- glmmTMB(case_ ~ -1 +
                    family = poisson(), data = dat.issa.10[,`:=`(year = as.factor(year), 
                                                                 indiv_step_id = as.factor(indiv_step_id),
                                                                 id = as.factor(id))],
-                   map= list(theta = factor(c(NA,1:7))),
-                   start = list(theta =c(log(1000), seq(0,0, length.out = 7))), 
+                   map= list(theta = factor(c(NA,1:6))),
+                   start = list(theta =c(log(1000), seq(0,0, length.out = 6))), 
                    verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
 
