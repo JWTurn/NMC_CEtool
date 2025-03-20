@@ -575,8 +575,8 @@ m.large <- glmmTMB(case_ ~ -1 +
                      #I(cos(ta_)) +
                      I(log((sl_+1)/1000)):I(cos(ta_)) +
                      #scale(for.age_start):I(log(sl_+1)) + 
-                     prop_forest_start:I(log(sl_+1)) +
-                     prop_veg_start:I(log(sl_+1)) + 
+                     # prop_forest_start:I(log(sl_+1)) +
+                     #prop_veg_start:I(log(sl_+1)) + 
                      # scale(for.age_end) + scale(for.age_end):scale(for.age_avail) +
                      prop_forest_end + prop_forest_end:prop_forest_avail +
                      prop_veg_end + prop_veg_end:prop_veg_avail +
@@ -588,7 +588,7 @@ m.large <- glmmTMB(case_ ~ -1 +
                      # I(log((dist_lf_other_end_adj+1)/1000)) + I(log((dist_lf_other_end_adj/1000)+1)):I(log((dist_lf_other_avail/1000)+1)) +
                      #I(log((dist_anthro_end_adj/1000)+1)) + I(log((dist_anthro_end_adj/1000)+1)):I(log((dist_anthro_avail/1000)+1)) +
                      # I(log((dist_mining_end_adj+1)/1000)) +# I(log((dist_mining_end_adj/1000)+1)):I(log((dist_mining_avail/1000)+1)) +
-                     I(log((dist_anthrodisturbance_end_adj+1)/1000)) + I(log((dist_anthrodisturbance_end_adj+1)/1000)):I(log(((dist_anthrodisturbance_avail+1)/1000))) +
+                     I(log((dist_anthrodisturbance_end_adj+1)/1000)) + #I(log((dist_anthrodisturbance_end_adj+1)/1000)):I(log(((dist_anthrodisturbance_avail+1)/1000))) +
                      
                      (1|indiv_step_id) +
                      (0 + I(log((sl_ +1)/1000))|id) +
@@ -617,8 +617,6 @@ m.large <- glmmTMB(case_ ~ -1 +
                    map= list(theta = factor(c(NA,1:7))),
                    start = list(theta =c(log(1000), seq(0,0, length.out = 7))), 
                    verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
-
-
 )
 
 summary(m.large)
@@ -652,6 +650,12 @@ ggplot(data = indivs[(term %like% 'dist')], aes(x =term, y = estimate)) + #This 
   geom_hline(aes(yintercept = 0), lty = 'dashed') +
   coord_flip() 
 
+ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
+  geom_boxplot()+
+  geom_jitter() +
+  #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
 
 
 
