@@ -167,6 +167,10 @@ dat.issa.20 <- dat.issa[,.SD[1:21], by = .(indiv_step_id)]
 dat.issa.15 <- dat.issa[,.SD[1:16], by = .(indiv_step_id)]
 dat.issa.10 <- dat.issa[,.SD[1:11], by = .(indiv_step_id)]
 
+
+---------------------------------------------
+
+
 # Separate seasons into diff datasets
 dat.issa.10$monthday <- format(as.Date(dat.issa.10$t1_, format="%Y/%m/%d"),"%m/%d") #Create new column that isolates the month and day out of t1_
 dat.issa.10$monthday #Confirming that the new column was created correctly
@@ -355,6 +359,9 @@ ggplot(data = indivs[(term %like% 'dist')], aes(x =term, y = estimate)) + #This 
 ##BOTH SUMMER AND WINTER ANALYSES SHOWED THE SAME VARIANCE ISSUE
 
 
+---------------------------------------------
+
+
 #FIDDLING WITH PARAMETERS to simplify model
 m.full <- glmmTMB(case_ ~ -1 +
                     I(log((sl_+1)/1000)) +
@@ -442,6 +449,8 @@ ggplot(data = indivs[(term %like% 'dist')], aes(x =term, y = estimate)) + #This 
 
 
 ##SAME ISSUE
+
+---------------------------------------------
 
 
 #Fiddling further by filtering out data when the disturbance is far away
@@ -531,6 +540,9 @@ ggplot(data = indivs[(term %like% 'dist')], aes(x =term, y = estimate)) + #This 
 ##VARIANCE ISSUE HAS BEEN FIXED BY MODELLING NEAR-BY DISTURBANCES ONLY
 
 
+---------------------------------------------
+
+
 #Testing correlations between each unique distance-to variables
 cor(dat.issa.10$dist_paved_end, dat.issa.10$dist_unpaved_end, use = "complete.obs") #0.71
 cor(dat.issa.10$dist_paved_end, dat.issa.10$dist_lf_other_end, use = "complete.obs") #-0.005
@@ -571,6 +583,9 @@ O = cor(cor_df3, use = "complete.obs") #produce plot of correlations
 corrplot(O, method = 'number')
 
 
+---------------------------------------------
+
+
 #LARGE MODEL testing after correlation (collapsing all polyginal and lf parameters), test on original, unfiltered dat.issa.10 dataset
 # Filter the dat.issa.10 dataset to only include individuals with >9 months of data
 
@@ -578,20 +593,21 @@ dat.issa.10$month <- format(as.Date(dat.issa.10$t1_, format="%Y/%m/%d"),"%m") #C
 dat.issa.10$month #Confirming that the new column was created correctly
 names(dat.issa.10) #Confirming that the new column exists
 
-dat.issa.10_filtered <- dat.issa.10 %>%
-  group_by %>%
-  filter(n() > 1) %>%
+
+dat.issa.10 <- tibble::repair_names(dat.issa.10)  #Fix duplicated columns
+
+dat.issa.10_filtered <- dat.issa.10 %>% #Filtering dataset
+  group_by(id) %>%
+  filter(n_distinct(month) >= 9) %>%
   ungroup()
 
+setDT(dat.issa.10_filtered)#Set dataset as a data table
 
-  
-
-
-
-
+length(unique(dat.issa.10_filtered$id)) #371 individuals in the filtered dataset
+length(unique(dat.issa.10$id)) #466 individuals in the OG dataset
 
 
-
+#Running model on filtered dataset
 m.large <- glmmTMB(case_ ~ -1 +
                      I(log((sl_+1)/1000)) +
                      #I(cos(ta_)) +
@@ -633,18 +649,17 @@ m.large <- glmmTMB(case_ ~ -1 +
                      (0 + I(log((dist_anthrodisturbance_end_adj+1)/1000))|id) + 
                      
                      (1|year),
-                   family = poisson(), data = dat.issa.10[,`:=`(year = as.factor(year), 
+                   family = poisson(), data = dat.issa.10_filtered[,`:=`(year = as.factor(year), 
                                                                 indiv_step_id = as.factor(indiv_step_id),
                                                                 id = as.factor(id))],
-                   map= list(theta = factor(c(NA,1:6))),
-                   start = list(theta =c(log(1000), seq(0,0, length.out = 6))), 
+                   map= list(theta = factor(c(NA,1:7))),
+                   start = list(theta =c(log(1000), seq(0,0, length.out = 7))), 
                    verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
 
 summary(m.large)
 # save model output
-saveRDS(m.large, file.path(derived, 'm.large.mod_lf20poly20.RDS'))
-
+saveRDS(m.large, "m.large_filtered.mod_lf20poly20.RDS")
 
 m.large.indiv <- coef(m.large)$cond$id %>% rownames_to_column("id") %>%
   pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
@@ -679,7 +694,100 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
   geom_hline(aes(yintercept = 0), lty = 'dashed') +
   coord_flip() 
 
+---------------------------------------------
 
+
+#Further work with seasonal datasets - filtering timing
+#Filter each seasonal dataset to at least 1 full month in summer and at least 3 months in winter
+#Winter
+dat.issa.10.winter$month <- format(as.Date(dat.issa.10.winter$t1_, format="%Y/%m/%d"),"%m") #Create new column that isolates the month
+dat.issa.10.winter$month #Confirming that the new column was created correctly
+names(dat.issa.10.winter) #Confirming that the new column exists
+dat.issa.10.winter <- tibble::repair_names(dat.issa.10.winter)  #Fix duplicated columns
+
+dat.issa.10.winter_filtered <- dat.issa.10.winter %>% #Filtering dataset
+  group_by(id) %>%
+  filter(n_distinct(month) >= 4) %>%
+  ungroup()
+
+setDT(dat.issa.10.winter_filtered)#Set dataset as a data table
+
+#Summer
+dat.issa.10.summer$month <- format(as.Date(dat.issa.10.summer$t1_, format="%Y/%m/%d"),"%m") #Create new column that isolates the month
+dat.issa.10.summer$month #Confirming that the new column was created correctly
+names(dat.issa.10.summer) #Confirming that the new column exists
+dat.issa.10.summer <- tibble::repair_names(dat.issa.10.summer)  #Fix duplicated columns
+
+dat.issa.10.summer_filtered <- dat.issa.10.summer %>% #Filtering dataset
+  group_by(id) %>%
+  filter(n_distinct(month) >= 2) %>%
+  ungroup()
+
+setDT(dat.issa.10.summer_filtered)#Set dataset as a data table
+
+
+m.winter.filt <- glmmTMB(case_ ~ -1 +
+                     I(log((sl_+1)/1000)) +
+                     #I(cos(ta_)) +
+                     I(log((sl_+1)/1000)):I(cos(ta_)) +
+                     #scale(for.age_start):I(log(sl_+1)) + 
+                     # prop_forest_start:I(log(sl_+1)) +
+                     #prop_veg_start:I(log(sl_+1)) + 
+                     # scale(for.age_end) + scale(for.age_end):scale(for.age_avail) +
+                     prop_forest_end + prop_forest_end:prop_forest_avail +
+                     prop_veg_end + prop_veg_end:prop_veg_avail +
+                     I(log(ts_fires_end+1)) + I(log(ts_fires_end+1)):I(log(ts_fires_avail+1)) +
+                     # I(log(ts_harv_end+1)) + I(log(ts_harv_end+1)):I(log(ts_harv_avail+1)) +
+                     # I(log((dist_paved_end_adj/1000)+1)) + I(log((dist_paved_end_adj/1000)+1)):I(log((dist_paved_avail/1000)+1)) +
+                     #  I(log((dist_unpaved_end_adj/1000)+1)) + I(log((dist_unpaved_end_adj/1000)+1)):I(log((dist_unpaved_avail/1000)+1)) +
+                     # I(log(((dist_road_end_adj+1)/1000))) + #I(log((dist_road_end_adj/1000)+1)):I(log((dist_road_avail/1000)+1)) +
+                     # I(log((dist_lf_other_end_adj+1)/1000)) + I(log((dist_lf_other_end_adj/1000)+1)):I(log((dist_lf_other_avail/1000)+1)) +
+                     #I(log((dist_anthro_end_adj/1000)+1)) + I(log((dist_anthro_end_adj/1000)+1)):I(log((dist_anthro_avail/1000)+1)) +
+                     # I(log((dist_mining_end_adj+1)/1000)) +# I(log((dist_mining_end_adj/1000)+1)):I(log((dist_mining_avail/1000)+1)) +
+                     I(log((dist_anthrodisturbance_end_adj+1)/1000)) + #I(log((dist_anthrodisturbance_end_adj+1)/1000)):I(log(((dist_anthrodisturbance_avail+1)/1000))) +
+                     
+                     (1|indiv_step_id) +
+                     (0 + I(log((sl_ +1)/1000))|id) +
+                     #(0 + I(cos(ta_))|id) +
+                     (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                     #(0 + scale(for.age_start):I(log(sl_+1))|id) + 
+                     #  (0 + prop_forest_start:I(log(sl_+1))|id) +
+                     # (0 + prop_veg_start:I(log(sl_+1))|id) + 
+                     # (0 + scale(for.age_end)|id) + 
+                     (0 + prop_forest_end|id) +
+                     (0 + prop_veg_end|id) +
+                     (0 + (I(log(ts_fires_end+1)))|id) +
+                     # (0 + (I(log(ts_harv_end+1)))|id) + 
+                     # (0 + I(log((dist_paved_end_adj/1000)+1))|id) + 
+                     # (0 + I(log((dist_unpaved_end_adj/1000)+1))|id) + 
+                     # (0 + I(log((dist_road_end_adj+1)/1000))|id) + 
+                     # (0 + I(log((dist_lf_other_end_adj+1)/1000))|id) +
+                     #(0 + I(log((dist_anthro_end_adj/1000)+1))|id) + 
+                     # (0 + I(log((dist_mining_end_adj+1)/1000))|id) + 
+                     (0 + I(log((dist_anthrodisturbance_end_adj+1)/1000))|id) + 
+                     
+                     (1|year),
+                   family = poisson(), data = dat.issa.10.winter_filtered[,`:=`(year = as.factor(year), 
+                                                                         indiv_step_id = as.factor(indiv_step_id),
+                                                                         id = as.factor(id))],
+                   map= list(theta = factor(c(NA,1:7))),
+                   start = list(theta =c(log(1000), seq(0,0, length.out = 7))), 
+                   verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+---------------------------------------------
 
 # full iSSA ----
 gc()
