@@ -237,7 +237,8 @@ summary(m.full.winter)
 saveRDS(m.full.winter, file.path(derived, 'mod_road_lfother_mining_anthroother_lf20poly20_winter.RDS'))
 
 # read back in if needed
-m.full.winter <- readRDS(file.path(derived, 'mod_road_lfother_mining_anthroother_lf10poly20_winter.RDS'))
+list.files() 
+m.full.winter <- readRDS("mod_road_lfother_mining_anthroother_lf20poly20_winter.RDS")
 m.full.indiv.winter <- coef(m.full.winter)$cond$id %>% rownames_to_column("id") %>%
   pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
   mutate(method = "ME")
@@ -322,7 +323,8 @@ summary(m.full.summer)
 saveRDS(m.full.summer, file.path(derived, 'mod_road_lfother_mining_anthroother_lf20poly20_summer.RDS'))
 
 # read back in if needed
-m.full.summer <- readRDS(file.path(derived, 'mod_road_lfother_mining_anthroother_lf10poly20_winter.RDS'))
+list.files() 
+m.full.summer <- readRDS("mod_road_lfother_mining_anthroother_lf20poly20_summer.RDS")
 m.full.indiv.summer <- coef(m.full.summer)$cond$id %>% rownames_to_column("id") %>%
   pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
   mutate(method = "ME")
@@ -570,6 +572,26 @@ corrplot(O, method = 'number')
 
 
 #LARGE MODEL testing after correlation (collapsing all polyginal and lf parameters), test on original, unfiltered dat.issa.10 dataset
+# Filter the dat.issa.10 dataset to only include individuals with >9 months of data
+
+dat.issa.10$month <- format(as.Date(dat.issa.10$t1_, format="%Y/%m/%d"),"%m") #Create new column that isolates the month
+dat.issa.10$month #Confirming that the new column was created correctly
+names(dat.issa.10) #Confirming that the new column exists
+
+dat.issa.10_filtered <- dat.issa.10 %>%
+  group_by %>%
+  filter(n() > 1) %>%
+  ungroup()
+
+
+  
+
+
+
+
+
+
+
 m.large <- glmmTMB(case_ ~ -1 +
                      I(log((sl_+1)/1000)) +
                      #I(cos(ta_)) +
