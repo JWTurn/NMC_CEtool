@@ -456,6 +456,7 @@ ggplot(data = indivs[(term %like% 'dist')], aes(x =term, y = estimate)) + #This 
 #Fiddling further by filtering out data when the disturbance is far away
 dat.issa.10$dist_anthrodisturbance_start <= 20000
 
+gc()
 m.closedisturbance <- glmmTMB(case_ ~ -1 +
                                 I(log((sl_+1)/1000)) +
                                 #I(cos(ta_)) +
@@ -503,10 +504,45 @@ m.closedisturbance <- glmmTMB(case_ ~ -1 +
                               family = poisson(), data = dat.issa.10[,`:=`(year = as.factor(year), 
                                                                            indiv_step_id = as.factor(indiv_step_id),
                                                                            id = as.factor(id))],
-                              map= list(theta = factor(c(NA,1:10))),
-                              start = list(theta =c(log(1000), seq(0,0, length.out = 10))), 
+                              map= list(theta = factor(c(NA,1:11))),
+                              start = list(theta =c(log(1000), seq(0,0, length.out = 11))), 
                               verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
+
+
+#Not converging when quartz and placer are added, so re-vamping to look like an RSF
+gc()
+m.rsf.mines <- glmmTMB(case_ ~ -1 +
+                        prop_forest_end +
+                        prop_forest_end:prop_forest_avail +
+                        prop_veg_end +
+                        prop_veg_end:prop_veg_avail +
+                        I(log(ts_fires_end+1)) + I(log(ts_fires_end+1)):I(log(ts_fires_avail+1)) +
+                        I(log(((dist_road_end+1)/1000))) +
+                        I(log((dist_lf_other_end+1)/1000)) + 
+                        I(log((dist_otherdisturbance_end+1)/1000)) +
+                        I(log((dist_quartz_end+1)/1000)) + I(log((dist_placer_end+1)/1000)) +
+                        
+                        (1|id) +
+                        (0 + prop_forest_end|id) +
+                        (0 + prop_veg_end|id) +
+                        (0 + (I(log(ts_fires_end+1)))|id) +
+                        (0 + I(log((dist_road_end+1)/1000))|id) + 
+                        (0 + I(log((dist_lf_other_end+1)/1000))|id) +
+                        (0 + I(log((dist_quartz_end+1)/1000))|id) +
+                        (0 + I(log((dist_placer_end+1)/1000))|id) +
+                        (0 + I(log((dist_otherdisturbance_end+1)/1000))|id) + 
+                        
+                        (1|year),
+                      family = binomial(), data = dat.issa.10[,`:=`(year = as.factor(year),
+                                                                 id = as.factor(id))],
+                      map= list(theta = factor(c(NA,1:9))),
+                      start = list(theta =c(log(1000), seq(0,0, length.out = 9))),
+                      verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+)
+
+
+
 
 summary(m.closedisturbance)
 # save model output
@@ -541,6 +577,51 @@ ggplot(data = indivs[(term %like% 'dist')], aes(x =term, y = estimate)) + #This 
 
 
 ##VARIANCE ISSUE HAS BEEN FIXED BY MODELLING NEAR-BY DISTURBANCES ONLY
+
+
+
+#RSF results
+summary(m.rsf.mines)
+# save model output
+saveRDS(m.rsf.mines, "m.rsf.mines_lf20poly20.RDS")
+
+
+m.rsf.mines.indiv <- coef(m.rsf.mines)$cond$id %>% rownames_to_column("id") %>%
+  pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
+  mutate(method = "ME")
+indivs <- setDT(m.rsf.mines.indiv)[term!='(Intercept)']
+pop <- setDT(tidy(m.rsf.mines, effects = 'fixed'))
+
+
+require(ggplot2)
+ggplot(data = pop[term %like% 'dist'], aes(x =term, y = estimate)) +
+  geom_point()+
+  geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+ggplot(data = pop[!(term %like% 'dist')], aes(x =term, y = estimate)) +
+  geom_point()+
+  geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+
+ggplot(data = indivs[(term %like% 'dist')], aes(x =term, y = estimate)) + #This one
+  geom_boxplot()+
+  geom_jitter() +
+  #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+
+ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
+  geom_boxplot()+
+  geom_jitter() +
+  #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+
+
+
+
 
 
 ---------------------------------------------
