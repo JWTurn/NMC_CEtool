@@ -474,8 +474,7 @@ m.closedisturbance <- glmmTMB(case_ ~ -1 +
                                 I(log(((dist_road_end+1)/1000))) + #I(log((dist_road_end_adj/1000)+1)):I(log((dist_road_avail/1000)+1)) +
                                 I(log((dist_lf_other_end+1)/1000)) +# I(log((dist_lf_other_end_adj/1000)+1)):I(log((dist_lf_other_avail/1000)+1)) +
                                 #I(log((dist_anthro_end_adj/1000)+1)) + I(log((dist_anthro_end_adj/1000)+1)):I(log((dist_anthro_avail/1000)+1)) +
-                                #I(log((dist_mining_end+1)/1000)) +# I(log((dist_mining_end_adj/1000)+1)):I(log((dist_mining_avail/1000)+1)) +
-                                I(log((dist_quartz_end+1)/1000)) + I(log((dist_placer_end+1)/1000)) +
+                                I(log((dist_mining_end+1)/1000)) +# I(log((dist_mining_end_adj/1000)+1)):I(log((dist_mining_avail/1000)+1)) +
                                 I(log((dist_otherdisturbance_end+1)/1000)) + #I(log((dist_otherdisturbance_end_adj/1000)+1)):I(log((dist_otherdisturbance_avail/1000)+1)) +
                                 
                                 (1|indiv_step_id) +
@@ -495,17 +494,15 @@ m.closedisturbance <- glmmTMB(case_ ~ -1 +
                                 (0 + I(log((dist_road_end+1)/1000))|id) + 
                                 (0 + I(log((dist_lf_other_end+1)/1000))|id) +
                                 #(0 + I(log((dist_anthro_end_adj/1000)+1))|id) + 
-                                #(0 + I(log((dist_mining_end+1)/1000))|id) + 
-                                (0 + I(log((dist_placer_end+1)/1000))|id) +
-                                (0 + I(log((dist_quartz_end+1)/1000))|id) +
+                                (0 + I(log((dist_mining_end+1)/1000))|id) + 
                                 (0 + I(log((dist_otherdisturbance_end+1)/1000))|id) + 
                                 
                                 (1|year),
                               family = poisson(), data = dat.issa.10[,`:=`(year = as.factor(year), 
                                                                            indiv_step_id = as.factor(indiv_step_id),
                                                                            id = as.factor(id))],
-                              map= list(theta = factor(c(NA,1:11))),
-                              start = list(theta =c(log(1000), seq(0,0, length.out = 11))), 
+                              map= list(theta = factor(c(NA,1:9))),
+                              start = list(theta =c(log(1000), seq(0,0, length.out = 9))), 
                               verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
 
@@ -622,12 +619,10 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 
 
 
-
-
 ---------------------------------------------
 
 
-#Testing correlations between each unique distance-to variables
+#Testing correlations between each unique distance-to variables for multicollinearity
 cor(dat.issa.10$dist_paved_end, dat.issa.10$dist_unpaved_end, use = "complete.obs") #0.71
 cor(dat.issa.10$dist_paved_end, dat.issa.10$dist_lf_other_end, use = "complete.obs") #-0.005
 cor(dat.issa.10$dist_paved_end, dat.issa.10$dist_placer_end, use = "complete.obs") #-0.13
@@ -958,6 +953,7 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 
 ---------------------------------------------
 #Dropping distance to anthrodisturbance out of the random effects
+gc()
 m.fardisturbance <- glmmTMB(case_ ~ -1 +
                             I(log((sl_+1)/1000)) +
                             #I(cos(ta_)) +
@@ -1045,16 +1041,403 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
   geom_hline(aes(yintercept = 0), lty = 'dashed') +
   coord_flip()  
   
-  
-  
-  
-  
-  
-  
-  
+#worked and looks good
     
 ---------------------------------------------
+#Now run seasonal datasets through the two models that have worked so far, then attempting to tease apart the mines (quartz and placer)
+ 
+# Separate seasons into diff datasets
+dat.issa.10$monthday <- format(as.Date(dat.issa.10$t1_, format="%Y/%m/%d"),"%m/%d") #Create new column that isolates the month and day out of t1_
+dat.issa.10$monthday #Confirming that the new column was created correctly
+names(dat.issa.10) #Confirming that the new column exists
 
+dat.issa.10[monthday >= '11/01' | monthday <= '04/15', season:="winter"] #Create new season column, with Nov to mid-April being called Winter
+dat.issa.10.winter <- dat.issa.10[dat.issa.10$season == 'winter',] #Assign to new winter dataframe
+
+
+dat.issa.10[monthday >= '07/01' & monthday <= '09/30', season:="summer"] #Create summer season from July through September
+dat.issa.10.summer <- dat.issa.10[dat.issa.10$season == 'summer',] #Assign to new summer dataframe
+
+
+dat.issa.10.winter <- tibble::repair_names(dat.issa.10.winter) #Rename duplicate columns in order to run filter functions
+dat.issa.10.summer <- tibble::repair_names(dat.issa.10.summer)
+
+
+#Starting off with Winter and close to disturbance
+closedisturbwinter <- filter(dat.issa.10.winter, dat.issa.10.winter$dist_anthrodisturbance_start <= 20000)
+setDT(closedisturbwinter)
+
+gc()
+winter.m.closedisturbance <- glmmTMB(case_ ~ -1 +
+                                I(log((sl_+1)/1000)) +
+                                #I(cos(ta_)) +
+                                I(log((sl_+1)/1000)):I(cos(ta_)) +
+                                #scale(for.age_start):I(log(sl_+1)) + 
+                                #  prop_forest_start:I(log(sl_+1)) +
+                                # prop_veg_start:I(log(sl_+1)) + 
+                                # scale(for.age_end) + scale(for.age_end):scale(for.age_avail) +
+                                prop_forest_end + prop_forest_end:prop_forest_avail +
+                                prop_veg_end + prop_veg_end:prop_veg_avail +
+                                I(log(ts_fires_end+1)) + I(log(ts_fires_end+1)):I(log(ts_fires_avail+1)) +
+                                # I(log(ts_harv_end+1)) + I(log(ts_harv_end+1)):I(log(ts_harv_avail+1)) +
+                                # I(log((dist_paved_end_adj/1000)+1)) + I(log((dist_paved_end_adj/1000)+1)):I(log((dist_paved_avail/1000)+1)) +
+                                #  I(log((dist_unpaved_end_adj/1000)+1)) + I(log((dist_unpaved_end_adj/1000)+1)):I(log((dist_unpaved_avail/1000)+1)) +
+                                I(log(((dist_road_end+1)/1000))) + #I(log((dist_road_end_adj/1000)+1)):I(log((dist_road_avail/1000)+1)) +
+                                I(log((dist_lf_other_end+1)/1000)) +# I(log((dist_lf_other_end_adj/1000)+1)):I(log((dist_lf_other_avail/1000)+1)) +
+                                #I(log((dist_anthro_end_adj/1000)+1)) + I(log((dist_anthro_end_adj/1000)+1)):I(log((dist_anthro_avail/1000)+1)) +
+                                I(log((dist_mining_end+1)/1000)) +# I(log((dist_mining_end_adj/1000)+1)):I(log((dist_mining_avail/1000)+1)) +
+                                I(log((dist_otherdisturbance_end+1)/1000)) + #I(log((dist_otherdisturbance_end_adj/1000)+1)):I(log((dist_otherdisturbance_avail/1000)+1)) +
+                                
+                                (1|indiv_step_id) +
+                                (0 + I(log((sl_ +1)/1000))|id) +
+                                #(0 + I(cos(ta_))|id) +
+                                (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                                #(0 + scale(for.age_start):I(log(sl_+1))|id) + 
+                                #  (0 + prop_forest_start:I(log(sl_+1))|id) +
+                                # (0 + prop_veg_start:I(log(sl_+1))|id) + 
+                                # (0 + scale(for.age_end)|id) + 
+                                (0 + prop_forest_end|id) +
+                                (0 + prop_veg_end|id) +
+                                (0 + (I(log(ts_fires_end+1)))|id) +
+                                # (0 + (I(log(ts_harv_end+1)))|id) + 
+                                # (0 + I(log((dist_paved_end_adj/1000)+1))|id) + 
+                                # (0 + I(log((dist_unpaved_end_adj/1000)+1))|id) + 
+                                (0 + I(log((dist_road_end+1)/1000))|id) + 
+                                (0 + I(log((dist_lf_other_end+1)/1000))|id) +
+                                #(0 + I(log((dist_anthro_end_adj/1000)+1))|id) + 
+                                (0 + I(log((dist_mining_end+1)/1000))|id) + 
+                                (0 + I(log((dist_otherdisturbance_end+1)/1000))|id) + 
+                                
+                                (1|year),
+                              family = poisson(), data = closedisturbwinter[,`:=`(year = as.factor(year), 
+                                                                           indiv_step_id = as.factor(indiv_step_id),
+                                                                           id = as.factor(id))],
+                              map= list(theta = factor(c(NA,1:10))),
+                              start = list(theta =c(log(1000), seq(0,0, length.out = 10))), 
+                              verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+)
+
+
+summary(winter.m.closedisturbance)
+# save model output
+saveRDS(winter.m.closedisturbance, "winter.m.closedisturbance.mod_lf20poly20.RDS")
+
+winter.m.closedisturbance.indiv <- coef(winter.m.closedisturbance)$cond$id %>% rownames_to_column("id") %>%
+  pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
+  mutate(method = "ME")
+indivs <- setDT(winter.m.closedisturbance.indiv)[term!='(Intercept)']
+pop <- setDT(tidy(winter.m.closedisturbance, effects = 'fixed'))
+
+
+require(ggplot2)
+ggplot(data = pop[term %like% 'dist'], aes(x =term, y = estimate)) +
+  geom_point()+
+  geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+ggplot(data = pop[!(term %like% 'dist')], aes(x =term, y = estimate)) +
+  geom_point()+
+  geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+
+ggplot(data = indivs[(term %like% 'dist')], aes(x =term, y = estimate)) + #This one
+  geom_boxplot()+
+  geom_jitter() +
+  #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+
+ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
+  geom_boxplot()+
+  geom_jitter() +
+  #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip()  
+
+#Looks great, moving on to dropping dist_anthro from winterdataset
+
+gc()
+winter.m.fardisturbance <- glmmTMB(case_ ~ -1 +
+                              I(log((sl_+1)/1000)) +
+                              #I(cos(ta_)) +
+                              I(log((sl_+1)/1000)):I(cos(ta_)) +
+                              #scale(for.age_start):I(log(sl_+1)) + 
+                              # prop_forest_start:I(log(sl_+1)) +
+                              #prop_veg_start:I(log(sl_+1)) + 
+                              # scale(for.age_end) + scale(for.age_end):scale(for.age_avail) +
+                              prop_forest_end + prop_forest_end:prop_forest_avail +
+                              prop_veg_end + prop_veg_end:prop_veg_avail +
+                              I(log(ts_fires_end+1)) + I(log(ts_fires_end+1)):I(log(ts_fires_avail+1)) +
+                              # I(log(ts_harv_end+1)) + I(log(ts_harv_end+1)):I(log(ts_harv_avail+1)) +
+                              # I(log((dist_paved_end_adj/1000)+1)) + I(log((dist_paved_end_adj/1000)+1)):I(log((dist_paved_avail/1000)+1)) +
+                              #  I(log((dist_unpaved_end_adj/1000)+1)) + I(log((dist_unpaved_end_adj/1000)+1)):I(log((dist_unpaved_avail/1000)+1)) +
+                              # I(log(((dist_road_end_adj+1)/1000))) + #I(log((dist_road_end_adj/1000)+1)):I(log((dist_road_avail/1000)+1)) +
+                              # I(log((dist_lf_other_end_adj+1)/1000)) + I(log((dist_lf_other_end_adj/1000)+1)):I(log((dist_lf_other_avail/1000)+1)) +
+                              #I(log((dist_anthro_end_adj/1000)+1)) + I(log((dist_anthro_end_adj/1000)+1)):I(log((dist_anthro_avail/1000)+1)) +
+                              # I(log((dist_mining_end_adj+1)/1000)) +# I(log((dist_mining_end_adj/1000)+1)):I(log((dist_mining_avail/1000)+1)) +
+                              I(log((dist_anthrodisturbance_end_adj+1)/1000)) + #I(log((dist_anthrodisturbance_end_adj+1)/1000)):I(log(((dist_anthrodisturbance_avail+1)/1000))) +
+                              
+                              (1|indiv_step_id) +
+                              (0 + I(log((sl_ +1)/1000))|id) +
+                              #(0 + I(cos(ta_))|id) +
+                              (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                              #(0 + scale(for.age_start):I(log(sl_+1))|id) + 
+                              #  (0 + prop_forest_start:I(log(sl_+1))|id) +
+                              # (0 + prop_veg_start:I(log(sl_+1))|id) + 
+                              # (0 + scale(for.age_end)|id) + 
+                              (0 + prop_forest_end|id) +
+                              (0 + prop_veg_end|id) +
+                              (0 + (I(log(ts_fires_end+1)))|id) +
+                              #(0 + (I(log(ts_harv_end+1)))|id) + 
+                              #(0 + I(log((dist_paved_end_adj/1000)+1))|id) + 
+                              # (0 + I(log((dist_unpaved_end_adj/1000)+1))|id) + 
+                              # (0 + I(log((dist_road_end_adj+1)/1000))|id) + 
+                              # (0 + I(log((dist_lf_other_end_adj+1)/1000))|id) +
+                              #(0 + I(log((dist_anthro_end_adj/1000)+1))|id) + 
+                              # (0 + I(log((dist_mining_end_adj+1)/1000))|id) + 
+                              ##(0 + I(log((dist_anthrodisturbance_end_adj+1)/1000))|id) + 
+                              
+                              (1|year),
+                            family = poisson(), data = dat.issa.10.winter[,`:=`(year = as.factor(year), 
+                                                                         indiv_step_id = as.factor(indiv_step_id),
+                                                                         id = as.factor(id))],
+                            map= list(theta = factor(c(NA,1:6))),
+                            start = list(theta =c(log(1000), seq(0,0, length.out = 6))), 
+                            verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+)
+
+
+  
+summary(m.fardisturbance)
+# save model output
+saveRDS(m.fardisturbance, "winter.m.fardisturbance.mod_lf20poly20.RDS")
+
+winter.m.fardisturbance.indiv <- coef(m.fardisturbance)$cond$id %>% rownames_to_column("id") %>%
+  pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
+  mutate(method = "ME")
+indivs <- setDT(winter.m.fardisturbance.indiv)[term!='(Intercept)']
+pop <- setDT(tidy(m.fardisturbance, effects = 'fixed'))
+
+
+require(ggplot2)
+ggplot(data = pop[term %like% 'dist'], aes(x =term, y = estimate)) +
+  geom_point()+
+  geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+ggplot(data = pop[!(term %like% 'dist')], aes(x =term, y = estimate)) +
+  geom_point()+
+  geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+
+ggplot(data = indivs[(term %like% 'dist')], aes(x =term, y = estimate)) + #This one
+  geom_boxplot()+
+  geom_jitter() +
+  #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+
+ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
+  geom_boxplot()+
+  geom_jitter() +
+  #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip()  
+  
+# Looks good as well. Moving on to the summer dataset
+
+
+#Starting with the close to disturbance model
+closedisturbsummer <- filter(dat.issa.10.summer, dat.issa.10.summer$dist_anthrodisturbance_start <= 20000)
+setDT(closedisturbsummer)
+
+gc()
+summer.m.closedisturbance <- glmmTMB(case_ ~ -1 +
+                                       I(log((sl_+1)/1000)) +
+                                       #I(cos(ta_)) +
+                                       I(log((sl_+1)/1000)):I(cos(ta_)) +
+                                       #scale(for.age_start):I(log(sl_+1)) + 
+                                       #  prop_forest_start:I(log(sl_+1)) +
+                                       # prop_veg_start:I(log(sl_+1)) + 
+                                       # scale(for.age_end) + scale(for.age_end):scale(for.age_avail) +
+                                       prop_forest_end + prop_forest_end:prop_forest_avail +
+                                       prop_veg_end + prop_veg_end:prop_veg_avail +
+                                       I(log(ts_fires_end+1)) + I(log(ts_fires_end+1)):I(log(ts_fires_avail+1)) +
+                                       # I(log(ts_harv_end+1)) + I(log(ts_harv_end+1)):I(log(ts_harv_avail+1)) +
+                                       # I(log((dist_paved_end_adj/1000)+1)) + I(log((dist_paved_end_adj/1000)+1)):I(log((dist_paved_avail/1000)+1)) +
+                                       #  I(log((dist_unpaved_end_adj/1000)+1)) + I(log((dist_unpaved_end_adj/1000)+1)):I(log((dist_unpaved_avail/1000)+1)) +
+                                       I(log(((dist_road_end+1)/1000))) + #I(log((dist_road_end_adj/1000)+1)):I(log((dist_road_avail/1000)+1)) +
+                                       I(log((dist_lf_other_end+1)/1000)) +# I(log((dist_lf_other_end_adj/1000)+1)):I(log((dist_lf_other_avail/1000)+1)) +
+                                       #I(log((dist_anthro_end_adj/1000)+1)) + I(log((dist_anthro_end_adj/1000)+1)):I(log((dist_anthro_avail/1000)+1)) +
+                                       I(log((dist_mining_end+1)/1000)) +# I(log((dist_mining_end_adj/1000)+1)):I(log((dist_mining_avail/1000)+1)) +
+                                       I(log((dist_otherdisturbance_end+1)/1000)) + #I(log((dist_otherdisturbance_end_adj/1000)+1)):I(log((dist_otherdisturbance_avail/1000)+1)) +
+                                       
+                                       (1|indiv_step_id) +
+                                       (0 + I(log((sl_ +1)/1000))|id) +
+                                       #(0 + I(cos(ta_))|id) +
+                                       (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                                       #(0 + scale(for.age_start):I(log(sl_+1))|id) + 
+                                       #  (0 + prop_forest_start:I(log(sl_+1))|id) +
+                                       # (0 + prop_veg_start:I(log(sl_+1))|id) + 
+                                       # (0 + scale(for.age_end)|id) + 
+                                       (0 + prop_forest_end|id) +
+                                       (0 + prop_veg_end|id) +
+                                       (0 + (I(log(ts_fires_end+1)))|id) +
+                                       # (0 + (I(log(ts_harv_end+1)))|id) + 
+                                       # (0 + I(log((dist_paved_end_adj/1000)+1))|id) + 
+                                       # (0 + I(log((dist_unpaved_end_adj/1000)+1))|id) + 
+                                       (0 + I(log((dist_road_end+1)/1000))|id) + 
+                                       (0 + I(log((dist_lf_other_end+1)/1000))|id) +
+                                       #(0 + I(log((dist_anthro_end_adj/1000)+1))|id) + 
+                                       (0 + I(log((dist_mining_end+1)/1000))|id) + 
+                                       (0 + I(log((dist_otherdisturbance_end+1)/1000))|id) + 
+                                       
+                                       (1|year),
+                                     family = poisson(), data = closedisturbsummer[,`:=`(year = as.factor(year), 
+                                                                                         indiv_step_id = as.factor(indiv_step_id),
+                                                                                         id = as.factor(id))],
+                                     map= list(theta = factor(c(NA,1:10))),
+                                     start = list(theta =c(log(1000), seq(0,0, length.out = 10))), 
+                                     verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+)
+
+
+summary(summer.m.closedisturbance)
+# save model output
+saveRDS(summer.m.closedisturbance, "summer.m.closedisturbance.mod_lf20poly20.RDS")
+
+summer.m.closedisturbance.indiv <- coef(summer.m.closedisturbance)$cond$id %>% rownames_to_column("id") %>%
+  pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
+  mutate(method = "ME")
+indivs <- setDT(summer.m.closedisturbance.indiv)[term!='(Intercept)']
+pop <- setDT(tidy(summer.m.closedisturbance, effects = 'fixed'))
+
+
+require(ggplot2)
+ggplot(data = pop[term %like% 'dist'], aes(x =term, y = estimate)) +
+  geom_point()+
+  geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+ggplot(data = pop[!(term %like% 'dist')], aes(x =term, y = estimate)) +
+  geom_point()+
+  geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+
+ggplot(data = indivs[(term %like% 'dist')], aes(x =term, y = estimate)) + #This one
+  geom_boxplot()+
+  geom_jitter() +
+  #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+
+ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
+  geom_boxplot()+
+  geom_jitter() +
+  #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip()  
+
+#Looks great, moving on to dropping dist_anthro from summer dataset
+
+gc()
+summer.m.fardisturbance <- glmmTMB(case_ ~ -1 +
+                                     I(log((sl_+1)/1000)) +
+                                     #I(cos(ta_)) +
+                                     I(log((sl_+1)/1000)):I(cos(ta_)) +
+                                     #scale(for.age_start):I(log(sl_+1)) + 
+                                     # prop_forest_start:I(log(sl_+1)) +
+                                     #prop_veg_start:I(log(sl_+1)) + 
+                                     # scale(for.age_end) + scale(for.age_end):scale(for.age_avail) +
+                                     prop_forest_end + prop_forest_end:prop_forest_avail +
+                                     prop_veg_end + prop_veg_end:prop_veg_avail +
+                                     I(log(ts_fires_end+1)) + I(log(ts_fires_end+1)):I(log(ts_fires_avail+1)) +
+                                     # I(log(ts_harv_end+1)) + I(log(ts_harv_end+1)):I(log(ts_harv_avail+1)) +
+                                     # I(log((dist_paved_end_adj/1000)+1)) + I(log((dist_paved_end_adj/1000)+1)):I(log((dist_paved_avail/1000)+1)) +
+                                     #  I(log((dist_unpaved_end_adj/1000)+1)) + I(log((dist_unpaved_end_adj/1000)+1)):I(log((dist_unpaved_avail/1000)+1)) +
+                                     # I(log(((dist_road_end_adj+1)/1000))) + #I(log((dist_road_end_adj/1000)+1)):I(log((dist_road_avail/1000)+1)) +
+                                     # I(log((dist_lf_other_end_adj+1)/1000)) + I(log((dist_lf_other_end_adj/1000)+1)):I(log((dist_lf_other_avail/1000)+1)) +
+                                     #I(log((dist_anthro_end_adj/1000)+1)) + I(log((dist_anthro_end_adj/1000)+1)):I(log((dist_anthro_avail/1000)+1)) +
+                                     # I(log((dist_mining_end_adj+1)/1000)) +# I(log((dist_mining_end_adj/1000)+1)):I(log((dist_mining_avail/1000)+1)) +
+                                     I(log((dist_anthrodisturbance_end_adj+1)/1000)) + #I(log((dist_anthrodisturbance_end_adj+1)/1000)):I(log(((dist_anthrodisturbance_avail+1)/1000))) +
+                                     
+                                     (1|indiv_step_id) +
+                                     (0 + I(log((sl_ +1)/1000))|id) +
+                                     #(0 + I(cos(ta_))|id) +
+                                     (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                                     #(0 + scale(for.age_start):I(log(sl_+1))|id) + 
+                                     #  (0 + prop_forest_start:I(log(sl_+1))|id) +
+                                     # (0 + prop_veg_start:I(log(sl_+1))|id) + 
+                                     # (0 + scale(for.age_end)|id) + 
+                                     (0 + prop_forest_end|id) +
+                                     (0 + prop_veg_end|id) +
+                                     (0 + (I(log(ts_fires_end+1)))|id) +
+                                     #(0 + (I(log(ts_harv_end+1)))|id) + 
+                                     #(0 + I(log((dist_paved_end_adj/1000)+1))|id) + 
+                                     # (0 + I(log((dist_unpaved_end_adj/1000)+1))|id) + 
+                                     # (0 + I(log((dist_road_end_adj+1)/1000))|id) + 
+                                     # (0 + I(log((dist_lf_other_end_adj+1)/1000))|id) +
+                                     #(0 + I(log((dist_anthro_end_adj/1000)+1))|id) + 
+                                     # (0 + I(log((dist_mining_end_adj+1)/1000))|id) + 
+                                     ##(0 + I(log((dist_anthrodisturbance_end_adj+1)/1000))|id) + 
+                                     
+                                     (1|year),
+                                   family = poisson(), data = dat.issa.10.summer[,`:=`(year = as.factor(year), 
+                                                                                       indiv_step_id = as.factor(indiv_step_id),
+                                                                                       id = as.factor(id))],
+                                   map= list(theta = factor(c(NA,1:6))),
+                                   start = list(theta =c(log(1000), seq(0,0, length.out = 6))), 
+                                   verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+)
+
+summary(summer.m.fardisturbance)
+# save model output
+saveRDS(summer.m.fardisturbance, "summer.m.fardisturbance.mod_lf20poly20.RDS")
+
+summer.m.fardisturbance.indiv <- coef(summer.m.fardisturbance)$cond$id %>% rownames_to_column("id") %>%
+  pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
+  mutate(method = "ME")
+indivs <- setDT(summer.m.fardisturbance.indiv)[term!='(Intercept)']
+pop <- setDT(tidy(summer.m.fardisturbance, effects = 'fixed'))
+
+
+require(ggplot2)
+ggplot(data = pop[term %like% 'dist'], aes(x =term, y = estimate)) +
+  geom_point()+
+  geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+ggplot(data = pop[!(term %like% 'dist')], aes(x =term, y = estimate)) +
+  geom_point()+
+  geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+
+ggplot(data = indivs[(term %like% 'dist')], aes(x =term, y = estimate)) + #This one
+  geom_boxplot()+
+  geom_jitter() +
+  #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+
+ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
+  geom_boxplot()+
+  geom_jitter() +
+  #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip()   
+  
+  
+#Model looks good. Now to go back and try and parse apart mines into placer and quartz, then re-reun each of the four models  
+  
+  
+  
+  
+  
+---------------------------------------------
 # full iSSA ----
 gc()
 m.full <- glmmTMB(case_ ~ -1 +
