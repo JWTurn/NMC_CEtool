@@ -1085,7 +1085,8 @@ winter.m.closedisturbance <- glmmTMB(case_ ~ -1 +
                                 I(log(((dist_road_end+1)/1000))) + #I(log((dist_road_end_adj/1000)+1)):I(log((dist_road_avail/1000)+1)) +
                                 I(log((dist_lf_other_end+1)/1000)) +# I(log((dist_lf_other_end_adj/1000)+1)):I(log((dist_lf_other_avail/1000)+1)) +
                                 #I(log((dist_anthro_end_adj/1000)+1)) + I(log((dist_anthro_end_adj/1000)+1)):I(log((dist_anthro_avail/1000)+1)) +
-                                I(log((dist_mining_end+1)/1000)) +# I(log((dist_mining_end_adj/1000)+1)):I(log((dist_mining_avail/1000)+1)) +
+                                I(log((dist_placer_end+1)/1000)) + I(log((dist_quartz_end+1)/1000)) +
+                                #I(log((dist_mining_end+1)/1000)) +# I(log((dist_mining_end_adj/1000)+1)):I(log((dist_mining_avail/1000)+1)) +
                                 I(log((dist_otherdisturbance_end+1)/1000)) + #I(log((dist_otherdisturbance_end_adj/1000)+1)):I(log((dist_otherdisturbance_avail/1000)+1)) +
                                 
                                 (1|indiv_step_id) +
@@ -1105,15 +1106,17 @@ winter.m.closedisturbance <- glmmTMB(case_ ~ -1 +
                                 (0 + I(log((dist_road_end+1)/1000))|id) + 
                                 (0 + I(log((dist_lf_other_end+1)/1000))|id) +
                                 #(0 + I(log((dist_anthro_end_adj/1000)+1))|id) + 
-                                (0 + I(log((dist_mining_end+1)/1000))|id) + 
+                                (0 + I(log((dist_placer_end+1)/1000))|id) +
+                                (0 + I(log((dist_quartz_end+1)/1000))|id) +
+                                #(0 + I(log((dist_mining_end+1)/1000))|id) + 
                                 (0 + I(log((dist_otherdisturbance_end+1)/1000))|id) + 
                                 
                                 (1|year),
                               family = poisson(), data = closedisturbwinter[,`:=`(year = as.factor(year), 
                                                                            indiv_step_id = as.factor(indiv_step_id),
                                                                            id = as.factor(id))],
-                              map= list(theta = factor(c(NA,1:10))),
-                              start = list(theta =c(log(1000), seq(0,0, length.out = 10))), 
+                              map= list(theta = factor(c(NA,1:11))),
+                              start = list(theta =c(log(1000), seq(0,0, length.out = 11))), 
                               verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
 
@@ -1121,6 +1124,7 @@ winter.m.closedisturbance <- glmmTMB(case_ ~ -1 +
 summary(winter.m.closedisturbance)
 # save model output
 saveRDS(winter.m.closedisturbance, "winter.m.closedisturbance.mod_lf20poly20.RDS")
+saveRDS(winter.m.closedisturbance, "winter.m.closedisturbanceplacerquartz.mod_lf20poly20.RDS")
 
 winter.m.closedisturbance.indiv <- coef(winter.m.closedisturbance)$cond$id %>% rownames_to_column("id") %>%
   pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
@@ -1155,10 +1159,10 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
   geom_hline(aes(yintercept = 0), lty = 'dashed') +
   coord_flip()  
 
-#Looks great, moving on to dropping dist_anthro from winterdataset
+#Looks great, moving on to dropping dist_anthro from winterdataset - model worked with placer and quartz
 
 gc()
-winter.m.fardisturbance <- glmmTMB(case_ ~ -1 +
+winter.m.fardisturbancepq <- glmmTMB(case_ ~ -1 +
                               I(log((sl_+1)/1000)) +
                               #I(cos(ta_)) +
                               I(log((sl_+1)/1000)):I(cos(ta_)) +
@@ -1175,6 +1179,7 @@ winter.m.fardisturbance <- glmmTMB(case_ ~ -1 +
                               # I(log(((dist_road_end_adj+1)/1000))) + #I(log((dist_road_end_adj/1000)+1)):I(log((dist_road_avail/1000)+1)) +
                               # I(log((dist_lf_other_end_adj+1)/1000)) + I(log((dist_lf_other_end_adj/1000)+1)):I(log((dist_lf_other_avail/1000)+1)) +
                               #I(log((dist_anthro_end_adj/1000)+1)) + I(log((dist_anthro_end_adj/1000)+1)):I(log((dist_anthro_avail/1000)+1)) +
+                              I(log((dist_placer_end+1)/1000)) + I(log((dist_quartz_end+1)/1000)) +
                               # I(log((dist_mining_end_adj+1)/1000)) +# I(log((dist_mining_end_adj/1000)+1)):I(log((dist_mining_avail/1000)+1)) +
                               I(log((dist_anthrodisturbance_end_adj+1)/1000)) + #I(log((dist_anthrodisturbance_end_adj+1)/1000)):I(log(((dist_anthrodisturbance_avail+1)/1000))) +
                               
@@ -1196,14 +1201,16 @@ winter.m.fardisturbance <- glmmTMB(case_ ~ -1 +
                               # (0 + I(log((dist_lf_other_end_adj+1)/1000))|id) +
                               #(0 + I(log((dist_anthro_end_adj/1000)+1))|id) + 
                               # (0 + I(log((dist_mining_end_adj+1)/1000))|id) + 
+                              (0 + I(log((dist_placer_end+1)/1000))|id) +
+                              (0 + I(log((dist_quartz_end+1)/1000))|id) +
                               ##(0 + I(log((dist_anthrodisturbance_end_adj+1)/1000))|id) + 
                               
                               (1|year),
                             family = poisson(), data = dat.issa.10.winter[,`:=`(year = as.factor(year), 
                                                                          indiv_step_id = as.factor(indiv_step_id),
                                                                          id = as.factor(id))],
-                            map= list(theta = factor(c(NA,1:6))),
-                            start = list(theta =c(log(1000), seq(0,0, length.out = 6))), 
+                            map= list(theta = factor(c(NA,1:8))),
+                            start = list(theta =c(log(1000), seq(0,0, length.out = 8))), 
                             verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
 
@@ -1213,11 +1220,14 @@ summary(m.fardisturbance)
 # save model output
 saveRDS(m.fardisturbance, "winter.m.fardisturbance.mod_lf20poly20.RDS")
 
-winter.m.fardisturbance.indiv <- coef(m.fardisturbance)$cond$id %>% rownames_to_column("id") %>%
+summary(winter.m.fardisturbancepq)
+saveRDS(winter.m.fardisturbancepq, "winter.m.fardisturbancepq.mod_lf20poly20.RDS")
+
+winter.m.fardisturbance.indiv <- coef(winter.m.fardisturbancepq)$cond$id %>% rownames_to_column("id") %>%
   pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
   mutate(method = "ME")
 indivs <- setDT(winter.m.fardisturbance.indiv)[term!='(Intercept)']
-pop <- setDT(tidy(m.fardisturbance, effects = 'fixed'))
+pop <- setDT(tidy(winter.m.fardisturbancepq, effects = 'fixed'))
 
 
 require(ggplot2)
@@ -1246,7 +1256,7 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
   geom_hline(aes(yintercept = 0), lty = 'dashed') +
   coord_flip()  
   
-# Looks good as well. Moving on to the summer dataset
+# Looks good as well. Moving on to the summer dataset - model ran with placer and quartz
 
 
 #Starting with the close to disturbance model
@@ -1254,7 +1264,7 @@ closedisturbsummer <- filter(dat.issa.10.summer, dat.issa.10.summer$dist_anthrod
 setDT(closedisturbsummer)
 
 gc()
-summer.m.closedisturbance <- glmmTMB(case_ ~ -1 +
+summer.m.closedisturbancepq <- glmmTMB(case_ ~ -1 +
                                        I(log((sl_+1)/1000)) +
                                        #I(cos(ta_)) +
                                        I(log((sl_+1)/1000)):I(cos(ta_)) +
@@ -1271,7 +1281,8 @@ summer.m.closedisturbance <- glmmTMB(case_ ~ -1 +
                                        I(log(((dist_road_end+1)/1000))) + #I(log((dist_road_end_adj/1000)+1)):I(log((dist_road_avail/1000)+1)) +
                                        I(log((dist_lf_other_end+1)/1000)) +# I(log((dist_lf_other_end_adj/1000)+1)):I(log((dist_lf_other_avail/1000)+1)) +
                                        #I(log((dist_anthro_end_adj/1000)+1)) + I(log((dist_anthro_end_adj/1000)+1)):I(log((dist_anthro_avail/1000)+1)) +
-                                       I(log((dist_mining_end+1)/1000)) +# I(log((dist_mining_end_adj/1000)+1)):I(log((dist_mining_avail/1000)+1)) +
+                                       I(log((dist_placer_end+1)/1000)) + I(log((dist_quartz_end+1)/1000)) +
+                                       #I(log((dist_mining_end+1)/1000)) +# I(log((dist_mining_end_adj/1000)+1)):I(log((dist_mining_avail/1000)+1)) +
                                        I(log((dist_otherdisturbance_end+1)/1000)) + #I(log((dist_otherdisturbance_end_adj/1000)+1)):I(log((dist_otherdisturbance_avail/1000)+1)) +
                                        
                                        (1|indiv_step_id) +
@@ -1291,15 +1302,17 @@ summer.m.closedisturbance <- glmmTMB(case_ ~ -1 +
                                        (0 + I(log((dist_road_end+1)/1000))|id) + 
                                        (0 + I(log((dist_lf_other_end+1)/1000))|id) +
                                        #(0 + I(log((dist_anthro_end_adj/1000)+1))|id) + 
-                                       (0 + I(log((dist_mining_end+1)/1000))|id) + 
+                                       (0 + I(log((dist_placer_end+1)/1000))|id) +
+                                       (0 + I(log((dist_quartz_end+1)/1000))|id) +
+                                       #(0 + I(log((dist_mining_end+1)/1000))|id) + 
                                        (0 + I(log((dist_otherdisturbance_end+1)/1000))|id) + 
                                        
                                        (1|year),
                                      family = poisson(), data = closedisturbsummer[,`:=`(year = as.factor(year), 
                                                                                          indiv_step_id = as.factor(indiv_step_id),
                                                                                          id = as.factor(id))],
-                                     map= list(theta = factor(c(NA,1:10))),
-                                     start = list(theta =c(log(1000), seq(0,0, length.out = 10))), 
+                                     map= list(theta = factor(c(NA,1:11))),
+                                     start = list(theta =c(log(1000), seq(0,0, length.out = 11))), 
                                      verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
 
@@ -1308,11 +1321,15 @@ summary(summer.m.closedisturbance)
 # save model output
 saveRDS(summer.m.closedisturbance, "summer.m.closedisturbance.mod_lf20poly20.RDS")
 
-summer.m.closedisturbance.indiv <- coef(summer.m.closedisturbance)$cond$id %>% rownames_to_column("id") %>%
+summary(summer.m.closedisturbancepq)
+# save model output
+saveRDS(summer.m.closedisturbancepq, "summer.m.closedisturbancepq.mod_lf20poly20.RDS")
+
+summer.m.closedisturbance.indiv <- coef(summer.m.closedisturbancepq)$cond$id %>% rownames_to_column("id") %>%
   pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
   mutate(method = "ME")
 indivs <- setDT(summer.m.closedisturbance.indiv)[term!='(Intercept)']
-pop <- setDT(tidy(summer.m.closedisturbance, effects = 'fixed'))
+pop <- setDT(tidy(summer.m.closedisturbancepq, effects = 'fixed'))
 
 
 require(ggplot2)
@@ -1341,10 +1358,10 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
   geom_hline(aes(yintercept = 0), lty = 'dashed') +
   coord_flip()  
 
-#Looks great, moving on to dropping dist_anthro from summer dataset
+#Looks great, moving on to dropping dist_anthro from summer dataset - model ran with placer and quartz
 
 gc()
-summer.m.fardisturbance <- glmmTMB(case_ ~ -1 +
+summer.m.fardisturbancepq <- glmmTMB(case_ ~ -1 +
                                      I(log((sl_+1)/1000)) +
                                      #I(cos(ta_)) +
                                      I(log((sl_+1)/1000)):I(cos(ta_)) +
@@ -1361,6 +1378,7 @@ summer.m.fardisturbance <- glmmTMB(case_ ~ -1 +
                                      # I(log(((dist_road_end_adj+1)/1000))) + #I(log((dist_road_end_adj/1000)+1)):I(log((dist_road_avail/1000)+1)) +
                                      # I(log((dist_lf_other_end_adj+1)/1000)) + I(log((dist_lf_other_end_adj/1000)+1)):I(log((dist_lf_other_avail/1000)+1)) +
                                      #I(log((dist_anthro_end_adj/1000)+1)) + I(log((dist_anthro_end_adj/1000)+1)):I(log((dist_anthro_avail/1000)+1)) +
+                                     I(log((dist_placer_end+1)/1000)) + I(log((dist_quartz_end+1)/1000)) +
                                      # I(log((dist_mining_end_adj+1)/1000)) +# I(log((dist_mining_end_adj/1000)+1)):I(log((dist_mining_avail/1000)+1)) +
                                      I(log((dist_anthrodisturbance_end_adj+1)/1000)) + #I(log((dist_anthrodisturbance_end_adj+1)/1000)):I(log(((dist_anthrodisturbance_avail+1)/1000))) +
                                      
@@ -1381,6 +1399,8 @@ summer.m.fardisturbance <- glmmTMB(case_ ~ -1 +
                                      # (0 + I(log((dist_road_end_adj+1)/1000))|id) + 
                                      # (0 + I(log((dist_lf_other_end_adj+1)/1000))|id) +
                                      #(0 + I(log((dist_anthro_end_adj/1000)+1))|id) + 
+                                     (0 + I(log((dist_placer_end+1)/1000))|id) +
+                                     (0 + I(log((dist_quartz_end+1)/1000))|id) +
                                      # (0 + I(log((dist_mining_end_adj+1)/1000))|id) + 
                                      ##(0 + I(log((dist_anthrodisturbance_end_adj+1)/1000))|id) + 
                                      
@@ -1388,8 +1408,8 @@ summer.m.fardisturbance <- glmmTMB(case_ ~ -1 +
                                    family = poisson(), data = dat.issa.10.summer[,`:=`(year = as.factor(year), 
                                                                                        indiv_step_id = as.factor(indiv_step_id),
                                                                                        id = as.factor(id))],
-                                   map= list(theta = factor(c(NA,1:6))),
-                                   start = list(theta =c(log(1000), seq(0,0, length.out = 6))), 
+                                   map= list(theta = factor(c(NA,1:8))),
+                                   start = list(theta =c(log(1000), seq(0,0, length.out = 8))), 
                                    verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
 
@@ -1397,11 +1417,16 @@ summary(summer.m.fardisturbance)
 # save model output
 saveRDS(summer.m.fardisturbance, "summer.m.fardisturbance.mod_lf20poly20.RDS")
 
-summer.m.fardisturbance.indiv <- coef(summer.m.fardisturbance)$cond$id %>% rownames_to_column("id") %>%
+summary(summer.m.fardisturbancepq)
+# save model output
+saveRDS(summer.m.fardisturbancepq, "summer.m.fardisturbancepq.mod_lf20poly20.RDS")
+
+
+summer.m.fardisturbance.indiv <- coef(summer.m.fardisturbancepq)$cond$id %>% rownames_to_column("id") %>%
   pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
   mutate(method = "ME")
 indivs <- setDT(summer.m.fardisturbance.indiv)[term!='(Intercept)']
-pop <- setDT(tidy(summer.m.fardisturbance, effects = 'fixed'))
+pop <- setDT(tidy(summer.m.fardisturbancepq, effects = 'fixed'))
 
 
 require(ggplot2)
@@ -1433,10 +1458,7 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
   
 #Model looks good. Now to go back and try and parse apart mines into placer and quartz, then re-reun each of the four models  
   
-  
-  
-  
-  
+
 ---------------------------------------------
 # full iSSA ----
 gc()
