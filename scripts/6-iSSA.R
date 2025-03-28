@@ -196,7 +196,7 @@ m.full.winter <- glmmTMB(case_ ~ -1 +
                     # scale(for.age_end) + scale(for.age_end):scale(for.age_avail) + #fine scale functional response - forest age available
                     prop_forest_end + prop_forest_end:prop_forest_avail +
                     prop_veg_end + prop_veg_end:prop_veg_avail + #this is modelling the selection
-                    I(log(ts_fires_end+1)) + I(log(ts_fires_end+1)):I(log(ts_fires_avail+1)) + #ts is time since fires, ds is dintance to
+                    I(log(ts_fires_end+1)) + I(log(ts_fires_end+1)):I(log(ts_fires_avail+1)) + #ts is time since fires, ds is distance to
                     # I(log(ts_harv_end+1)) + I(log(ts_harv_end+1)):I(log(ts_harv_avail+1)) +
                     # I(log((dist_paved_end_adj/1000)+1)) + I(log((dist_paved_end_adj/1000)+1)):I(log((dist_paved_avail/1000)+1)) +
                     #  I(log((dist_unpaved_end_adj/1000)+1)) + I(log((dist_unpaved_end_adj/1000)+1)):I(log((dist_unpaved_avail/1000)+1)) +
@@ -320,7 +320,7 @@ m.full.summer <- glmmTMB(case_ ~ -1 +
                          start = list(theta =c(log(1000), seq(0,0, length.out = 10))), #set variance high for clusters
                          verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
-## 
+ 
 
 summary(m.full.summer)
 # save model output
@@ -617,12 +617,12 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
   coord_flip() 
 
 
-
+#No need to contonue with this RSF, waiting on Tal for more info
 
 ---------------------------------------------
 
 
-#Testing correlations between each unique distance-to variables for multicollinearity
+#Testing correlations between each unique distance-to variables for collinearity
 cor(dat.issa.10$dist_paved_end, dat.issa.10$dist_unpaved_end, use = "complete.obs") #0.71
 cor(dat.issa.10$dist_paved_end, dat.issa.10$dist_lf_other_end, use = "complete.obs") #-0.005
 cor(dat.issa.10$dist_paved_end, dat.issa.10$dist_placer_end, use = "complete.obs") #-0.13
@@ -675,12 +675,7 @@ names(dat.issa.10) #Confirming that the new column exists
 
 dat.issa.10 <- tibble::repair_names(dat.issa.10)  #Fix duplicated columns
 
-dat.issa.10_filtered <- dat.issa.10 %>% #Filtering dataset
-  group_by(id) %>%
-  filter(n_distinct(month) >= 9) %>%
-  ungroup()
-
-setDT(dat.issa.10_filtered)#Set dataset as a data table
+dat.issa.10_filtered <- dat.issa.10[, .SD[n_distinct(month) >= 9], by = id] #To create filtered dataset of indivs with >9 months of data
 
 length(unique(dat.issa.10_filtered$id)) #371 individuals in the filtered dataset
 length(unique(dat.issa.10$id)) #466 individuals in the OG dataset
@@ -784,12 +779,8 @@ dat.issa.10.winter$month #Confirming that the new column was created correctly
 names(dat.issa.10.winter) #Confirming that the new column exists
 dat.issa.10.winter <- tibble::repair_names(dat.issa.10.winter)  #Fix duplicated columns
 
-dat.issa.10.winter_filtered <- dat.issa.10.winter %>% #Filtering dataset
-  group_by(id) %>%
-  filter(n_distinct(month) >= 4) %>%
-  ungroup()
+dat.issa.10.winter_filtered <- dat.issa.10.winter[, .SD[n_distinct(month) >= 4], by = id]
 
-setDT(dat.issa.10.winter_filtered)#Set dataset as a data table
 
 #Summer
 dat.issa.10.summer$month <- format(as.Date(dat.issa.10.summer$t1_, format="%Y/%m/%d"),"%m") #Create new column that isolates the month
@@ -797,12 +788,7 @@ dat.issa.10.summer$month #Confirming that the new column was created correctly
 names(dat.issa.10.summer) #Confirming that the new column exists
 dat.issa.10.summer <- tibble::repair_names(dat.issa.10.summer)  #Fix duplicated columns
 
-dat.issa.10.summer_filtered <- dat.issa.10.summer %>% #Filtering dataset
-  group_by(id) %>%
-  filter(n_distinct(month) >= 2) %>%
-  ungroup()
-
-setDT(dat.issa.10.summer_filtered)#Set dataset as a data table
+dat.issa.10.summer_filtered <- dat.issa.10.summer[, .SD[n_distinct(month) >= 2], by = id]
 
 
 m.winter.filt <- glmmTMB(case_ ~ -1 +
@@ -1044,7 +1030,8 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 #worked and looks good
     
 ---------------------------------------------
-#Now run seasonal datasets through the two models that have worked so far, then attempting to tease apart the mines (quartz and placer)
+  
+###Now run seasonal datasets through the two models that have worked so far, then attempting to tease apart the mines (quartz and placer)
  
 # Separate seasons into diff datasets
 dat.issa.10$monthday <- format(as.Date(dat.issa.10$t1_, format="%Y/%m/%d"),"%m/%d") #Create new column that isolates the month and day out of t1_
@@ -1064,8 +1051,7 @@ dat.issa.10.summer <- tibble::repair_names(dat.issa.10.summer)
 
 
 #Starting off with Winter and close to disturbance
-closedisturbwinter <- filter(dat.issa.10.winter, dat.issa.10.winter$dist_anthrodisturbance_start <= 20000)
-setDT(closedisturbwinter)
+closedisturbwinter <- dat.issa.10.winter[dist_anthrodisturbance_start <= 20000]
 
 gc()
 winter.m.closedisturbance <- glmmTMB(case_ ~ -1 +
@@ -1181,7 +1167,7 @@ winter.m.fardisturbancepq <- glmmTMB(case_ ~ -1 +
                               #I(log((dist_anthro_end_adj/1000)+1)) + I(log((dist_anthro_end_adj/1000)+1)):I(log((dist_anthro_avail/1000)+1)) +
                               I(log((dist_placer_end+1)/1000)) + I(log((dist_quartz_end+1)/1000)) +
                               # I(log((dist_mining_end_adj+1)/1000)) +# I(log((dist_mining_end_adj/1000)+1)):I(log((dist_mining_avail/1000)+1)) +
-                              I(log((dist_anthrodisturbance_end_adj+1)/1000)) + #I(log((dist_anthrodisturbance_end_adj+1)/1000)):I(log(((dist_anthrodisturbance_avail+1)/1000))) +
+                              I(log((dist_otherdisturbance_end_adj+1)/1000)) + #I(log((dist_anthrodisturbance_end_adj+1)/1000)):I(log(((dist_anthrodisturbance_avail+1)/1000))) +
                               
                               (1|indiv_step_id) +
                               (0 + I(log((sl_ +1)/1000))|id) +
@@ -1255,13 +1241,12 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
   #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
   geom_hline(aes(yintercept = 0), lty = 'dashed') +
   coord_flip()  
-  
+
+
 # Looks good as well. Moving on to the summer dataset - model ran with placer and quartz
 
-
 #Starting with the close to disturbance model
-closedisturbsummer <- filter(dat.issa.10.summer, dat.issa.10.summer$dist_anthrodisturbance_start <= 20000)
-setDT(closedisturbsummer)
+closedisturbsummer <- dat.issa.10.summer[dist_anthrodisturbance_start <= 20000]
 
 gc()
 summer.m.closedisturbancepq <- glmmTMB(case_ ~ -1 +
@@ -1380,7 +1365,7 @@ summer.m.fardisturbancepq <- glmmTMB(case_ ~ -1 +
                                      #I(log((dist_anthro_end_adj/1000)+1)) + I(log((dist_anthro_end_adj/1000)+1)):I(log((dist_anthro_avail/1000)+1)) +
                                      I(log((dist_placer_end+1)/1000)) + I(log((dist_quartz_end+1)/1000)) +
                                      # I(log((dist_mining_end_adj+1)/1000)) +# I(log((dist_mining_end_adj/1000)+1)):I(log((dist_mining_avail/1000)+1)) +
-                                     I(log((dist_anthrodisturbance_end_adj+1)/1000)) + #I(log((dist_anthrodisturbance_end_adj+1)/1000)):I(log(((dist_anthrodisturbance_avail+1)/1000))) +
+                                     I(log((dist_otherdisturbance_end_adj+1)/1000)) + #I(log((dist_anthrodisturbance_end_adj+1)/1000)):I(log(((dist_anthrodisturbance_avail+1)/1000))) +
                                      
                                      (1|indiv_step_id) +
                                      (0 + I(log((sl_ +1)/1000))|id) +
@@ -1457,7 +1442,153 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
   
   
 #Model looks good. Now to go back and try and parse apart mines into placer and quartz, then re-reun each of the four models  
+
+---------------------------------------------
+
+#Running models with lf and polys separate by season for the far model (where the RE is dropped)
   
+  #Start with winter
+
+setDT(dat.issa.10.winter) #Ensure the data is in data.table format
+  
+dat.issa.10.winter[, dist_polydisturbance_end := pmin(dist_anthro_end, dist_harv_end, dist_placer_end, dist_quartz_end, na.rm = T)]  
+names(dat.issa.10.winter) #create new polydisturbance variable as minimum vector value of each of above
+
+gc()
+winter.m.fardisturbancepolylf <- glmmTMB(case_ ~ -1 +
+                                       I(log((sl_+1)/1000)) +
+                                       #I(cos(ta_)) +
+                                       I(log((sl_+1)/1000)):I(cos(ta_)) +
+                                       #scale(for.age_start):I(log(sl_+1)) + 
+                                       # prop_forest_start:I(log(sl_+1)) +
+                                       #prop_veg_start:I(log(sl_+1)) + 
+                                       # scale(for.age_end) + scale(for.age_end):scale(for.age_avail) +
+                                       prop_forest_end + prop_forest_end:prop_forest_avail +
+                                       prop_veg_end + prop_veg_end:prop_veg_avail +
+                                       I(log(ts_fires_end+1)) + I(log(ts_fires_end+1)):I(log(ts_fires_avail+1)) +
+                                       # I(log(ts_harv_end+1)) + I(log(ts_harv_end+1)):I(log(ts_harv_avail+1)) +
+                                       # I(log((dist_paved_end_adj/1000)+1)) + I(log((dist_paved_end_adj/1000)+1)):I(log((dist_paved_avail/1000)+1)) +
+                                       # I(log((dist_unpaved_end_adj/1000)+1)) + I(log((dist_unpaved_end_adj/1000)+1)):I(log((dist_unpaved_avail/1000)+1)) +
+                                       # I(log(((dist_road_end_adj+1)/1000))) + #I(log((dist_road_end_adj/1000)+1)):I(log((dist_road_avail/1000)+1)) +
+                                       # I(log((dist_lf_other_end_adj+1)/1000)) + I(log((dist_lf_other_end_adj/1000)+1)):I(log((dist_lf_other_avail/1000)+1)) +
+                                       #I(log((dist_anthro_end_adj/1000)+1)) + I(log((dist_anthro_end_adj/1000)+1)):I(log((dist_anthro_avail/1000)+1)) +
+                                       #I(log((dist_placer_end+1)/1000)) + I(log((dist_quartz_end+1)/1000)) +
+                                       # I(log((dist_mining_end_adj+1)/1000)) +# I(log((dist_mining_end_adj/1000)+1)):I(log((dist_mining_avail/1000)+1)) +
+                                       #I(log((dist_otherdisturbance_end_adj+1)/1000)) + #I(log((dist_anthrodisturbance_end_adj+1)/1000)):I(log(((dist_anthrodisturbance_avail+1)/1000))) +
+                                        I(log((dist_polydisturbance_end+1)/1000)) +
+                                        I(log((dist_lf_end+1)/1000)) +
+                                         
+                                       (1|indiv_step_id) +
+                                       (0 + I(log((sl_ +1)/1000))|id) +
+                                       #(0 + I(cos(ta_))|id) +
+                                       (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                                       #(0 + scale(for.age_start):I(log(sl_+1))|id) + 
+                                       #  (0 + prop_forest_start:I(log(sl_+1))|id) +
+                                       # (0 + prop_veg_start:I(log(sl_+1))|id) + 
+                                       # (0 + scale(for.age_end)|id) + 
+                                       (0 + prop_forest_end|id) +
+                                       (0 + prop_veg_end|id) +
+                                       (0 + (I(log(ts_fires_end+1)))|id) +
+                                       #(0 + (I(log(ts_harv_end+1)))|id) + 
+                                       #(0 + I(log((dist_paved_end_adj/1000)+1))|id) + 
+                                       # (0 + I(log((dist_unpaved_end_adj/1000)+1))|id) + 
+                                       # (0 + I(log((dist_road_end_adj+1)/1000))|id) + 
+                                       # (0 + I(log((dist_lf_other_end_adj+1)/1000))|id) +
+                                       #(0 + I(log((dist_anthro_end_adj/1000)+1))|id) + 
+                                       # (0 + I(log((dist_mining_end_adj+1)/1000))|id) + 
+                                       #(0 + I(log((dist_placer_end+1)/1000))|id) +
+                                       #(0 + I(log((dist_quartz_end+1)/1000))|id) +
+                                       (0 + I(log((dist_polydisturbance_end+1)/1000))|id) +
+                                       (0 + I(log((dist_lf_end+1)/1000))|id) +
+                                       ##(0 + I(log((dist_anthrodisturbance_end_adj+1)/1000))|id) + 
+                                       
+                                       (1|year),
+                                     family = poisson(), data = dat.issa.10.winter[,`:=`(year = as.factor(year), 
+                                                                                         indiv_step_id = as.factor(indiv_step_id),
+                                                                                         id = as.factor(id))],
+                                     map= list(theta = factor(c(NA,1:8))),
+                                     start = list(theta =c(log(1000), seq(0,0, length.out = 8))), 
+                                     verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+)
+
+
+
+summary(m.fardisturbance)
+# save model output
+saveRDS(m.fardisturbance, "winter.m.fardisturbance.mod_lf20poly20.RDS")
+
+summary(winter.m.fardisturbancepq)
+saveRDS(winter.m.fardisturbancepq, "winter.m.fardisturbancepq.mod_lf20poly20.RDS")
+
+winter.m.fardisturbance.indiv <- coef(winter.m.fardisturbancepq)$cond$id %>% rownames_to_column("id") %>%
+  pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
+  mutate(method = "ME")
+indivs <- setDT(winter.m.fardisturbance.indiv)[term!='(Intercept)']
+pop <- setDT(tidy(winter.m.fardisturbancepq, effects = 'fixed'))
+
+
+require(ggplot2)
+ggplot(data = pop[term %like% 'dist'], aes(x =term, y = estimate)) +
+  geom_point()+
+  geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+ggplot(data = pop[!(term %like% 'dist')], aes(x =term, y = estimate)) +
+  geom_point()+
+  geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+
+ggplot(data = indivs[(term %like% 'dist')], aes(x =term, y = estimate)) + #This one
+  geom_boxplot()+
+  geom_jitter() +
+  #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+
+ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
+  geom_boxplot()+
+  geom_jitter() +
+  #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip()    
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
 
 ---------------------------------------------
 # full iSSA ----
