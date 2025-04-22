@@ -16,6 +16,7 @@ derived <- file.path('data', 'derived')
 dat <- targets::tar_read(stepID)
 
 
+
 ### explore ----
 dat[case_==TRUE,.(quantile(sl_)), by = .(prov)]
 
@@ -76,17 +77,23 @@ dat.issa <- dat[,.(id, area, prov, x1_, y1_, x2_, y2_, sl_, ta_, burst_, t1_, t2
                    dist_anthro_start, dist_anthro_end, dist_mining_start, dist_mining_end,
                    dist_placer_start, dist_placer_end, dist_quartz_start, dist_quartz_end,
                    dist_harv_start, dist_harv_end, 
+                   dist_polydisturbance_end = pmin(dist_anthro_end, dist_harv_end, 
+                                                   dist_placer_end, dist_quartz_end, na.rm = T),
                    dist_otherdisturbance_start = pmin(dist_paved_start, dist_unpaved_start, dist_lf_other_start, dist_anthro_start,
-                                                       dist_harv_start, na.rm = T), 
+                                                       dist_harv_start, na.rm = T),
                    dist_otherdisturbance_end = pmin(dist_paved_end, dist_unpaved_end, dist_lf_other_end, dist_anthro_end,
-                                                     dist_harv_end, na.rm = T), 
+                                                     dist_harv_end, na.rm = T),
                    dist_anthrodisturbance_start = pmin(dist_paved_start, dist_unpaved_start, dist_lf_other_start, dist_anthro_start,
-                                                     dist_harv_start, dist_placer_start, dist_quartz_start, na.rm = T), 
+                                                     dist_harv_start, dist_placer_start, dist_quartz_start, na.rm = T),
                    dist_anthrodisturbance_end = pmin(dist_paved_end, dist_unpaved_end, dist_lf_other_end, dist_anthro_end,
-                                                     dist_harv_end, dist_placer_end, dist_quartz_end, na.rm = T), 
-                   #prop_disturbance_start, prop_disturbance_end,
+                                                     dist_harv_end, dist_placer_end, dist_quartz_end, na.rm = T),
+                   # prop_disturbance_start, prop_disturbance_end,
                    for.age_start, for.age_end,
                    ts_harv_start, ts_harv_end, ts_fires_start, ts_fires_end)]
+#saveRDS(dat, file.path(derived, 'dat_iSSA.RDS'))
+
+dat.T <- dat.issa[,.(obsT = (max(t2_, na.rm = T) - min(t1_, na.rm = T))), by =.(prov, id)]
+dat.T[,(mean(obsT))/86400, by =.(prov)]
 
 sumdat <- dat.issa[,.(prov, year, prop_veg_start, prop_veg_end,
             for.age_start, for.age_end, prop_forest_start, prop_forest_end,
@@ -94,7 +101,7 @@ sumdat <- dat.issa[,.(prov, year, prop_veg_start, prop_veg_end,
             dist_road_end, dist_lf_other_start, dist_lf_other_end, dist_lf_end,
             dist_anthro_start, dist_anthro_end, dist_mining_start, dist_mining_end,
             dist_placer_start, dist_placer_end, dist_quartz_start, dist_quartz_end,
-            dist_harv_start, dist_harv_end,
+            dist_harv_start, dist_harv_end, dist_polydisturbance_end,
             dist_otherdisturbance_start, dist_otherdisturbance_end,
             dist_anthrodisturbance_start, dist_anthrodisturbance_end,
             #prop_disturbance_start, prop_disturbance_end,
@@ -178,8 +185,8 @@ m.full <- glmmTMB(case_ ~ -1 +
                    # prop_veg_start:I(log(sl_+1)) + 
                   # scale(for.age_end) + scale(for.age_end):scale(for.age_avail) +
                    prop_forest_end + prop_forest_end:prop_forest_avail +
-                    prop_veg_end + prop_veg_end:prop_veg_avail +
-                   I(log(ts_fires_end+1)) + I(log(ts_fires_end+1)):I(log(ts_fires_avail+1)) +
+                   # prop_veg_end + prop_veg_end:prop_veg_avail +
+                   I(log(ts_fires_end+1)) +# I(log(ts_fires_end+1)):I(log(ts_fires_avail+1)) +
                   # I(log(ts_harv_end+1)) + I(log(ts_harv_end+1)):I(log(ts_harv_avail+1)) +
                    # I(log((dist_paved_end_adj/1000)+1)) + I(log((dist_paved_end_adj/1000)+1)):I(log((dist_paved_avail/1000)+1)) +
                    #  I(log((dist_unpaved_end_adj/1000)+1)) + I(log((dist_unpaved_end_adj/1000)+1)):I(log((dist_unpaved_avail/1000)+1)) +
@@ -198,7 +205,7 @@ m.full <- glmmTMB(case_ ~ -1 +
                    # (0 + prop_veg_start:I(log(sl_+1))|id) + 
                   # (0 + scale(for.age_end)|id) + 
                     (0 + prop_forest_end|id) +
-                   (0 + prop_veg_end|id) +
+                  # (0 + prop_veg_end|id) +
                    (0 + (I(log(ts_fires_end+1)))|id) +
                   # (0 + (I(log(ts_harv_end+1)))|id) + 
                    # (0 + I(log((dist_paved_end_adj/1000)+1))|id) + 
@@ -213,12 +220,110 @@ m.full <- glmmTMB(case_ ~ -1 +
                  family = poisson(), data = dat.issa.10[,`:=`(year = as.factor(year), 
                                                            indiv_step_id = as.factor(indiv_step_id),
                                                            id = as.factor(id))],
-                 map= list(theta = factor(c(NA,1:10))),
-                 start = list(theta =c(log(1000), seq(0,0, length.out = 10))), 
+                 map= list(theta = factor(c(NA,1:8))),
+                 start = list(theta =c(log(1000), seq(0,0, length.out = 8))), 
                  verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
 ## 
 
+m.closedisturbance <- glmmTMB(case_ ~ -1 +
+                    I(log((sl_+1)/1000)) +
+                    #I(cos(ta_)) +
+                    I(log((sl_+1)/1000)):I(cos(ta_)) +
+                    #scale(for.age_start):I(log(sl_+1)) + 
+                    #  prop_forest_start:I(log(sl_+1)) +
+                    # prop_veg_start:I(log(sl_+1)) + 
+                    # scale(for.age_end) + scale(for.age_end):scale(for.age_avail) +
+                    prop_forest_end + prop_forest_end:prop_forest_avail +
+                     prop_veg_end + prop_veg_end:prop_veg_avail +
+                    I(log(ts_fires_end+1)) + I(log(ts_fires_end+1)):I(log(ts_fires_avail+1)) +
+                    # I(log(ts_harv_end+1)) + I(log(ts_harv_end+1)):I(log(ts_harv_avail+1)) +
+                    # I(log((dist_paved_end_adj/1000)+1)) + I(log((dist_paved_end_adj/1000)+1)):I(log((dist_paved_avail/1000)+1)) +
+                    #  I(log((dist_unpaved_end_adj/1000)+1)) + I(log((dist_unpaved_end_adj/1000)+1)):I(log((dist_unpaved_avail/1000)+1)) +
+                    I(log(((dist_road_end+1)/1000))) + #I(log((dist_road_end_adj/1000)+1)):I(log((dist_road_avail/1000)+1)) +
+                    I(log((dist_lf_other_end+1)/1000)) +# I(log((dist_lf_other_end_adj/1000)+1)):I(log((dist_lf_other_avail/1000)+1)) +
+                    #I(log((dist_anthro_end_adj/1000)+1)) + I(log((dist_anthro_end_adj/1000)+1)):I(log((dist_anthro_avail/1000)+1)) +
+                    I(log((dist_mining_end+1)/1000)) +# I(log((dist_mining_end_adj/1000)+1)):I(log((dist_mining_avail/1000)+1)) +
+                    I(log((dist_otherdisturbance_end+1)/1000)) + #I(log((dist_otherdisturbance_end_adj/1000)+1)):I(log((dist_otherdisturbance_avail/1000)+1)) +
+                    
+                    (1|indiv_step_id) +
+                    (0 + I(log((sl_ +1)/1000))|id) +
+                    #(0 + I(cos(ta_))|id) +
+                    (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                    #(0 + scale(for.age_start):I(log(sl_+1))|id) + 
+                    #  (0 + prop_forest_start:I(log(sl_+1))|id) +
+                    # (0 + prop_veg_start:I(log(sl_+1))|id) + 
+                    # (0 + scale(for.age_end)|id) + 
+                    (0 + prop_forest_end|id) +
+                     (0 + prop_veg_end|id) +
+                    (0 + (I(log(ts_fires_end+1)))|id) +
+                    # (0 + (I(log(ts_harv_end+1)))|id) + 
+                    # (0 + I(log((dist_paved_end_adj/1000)+1))|id) + 
+                    # (0 + I(log((dist_unpaved_end_adj/1000)+1))|id) + 
+                    (0 + I(log((dist_road_end+1)/1000))|id) + 
+                    (0 + I(log((dist_lf_other_end+1)/1000))|id) +
+                    #(0 + I(log((dist_anthro_end_adj/1000)+1))|id) + 
+                    (0 + I(log((dist_mining_end+1)/1000))|id) + 
+                    (0 + I(log((dist_otherdisturbance_end+1)/1000))|id) + 
+                    
+                    (1|year),
+                  family = poisson(), data = dat.issa.10[,`:=`(year = as.factor(year), 
+                                                               indiv_step_id = as.factor(indiv_step_id),
+                                                               id = as.factor(id))],
+                  map= list(theta = factor(c(NA,1:9))),
+                  start = list(theta =c(log(1000), seq(0,0, length.out = 9))), 
+                  verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+)
+
+
+m.large <- glmmTMB(case_ ~ -1 +
+                    I(log((sl_+1)/1000)) +
+                    #I(cos(ta_)) +
+                    I(log((sl_+1)/1000)):I(cos(ta_)) +
+                    #scale(for.age_start):I(log(sl_+1)) + 
+                    # prop_forest_start:I(log(sl_+1)) +
+                     #prop_veg_start:I(log(sl_+1)) + 
+                    # scale(for.age_end) + scale(for.age_end):scale(for.age_avail) +
+                    prop_forest_end + prop_forest_end:prop_forest_avail +
+                     prop_veg_end + prop_veg_end:prop_veg_avail +
+                    I(log(ts_fires_end+1)) + I(log(ts_fires_end+1)):I(log(ts_fires_avail+1)) +
+                    # I(log(ts_harv_end+1)) + I(log(ts_harv_end+1)):I(log(ts_harv_avail+1)) +
+                    # I(log((dist_paved_end_adj/1000)+1)) + I(log((dist_paved_end_adj/1000)+1)):I(log((dist_paved_avail/1000)+1)) +
+                    #  I(log((dist_unpaved_end_adj/1000)+1)) + I(log((dist_unpaved_end_adj/1000)+1)):I(log((dist_unpaved_avail/1000)+1)) +
+                    # I(log(((dist_road_end_adj+1)/1000))) + #I(log((dist_road_end_adj/1000)+1)):I(log((dist_road_avail/1000)+1)) +
+                    # I(log((dist_lf_other_end_adj+1)/1000)) + I(log((dist_lf_other_end_adj/1000)+1)):I(log((dist_lf_other_avail/1000)+1)) +
+                    #I(log((dist_anthro_end_adj/1000)+1)) + I(log((dist_anthro_end_adj/1000)+1)):I(log((dist_anthro_avail/1000)+1)) +
+                    # I(log((dist_mining_end_adj+1)/1000)) +# I(log((dist_mining_end_adj/1000)+1)):I(log((dist_mining_avail/1000)+1)) +
+                    I(log((dist_anthrodisturbance_end_adj+1)/1000)) + #I(log((dist_anthrodisturbance_end_adj+1)/1000)):I(log(((dist_anthrodisturbance_avail+1)/1000))) +
+                    
+                    (1|indiv_step_id) +
+                    (0 + I(log((sl_ +1)/1000))|id) +
+                    #(0 + I(cos(ta_))|id) +
+                    (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                    #(0 + scale(for.age_start):I(log(sl_+1))|id) + 
+                    #  (0 + prop_forest_start:I(log(sl_+1))|id) +
+                    # (0 + prop_veg_start:I(log(sl_+1))|id) + 
+                    # (0 + scale(for.age_end)|id) + 
+                    (0 + prop_forest_end|id) +
+                     (0 + prop_veg_end|id) +
+                    (0 + (I(log(ts_fires_end+1)))|id) +
+                    # (0 + (I(log(ts_harv_end+1)))|id) + 
+                    # (0 + I(log((dist_paved_end_adj/1000)+1))|id) + 
+                    # (0 + I(log((dist_unpaved_end_adj/1000)+1))|id) + 
+                    # (0 + I(log((dist_road_end_adj+1)/1000))|id) + 
+                    # (0 + I(log((dist_lf_other_end_adj+1)/1000))|id) +
+                    #(0 + I(log((dist_anthro_end_adj/1000)+1))|id) + 
+                    # (0 + I(log((dist_mining_end_adj+1)/1000))|id) + 
+                    (0 + I(log((dist_anthrodisturbance_end_adj+1)/1000))|id) + 
+                    
+                    (1|year),
+                  family = poisson(), data = dat.issa.10[,`:=`(year = as.factor(year), 
+                                                               indiv_step_id = as.factor(indiv_step_id),
+                                                               id = as.factor(id))],
+                  map= list(theta = factor(c(NA,1:6))),
+                  start = list(theta =c(log(1000), seq(0,0, length.out = 6))), 
+                  verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+)
 
 summary(m.full)
 # save model output
