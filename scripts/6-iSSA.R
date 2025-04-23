@@ -1513,18 +1513,15 @@ winter.m.fardisturbancepolylf <- glmmTMB(case_ ~ -1 +
 
 
 
-summary(m.fardisturbance)
+summary(winter.m.fardisturbancepolylf)
 # save model output
-saveRDS(m.fardisturbance, "winter.m.fardisturbance.mod_lf20poly20.RDS")
+saveRDS(winter.m.fardisturbancepolylf, "winter.m.fardisturbancepolylf.mod_lf20poly20.RDS")
 
-summary(winter.m.fardisturbancepq)
-saveRDS(winter.m.fardisturbancepq, "winter.m.fardisturbancepq.mod_lf20poly20.RDS")
-
-winter.m.fardisturbance.indiv <- coef(winter.m.fardisturbancepq)$cond$id %>% rownames_to_column("id") %>%
+winter.m.fardisturbancepolylf.indiv <- coef(winter.m.fardisturbancepolylf)$cond$id %>% rownames_to_column("id") %>%
   pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
   mutate(method = "ME")
-indivs <- setDT(winter.m.fardisturbance.indiv)[term!='(Intercept)']
-pop <- setDT(tidy(winter.m.fardisturbancepq, effects = 'fixed'))
+indivs <- setDT(winter.m.fardisturbancepolylf.indiv)[term!='(Intercept)']
+pop <- setDT(tidy(winter.m.fardisturbancepolylf, effects = 'fixed'))
 
 
 require(ggplot2)
@@ -1554,15 +1551,237 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
   coord_flip()    
   
 
+ggplot(data = indivs[(term %like% 'dist')], aes(x = term, y = estimate)) + 
+  ggdist::stat_halfeye(
+    adjust = .5, 
+    width = .6, 
+    .width = 0, 
+    justification = -.3, 
+    point_colour = NA) + 
+  geom_boxplot(
+    width = .25, 
+    outlier.shape = NA
+  ) +
+  geom_point(
+    size = 1.5,
+    alpha = .2,
+    position = position_jitter(
+      seed = 1, width = .1
+    )
+  ) + 
+  #coord_cartesian(xlim = c(1.2, 2.9), clip = "off") +
+  coord_flip() 
+
+ggplot(data = indivs[!(term %like% 'dist')], aes(x = term, y = estimate)) + 
+  ggdist::stat_halfeye(
+    adjust = .5, 
+    width = .6, 
+    .width = 0, 
+    justification = -.3, 
+    point_colour = NA) + 
+  geom_boxplot(
+    width = .25, 
+    outlier.shape = NA
+  ) +
+  geom_point(
+    size = 1.5,
+    alpha = .2,
+    position = position_jitter(
+      seed = 1, width = .1
+    )
+  ) + 
+  #coord_cartesian(xlim = c(1.2, 2.9), clip = "off") +
+  coord_flip() 
 
 
 
 
 
+#Moving on to the summer dataset
+
+setDT(dat.issa.10.summer) #Ensure the data is in data.table format
+
+dat.issa.10.summer[, dist_polydisturbance_end := pmin(dist_anthro_end, dist_harv_end, dist_placer_end, dist_quartz_end, na.rm = T)]  
+names(dat.issa.10.summer) #create new polydisturbance variable as minimum vector value of each of above
+
+gc()
+summer.m.fardisturbancepolylf <- glmmTMB(case_ ~ -1 +
+                                           I(log((sl_+1)/1000)) +
+                                           #I(cos(ta_)) +
+                                           I(log((sl_+1)/1000)):I(cos(ta_)) +
+                                           #scale(for.age_start):I(log(sl_+1)) + 
+                                           # prop_forest_start:I(log(sl_+1)) +
+                                           #prop_veg_start:I(log(sl_+1)) + 
+                                           # scale(for.age_end) + scale(for.age_end):scale(for.age_avail) +
+                                           prop_forest_end + prop_forest_end:prop_forest_avail +
+                                           prop_veg_end + prop_veg_end:prop_veg_avail +
+                                           I(log(ts_fires_end+1)) + I(log(ts_fires_end+1)):I(log(ts_fires_avail+1)) +
+                                           # I(log(ts_harv_end+1)) + I(log(ts_harv_end+1)):I(log(ts_harv_avail+1)) +
+                                           # I(log((dist_paved_end_adj/1000)+1)) + I(log((dist_paved_end_adj/1000)+1)):I(log((dist_paved_avail/1000)+1)) +
+                                           # I(log((dist_unpaved_end_adj/1000)+1)) + I(log((dist_unpaved_end_adj/1000)+1)):I(log((dist_unpaved_avail/1000)+1)) +
+                                           # I(log(((dist_road_end_adj+1)/1000))) + #I(log((dist_road_end_adj/1000)+1)):I(log((dist_road_avail/1000)+1)) +
+                                           # I(log((dist_lf_other_end_adj+1)/1000)) + I(log((dist_lf_other_end_adj/1000)+1)):I(log((dist_lf_other_avail/1000)+1)) +
+                                           #I(log((dist_anthro_end_adj/1000)+1)) + I(log((dist_anthro_end_adj/1000)+1)):I(log((dist_anthro_avail/1000)+1)) +
+                                           #I(log((dist_placer_end+1)/1000)) + I(log((dist_quartz_end+1)/1000)) +
+                                           # I(log((dist_mining_end_adj+1)/1000)) +# I(log((dist_mining_end_adj/1000)+1)):I(log((dist_mining_avail/1000)+1)) +
+                                           #I(log((dist_otherdisturbance_end_adj+1)/1000)) + #I(log((dist_anthrodisturbance_end_adj+1)/1000)):I(log(((dist_anthrodisturbance_avail+1)/1000))) +
+                                           I(log((dist_polydisturbance_end+1)/1000)) +
+                                           I(log((dist_lf_end+1)/1000)) +
+                                           
+                                           (1|indiv_step_id) +
+                                           (0 + I(log((sl_ +1)/1000))|id) +
+                                           #(0 + I(cos(ta_))|id) +
+                                           (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                                           #(0 + scale(for.age_start):I(log(sl_+1))|id) + 
+                                           #  (0 + prop_forest_start:I(log(sl_+1))|id) +
+                                           # (0 + prop_veg_start:I(log(sl_+1))|id) + 
+                                           # (0 + scale(for.age_end)|id) + 
+                                           (0 + prop_forest_end|id) +
+                                           (0 + prop_veg_end|id) +
+                                           (0 + (I(log(ts_fires_end+1)))|id) +
+                                           #(0 + (I(log(ts_harv_end+1)))|id) + 
+                                           #(0 + I(log((dist_paved_end_adj/1000)+1))|id) + 
+                                           # (0 + I(log((dist_unpaved_end_adj/1000)+1))|id) + 
+                                           # (0 + I(log((dist_road_end_adj+1)/1000))|id) + 
+                                           # (0 + I(log((dist_lf_other_end_adj+1)/1000))|id) +
+                                           #(0 + I(log((dist_anthro_end_adj/1000)+1))|id) + 
+                                           # (0 + I(log((dist_mining_end_adj+1)/1000))|id) + 
+                                           #(0 + I(log((dist_placer_end+1)/1000))|id) +
+                                           #(0 + I(log((dist_quartz_end+1)/1000))|id) +
+                                           (0 + I(log((dist_polydisturbance_end+1)/1000))|id) +
+                                           (0 + I(log((dist_lf_end+1)/1000))|id) +
+                                           ##(0 + I(log((dist_anthrodisturbance_end_adj+1)/1000))|id) + 
+                                           
+                                           (1|year),
+                                         family = poisson(), data = dat.issa.10.summer[,`:=`(year = as.factor(year), 
+                                                                                             indiv_step_id = as.factor(indiv_step_id),
+                                                                                             id = as.factor(id))],
+                                         map= list(theta = factor(c(NA,1:8))),
+                                         start = list(theta =c(log(1000), seq(0,0, length.out = 8))), 
+                                         verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+)
 
 
 
+summary(summer.m.fardisturbancepolylf)
+# save model output
+saveRDS(summer.m.fardisturbancepolylf, "summer.m.fardisturbancepolylf.mod_lf20poly20.RDS")
 
+summer.m.fardisturbancepolylf.indiv <- coef(summer.m.fardisturbancepolylf)$cond$id %>% rownames_to_column("id") %>%
+  pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
+  mutate(method = "ME")
+indivs <- setDT(summer.m.fardisturbancepolylf.indiv)[term!='(Intercept)']
+pop <- setDT(tidy(summer.m.fardisturbancepolylf, effects = 'fixed'))
+
+
+require(ggplot2)
+ggplot(data = pop[term %like% 'dist'], aes(x =term, y = estimate)) +
+  geom_point()+
+  geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+ggplot(data = pop[!(term %like% 'dist')], aes(x =term, y = estimate)) +
+  geom_point()+
+  geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+
+ggplot(data = indivs[(term %like% 'dist')], aes(x =term, y = estimate)) + #This one
+  geom_boxplot()+
+  geom_jitter() +
+  #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+
+ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
+  geom_boxplot()+
+  geom_jitter() +
+  #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip()    
+
+ggplot(data = indivs[(term %like% 'dist')], aes(x = term, y = estimate)) + 
+  ggdist::stat_halfeye(
+    adjust = .5, 
+    width = .6, 
+    .width = 0, 
+    justification = -.3, 
+    point_colour = NA) + 
+  geom_boxplot(
+    width = .25, 
+    outlier.shape = NA
+  ) +
+  geom_point(
+    size = 1.5,
+    alpha = .2,
+    position = position_jitter(
+      seed = 1, width = .1
+    )
+  ) + 
+  #coord_cartesian(xlim = c(1.2, 2.9), clip = "off") +
+  coord_flip() 
+
+ggplot(data = indivs[!(term %like% 'dist')], aes(x = term, y = estimate)) + 
+  ggdist::stat_halfeye(
+    adjust = .5, 
+    width = .6, 
+    .width = 0, 
+    justification = -.3, 
+    point_colour = NA) + 
+  geom_boxplot(
+    width = .25, 
+    outlier.shape = NA
+  ) +
+  geom_point(
+    size = 1.5,
+    alpha = .2,
+    position = position_jitter(
+      seed = 1, width = .1
+    )
+  ) + 
+  #coord_cartesian(xlim = c(1.2, 2.9), clip = "off") +
+  coord_flip() 
+
+
+
+#Looking solid. Now checking to see if the raw data of dist_polydisturb and dist_lf looks good
+setDT(dat.issa.10) #Ensure the data is in data.table format
+
+dat.issa.10[, dist_polydisturbance_end := pmin(dist_anthro_end, dist_harv_end, dist_placer_end, dist_quartz_end, na.rm = T)]  
+names(dat.issa.10) #create new polydisturbance variable as minimum vector value of each of above
+
+dat.issa.10[,dist_polydisturbance_avail:= mean(dist_polydisturbance_end, na.rm = T), by = indiv_step_id]
+
+new_dt <- dat.issa.10[, .(dist_polydisturbance_avail, dist_lf_avail)]
+
+data_long <- reshape2::melt(new_dt)
+setDT(data_long)
+
+mean(new_dt$dist_polydisturbance_avail)
+mean(new_dt$dist_lf_avail)
+
+require(ggplot2)
+require(ggdist)
+ggplot(data = data_long, aes(x = variable, y = value)) + 
+  ggdist::stat_halfeye(
+    adjust = .5, 
+    width = .6, 
+    .width = 0, 
+    justification = -.3, 
+    point_colour = NA) + 
+  geom_boxplot(
+    width = .25, 
+    outlier.shape = NA
+  ) +
+  geom_point(
+    size = 1.5,
+    alpha = .2,
+    position = position_jitter(
+      seed = 1, width = .1
+    )
+  ) + 
+  #coord_cartesian(xlim = c(1.2, 2.9), clip = "off") +
+  coord_flip() 
 
 
 
@@ -1575,15 +1794,22 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
   
   
   
+unique(dat.issa.10$prov)  
   
+filtered_dt <- dat.issa.10[prov == 'yt', ]  
   
+cor(filtered_dt$dist_placer_end, filtered_dt$dist_quartz_end, use = "complete.obs")  
+cor(dat.issa.10$dist_placer_end, dat.issa.10$dist_quartz_end, use = "complete.obs")   
+
   
-  
-  
-  
-  
-  
-  
+cor_df <- filtered_dt %>% select('dist_paved_end', 'dist_unpaved_end', 'dist_lf_other_end', 'dist_placer_end', 'dist_quartz_end', 'dist_harv_end', 'dist_anthro_end') #create new df with the variables I want
+library(corrplot)
+M = cor(cor_df, use = "complete.obs") #produce plot of correlations
+corrplot(M, method = 'number')
+
+cor_df2 <- dat.issa.10 %>% select('dist_road_end', 'dist_mining_end', 'dist_anthro_end', 'dist_lf_other_end')
+N = cor(cor_df2, use = "complete.obs") #produce plot of correlations
+corrplot(N, method = 'number')  
   
   
   
