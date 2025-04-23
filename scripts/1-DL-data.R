@@ -2,8 +2,18 @@
 # Julie Turner
 # Started: July 14 2023
 
+#Modified by Peter Baker April 23 2025
+.libPaths()
+
 # require(Require)
 # Require('reproducible')
+install.packages(move2)
+install.packages(sf)
+library(move2)
+library(data.table)
+library(sf)
+
+
 require('move2')
 require('data.table')
 require('sf')
@@ -16,7 +26,10 @@ derived <- file.path('data', 'derived')
 
 # YT DATA ----
 # This will have to be run once if first time using `move2`
-# movebank_store_credentials("myUserName", "myPassword")
+movebank_store_credentials("petebaker", "Marley12!1")
+
+keyring::key_list()
+movebank_download_study_info(i_have_download_access = TRUE)
 
 # study names to fill in loop
 # had to go through names on movebank and accept terms for each...
@@ -37,9 +50,9 @@ dsNames <-c('Aishihik Caribou', 'Clear Creek caribou',
 move <- list()
 for (ds in 1:length(dsNames)) {
   #hh = 1
-  move[[ds]]<-movebank_download_study(study =dsNames[[ds]])
+  move[[ds]]<-movebank_download_study(study =dsNames[[ds]], )
 }
-#saveRDS(move, file.path(raw, 'YTdata_DL.RDS'))
+saveRDS(move, file.path(raw, 'YTdata_DL.RDS'))
 move <- readRDS(file.path(raw, 'YTdata_DL.RDS'))
 
 move.meta <- list()
@@ -47,7 +60,7 @@ for (ds in 1:length(dsNames)) {
   #hh = 1
   move.meta[[ds]]<-movebank_download_deployment(study =dsNames[[ds]])
 }
-#saveRDS(move.meta, file.path(raw, 'YTmetadata_DL.RDS'))
+saveRDS(move.meta, file.path(raw, 'YTmetadata_DL.RDS'))
 move.meta <- readRDS(file.path(raw, 'YTmetadata_DL.RDS'))
 
 # pull just the data
@@ -105,7 +118,7 @@ yt.clean[,`:=`(deploy_start = min(datetime),
                deploy_end = max(datetime)), by = .(id)]
 
 # save 'clean' data 
-# saveRDS(move.clean, paste0(derived, 'data_all_yt.RDS'))
+saveRDS(move.clean, paste0(derived, 'data_all_yt.RDS'))
 
 # BC DATA ----
 bc <- fread(file.path(raw, 'BC_NMC_Telemetry.csv'))
@@ -124,6 +137,21 @@ bc.clean <- bc.trans[,.(prov = 'bc', area = population_unit, id=as.character(wlh
                         deployment_end_type = ifelse(isTRUE(mortality), dead, NA), 
                         deploy_start, deploy_end,
                         datetime = acquisition_date, longitude, latitude)]
+
+
+#Data from Mike Noonan
+bcmn <- fread(file.path(raw, 'nmc_combined_data_cleaned.csv'))
+
+bcmn.trans <- bcmn
+bcmn.trans[,`:=`(deploy_start = min(acquisition_date), 
+               deploy_end = max(acquisition_date)), by = .(wlh_id)]
+
+bcmn.clean <- bcmn.trans[,.(prov = 'bc', area = population_unit, id=as.character(wlh_id), 
+                        deployment_end_type = ifelse(isTRUE(mortality), dead, NA), 
+                        deploy_start, deploy_end,
+                        datetime = acquisition_date, longitude, latitude)]
+
+
 
 
 # COMBO DATA ----
