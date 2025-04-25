@@ -63,21 +63,21 @@ rtmsFuns <- c(paste0('make_landforest_prop(targetFile = targetFile, trast = rtm,
               paste('aggregate_landforest(targetFile = targetFile, trast = rtm', 
                     ', where2save = NULL)'))
 historicLandYears <- 2012:2013
+names(historicLandYears) <- historicLandYears
 
 st<- Sys.time()
 
 propLand <- Map(rtmname = names(rtms), rtm = rtms, rtmFun = rtmsFuns, 
                 function(rtm, rtmname, rtmFun) {
-                          
-                          Map(ii=historicLandYears, function(ii){
+                          path <- file.path(derived, 'prop_land', rtmname) |> checkPath(create = TRUE)
+                          Map(ii=as.character(historicLandYears), function(ii){
                             reproducible::prepInputs(
                               url = paste0("https://opendata.nfis.org/downloads/forest_change/CA_forest_VLCE2_", ii, ".zip"),
                               targetFile = paste0('CA_forest_VLCE2_',ii, '.tif'),
                               destinationPath = canada, # end preprocess
                               fun = eval(parse(text = rtmFun)), # end process, doing postprocess within fun
-                              # to = rtm, 
-                              # method = 'near', 
-                              writeTo = file.path(derived, 'prop_land', rtmname, paste0('propLand_', ii, '.tif'))) 
+                              writeTo = file.path(path, paste0('propLand_', ii, '.tif')) |> checkPath(create = TRUE)
+                              ) 
                           }) |> Cache()
                 }
 )
