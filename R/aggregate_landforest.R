@@ -7,12 +7,16 @@ aggregate_landforest <- function(targetFile, trast, where2save = NULL){
   
     
     landRaw <- terra::rast(targetFile)
-    landCrop <- postProcess(landRaw, cropTo=terra::buffer(trast, width = 10000))
-   
+    landCrop <- postProcess(landRaw, cropTo=terra::buffer(trast, width = 10000))|>
+      Cache()
     
-    land.seg <- terra::segregate(landCrop) #creates 1 file with diff layers, then focal on whole thing
+    # TODO make an argument/table so can use with diff datasets
+    lccClasses <- c(20, 31, 32, 33, 40, 50, 80, 81, 100, 210, 220, 230)
     
-    land.agg <- postProcess(landRaw, to = trast, method = 'average')
+    land.seg <- terra::segregate(landCrop, classes = lccClasses) #creates 1 file with diff layers, then focal on whole thing
+    
+    land.agg <- postProcess(landRaw, to = trast, method = 'average') |>
+      Cache()
     
     
     names(propLand) <- c('prop_water', 'prop_snow', 'prop_rock', 'prop_barrenland', 'prop_bryoids', 
