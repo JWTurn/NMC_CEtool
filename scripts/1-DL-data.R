@@ -26,10 +26,7 @@ derived <- file.path('data', 'derived')
 
 # YT DATA ----
 # This will have to be run once if first time using `move2`
-movebank_store_credentials("petebaker", "Marley12!1")
-
-keyring::key_list()
-movebank_download_study_info(i_have_download_access = TRUE)
+movebank_store_credentials("username", "password")
 
 # study names to fill in loop
 # had to go through names on movebank and accept terms for each...
@@ -143,22 +140,23 @@ bc.clean <- bc.trans[,.(prov = 'bc', area = population_unit, id=as.character(wlh
 bcmn <- fread(file.path(raw, 'nmc_combined_data_cleaned.csv'))
 
 bcmn.trans <- bcmn
-bcmn.trans[,`:=`(deploy_start = min(acquisition_date), 
-               deploy_end = max(acquisition_date)), by = .(wlh_id)]
+bcmn.trans[,`:=`(deploy_start = min(Acquisition_Date), 
+               deploy_end = max(Acquisition_Date)), by = .(WLH_ID)]
 
-bcmn.clean <- bcmn.trans[,.(prov = 'bc', area = population_unit, id=as.character(wlh_id), 
+#Need to change 0s to FALSE in mortality of Noonan data
+bcmn.trans$mortality <- as.logical(bcmn.trans$mortality)
+
+bcmn.clean <- bcmn.trans[,.(prov = 'bc', area = Pop_Unit, id=as.character(WLH_ID), 
                         deployment_end_type = ifelse(isTRUE(mortality), dead, NA), 
                         deploy_start, deploy_end,
-                        datetime = acquisition_date, longitude, latitude)]
-
-
+                        datetime = Acquisition_Date, Longitude, Latitude)]
 
 
 # COMBO DATA ----
 yt.clean <- readRDS(file.path(derived, 'data_all_yt.RDS'))
 yt.clean[,prov := 'yt']
 
-nmc.clean <- rbind(yt.clean, bc.clean, fill = T)
+nmc.clean <- rbind(yt.clean, bc.clean, bcmn.clean, fill = T)
 
 # save combo 'clean' data 
 saveRDS(nmc.clean, file.path(derived, 'prepDat_nmc.RDS'))

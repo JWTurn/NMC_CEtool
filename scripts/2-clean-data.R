@@ -34,6 +34,8 @@ outcrs <- st_crs(3154)
 # didn't work
 # 3978, 3979
 
+#canPoly <- st_read('lpr_000b16a_e.shp') For Pete, delete later
+
 canPoly <- st_read(file.path(canada, 'CanadaPoly', 'lpr_000b16a_e.shp'))
 # really using YT, BC, and NWT because of transboundary herds
 ytbc <- subset(canPoly, canPoly$PREABBR %in% c('B.C.', 'Y.T.', 'N.W.T.'))
@@ -60,12 +62,12 @@ DT.filter <- setDT(sfheaders::sf_to_df(dat.within, fill = T))
 
 # convert from long/lat to NAD83/Canada Atlas Lambert (need units to be m)
 range(DT.filter$x, na.rm = T)
-# [1] -140.5031 -117.3002
+# [1] -140.5031 -120.0000
 range(DT.filter$y, na.rm = T)
-# [1] 49.44640 65.17495
+# [1] 53.92103 65.17842
 quantile(DT.filter$y, na.rm = T)
 # 0%      25%      50%      75%     100% 
-# 49.44640 58.65384 60.10138 61.92756 65.17495 
+# 53.92103 59.44654 61.22696 62.25718 65.17842 
 
 # filter out those that are from the office further south
 DT.filter2 <- DT.filter[y>50]
@@ -110,14 +112,14 @@ sum.pts <- dat3 %>%
 dat.ids <- dat3[!is.na(id)&id!=""]
 
 
-
 coords<- dat.ids%>%st_as_sf(coords = c('x','y'))%>%
   st_set_crs(outcrs)
 #st_write(coords, file.path(derived, 'prepped', 'NMCprepDat.shp'), append = F)
 
 plot(coords$geometry)
 
-# ok major weirdos gone but still some likely not real points
+# ok major weirdos gone but still some likely not real points, two obvious ones removed below.
+
 
 # Clean data for movement ----
 trk <- dat.ids %>%
@@ -126,6 +128,16 @@ trk <- dat.ids %>%
            .t = datetime,
            crs=outcrs,
            all_cols = T) 
+
+#Removing two obvious outliers, two lowest values on y axis
+trk %>% 
+  summarise(min_value = min(y_, na.rm = TRUE)) %>% pull(min_value)
+# [1] 6025758
+trk <- trk[-c(198431), ]
+trk %>% 
+  summarise(min_value = min(y_, na.rm = TRUE)) %>% pull(min_value)
+trk <- trk[-c(262969), ]
+
 # Now we plot it
 plot(trk, main = "All Data")
 lines(trk)
@@ -180,7 +192,7 @@ range(fixrate$median)
 median(fixrate$median)
 # 8 hours
 mean(fixrate$median)
-# 11.3
+# 10.8
 
 # quick check steps
 
@@ -188,12 +200,12 @@ step.lengths <- unlist(map(trkid$data, step_lengths))
 hist(step.lengths, main="Histogram of step lengths", xlab="Step lengths", ylim = c(0,1000))
 
 median(step.lengths, na.rm = T)
-
+# 320.0361
 
 quantile(diff(trk4$t_))
 # Time differences in secs
 # 0%    25%    50%    75%   100% 
-# 0      0      0      2 601200 
+# 0      0      0      3 633600 
 
 #  For hourly data, much larger values are still safe.
 
@@ -271,11 +283,11 @@ trk8a <- trk8 %>%
   unnest(data)
 # How many?
 trk8a %>% 
-  filter(fast_roundtrip_) #93
+  filter(fast_roundtrip_) #27-Pete
 
 ## Get the entries where fast roundtrip == TRUE
 flagged.entries <- trk8a %>% 
-  filter(fast_roundtrip_) %>% #68 observations
+  filter(fast_roundtrip_) %>% #27 observations
   dplyr::mutate(flag.number = 1:n())
 
 ## Select defining columns of interest (we only want id*date combinations that had a fast roundtrip)
@@ -339,7 +351,7 @@ trk9 %>%
 
 
 # final ----
-final <- trk9 # down to 1263050 from 1505945
+final <- trk9 # down to 1571776 from 1952419
 
 final.dt <- setDT(final)
 
@@ -371,7 +383,7 @@ range(fixrate$median)
 median(fixrate$median)
 # 8 hours
 mean(fixrate$median)
-# 11.3
+# 10.8
 ### steps ----
 steps <- 
   final %>% 
@@ -383,11 +395,11 @@ hist(step.lengths, ylim = c(0, 1000), main="Histogram of step lengths", xlab="St
 range(step.lengths, na.rm = T)
 quantile(step.lengths, na.rm = T)
 # 0%          25%          50%          75%         100% 
-# 0.0000     134.7577     453.0335    1261.1896 1004079.8111 
+# 0.0000     101.0349     353.8098    1026.6534 1004097.3727 
 quantile(step.lengths, na.rm = T, probs = c(0.9, 0.95, 0.99))
 # 90%      95%      99% 
-# 2777.656 4302.666 9245.579
+# 2321.981 3648.561 7992.475
 mean(step.lengths, na.rm = T)
-# 1210.56
+# 991.0208
 
 # there are some REALLY big steps

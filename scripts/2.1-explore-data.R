@@ -1,7 +1,7 @@
 ### Explore Data ====
 # Julie Turner
 # Started: November 2 2023
-
+#Modified: April 28 2025 PB
 require('data.table')
 require('amt')
 require('dplyr')
@@ -52,7 +52,7 @@ range(fixrate.clean$median)
 median(fixrate.clean$median)
 # 8 hours
 mean(fixrate.clean$median)
-# 11.1
+# 10.9
 
 
 ### steps ----
@@ -90,14 +90,14 @@ steps.id <- steps.fr |> select(id,  steps)|>
 
 quantile(steps.id$sl_)
 # 0%         25%         50%         75%        100% 
-# 0.00000    73.15349   360.33912  1055.95952 34554.88582 
+# 0.0000   173.8541   494.0337  1238.2478 32015.2891 
 quantile(steps.id$sl_, probs = c(0.9, 0.95, 0.99))
 # 90%      95%      99% 
-# 2366.798 3690.058 7940.462 
+# 2574.592 3913.722 8067.054  
 mean(steps.id$sl_)
-# [1] 914.1802
+# [1] 1046.018
 median(steps.id$sl_)
-# [1] 360.3391
+# [1] 494.0337
 
 
 
@@ -128,10 +128,10 @@ steps.id13 <- steps.fr13 |> select(id,  steps)|>
 # this one has more points
 quantile(steps.id13$sl_)
 # 0%       25%       50%       75%      100% 
-# 0.000   257.667   716.164  1686.861 66248.619 
+# 0.0000   274.0547   747.9967  1741.7375 82427.1468 
 quantile(steps.id13$sl_, probs = c(0.9, 0.95, 0.99))
 # 90%      95%      99% 
-# 3377.296 5033.502 9918.429 
+# 3475.857  5153.962 10157.446 
 mean(steps.id13$sl_)
-# [1] 1393.192
+# [1] 1438.687
 
