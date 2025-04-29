@@ -29,7 +29,7 @@ studyArea.sf <- st_as_sf(studyArea.buff)
 studyArea.ch <- st_convex_hull(studyArea.sf)
 #st_write(studyArea.ch, file.path(derived, 'NMC_studyArea_extended.shp'))
 
-studyArea_extendedLandscape <- vect(studyArea.ch)
+studyArea_extendedLandscape <- vect(file.path(derived, 'NMC_studyArea_extended.shp'))
 # make template rasters at needed resolutions
 rasterToMatch_extendedLandscape30m <- terra::rast(studyArea_extendedLandscape, res = c(30,30))
 rasterToMatch_extendedLandscape30m [] <- 1
@@ -54,31 +54,34 @@ harv[harv==0]<-NA
 writeRaster(harv, file.path(derived, 'nmc_harv250m_1985-2020.tif'))
 
 
-buffer = 700
+buffer = 750
   
 rtms <- list(rasterToMatch_extendedLandscape250m, rasterToMatch_extendedLandscape1000m)
 names(rtms)  <- c("window250", 'agg1000') 
-rtmsFuns <- c(paste0('make_landforest_prop(targetFile = targetFile, trast = rtm, buff = ',
-                     buffer,', where2save = NULL)'),
-              paste('aggregate_landforest(targetFile = targetFile, trast = rtm', 
-                    ', where2save = NULL)'))
+rtmsFuns <- list(paste0('make_landforest_prop(targetFile = targetFile, trast = rtm, buff = ',
+                     buffer, ', where2save = saveName)'),
+              paste('aggregate_landforest(targetFile = targetFile, trast = rtm, where2save = saveName)'))
 historicLandYears <- 2012:2013
-names(historicLandYears) <- historicLandYears
+names(historicLandYears) <- paste0('year_',historicLandYears)
 
 st<- Sys.time()
 
 propLand <- Map(rtmname = names(rtms), rtm = rtms, rtmFun = rtmsFuns, 
                 function(rtm, rtmname, rtmFun) {
-                          path <- file.path(derived, 'prop_land', rtmname) |> checkPath(create = TRUE)
-                          Map(ii=as.character(historicLandYears), function(ii){
+                          
+                          Map(nn = names(historicLandYears),ii=as.character(historicLandYears), function(nn,ii){
+                            path <- file.path(derived, 'prop_land', rtmname) |> checkPath(create = TRUE)
+                            saveName <- file.path(path, paste0('propLand_', ii, '.tif'))
                             reproducible::prepInputs(
                               url = paste0("https://opendata.nfis.org/downloads/forest_change/CA_forest_VLCE2_", ii, ".zip"),
                               targetFile = paste0('CA_forest_VLCE2_',ii, '.tif'),
                               destinationPath = canada, # end preprocess
-                              fun = eval(parse(text = rtmFun)), # end process, doing postprocess within fun
-                              writeTo = file.path(path, paste0('propLand_', ii, '.tif')) |> checkPath(create = TRUE)
-                              ) 
-                          }) |> Cache()
+                              fun = eval(parse(text = rtmFun)),
+                              make_landforest_prop = make_landforest_prop,
+                              rtmFun = rtmFun#, # end process, doing postprocess within fun
+                              #where2save = file.path(path, paste0('propLand_', ii, '.tif'))
+                              ) |> Cache()
+                          }) 
                 }
-)
+)#|> Cache()
 
