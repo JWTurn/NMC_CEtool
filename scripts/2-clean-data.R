@@ -130,13 +130,13 @@ trk <- dat.ids %>%
            all_cols = T) 
 
 #Removing two obvious outliers, two lowest values on y axis
-trk %>% 
-  summarise(min_value = min(y_, na.rm = TRUE)) %>% pull(min_value)
+#trk %>% 
+  #summarise(min_value = min(y_, na.rm = TRUE)) %>% pull(min_value)
 # [1] 6025758
-trk <- trk[-c(198431), ]
-trk %>% 
-  summarise(min_value = min(y_, na.rm = TRUE)) %>% pull(min_value)
-trk <- trk[-c(262969), ]
+#trk <- trk[-c(198431), ]
+#trk %>% 
+  #summarise(min_value = min(y_, na.rm = TRUE)) %>% pull(min_value)
+#trk <- trk[-c(262969), ]
 
 # Now we plot it
 plot(trk, main = "All Data")
