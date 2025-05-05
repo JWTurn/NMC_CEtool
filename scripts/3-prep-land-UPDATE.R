@@ -74,7 +74,7 @@ harv[harv==0]<-NA
 writeRaster(harv, file.path(derived, 'nmc_harv250m_1985-2020.tif'))
 
 # TODO need (average) year of harvest at the larger resolutions
-# TODO need (average) distance to of harvest at the larger resolutions FOR LAST YEAR
+# TODO need (average) distance to for each of harvest at the larger resolutions (1000 and 5000)
 # TODO need presence/absence of harvest (active) in cell per year 1000 and 5000
 
 ## prop landcover ----
@@ -115,10 +115,56 @@ propLand <- Map(rtmname = names(rtms), rtm = rtms, rtmFun = rtmsFuns,
 ## human disturbances -----
 # Features to disentangle
 ## LFs: paved road, unpaved road, other lf
-## Polys: quart, placer, other mines, all other polygons (not including harvest)
+## Polys: quartz, placer, other mines, all other polygons (not including harvest)
 # TODO need distance to at larger resolutions per year for each feature
 # TODO need presence/absence of each feature per year at large resolution
 # TODO need each lf density per year at larger resolutions
 
+# pseudo set up density (may be presence/absences?)
+roadDensity250m <- reproducible::prepInputs(url = ROADS,
+                                     destinationPath = canada, # maybe change to raw
+                                     to = rasterToMatch_extendedLandscape250m, 
+                                     fun = 'terra::vect', 
+                                     method = 'average') |>
+  Cache()
+# if that doesn't give average density -- bring in at 30m, then average when aggregating up
 
 
+## FIRES ----
+# TODO this needs to be updated as above, but this is the old code
+
+## FIRES #####
+## this has been run already
+# combine nbac (which seems to be more error checked) with older fires from NFDB
+# TODO replace with URL
+fires <- vect(file.path(canada, 'fire_nbac_1972_2023', 'nbac_1972_2023_20240530.shp'))
+fires.proj <- project(fires, crs)
+fires.old <- vect(file.path(canada, 'NFDB_poly', 'NFDB_poly_20210707.shp'))
+fires.old.proj <- project(fires.old, crs)
+fires.pre <- subset(fires.old.proj, fires.old.proj$YEAR<1972)
+# crop to study area for computational ease
+nmc.fires.proj <- crop(fires.proj, ext(vect(sArea.ext)))
+nmc.fires.pre <- crop(fires.pre, ext(vect(sArea.ext)))
+# union old and new fires
+gc()
+nmc.fires.all <- union(nmc.fires.pre, nmc.fires.proj)
+# clean up the year associated with fire
+gc()
+d.fires.all <- as.data.frame(nmc.fires.all)
+nmc.fires.all$year_burn <- nmc.fires.all$YEAR
+nmc.fires.all$REP_YEAR <- as.integer(gsub("/.*$", "", nmc.fires.all$REP_DATE))
+# default to year already in DF, but if that's missing, use year from report date
+nmc.fires.all$YEAR <- ifelse(!is.na(nmc.fires.all$year_burn), nmc.fires.all$year_burn,
+                             nmc.fires.all$REP_YEAR)
+
+# NOTE: there are still some years that = -9999 that only have a decade associated with them
+## current plan is to set them to NA in analysis since it's unknown and not too many
+
+writeVector(nmc.fires.all, file.path(raw, 'fires', 'fires_1920_2023.shp'), overwrite = T)
+
+# make rasters from polygonal fires by year
+gc()
+
+make_fire_rast(layer = file.path(raw, 'fires', 'fires_1920_2023.shp'),
+               rast = land, minyr = minyr,
+               where2save = file.path(raw, 'fires'))
