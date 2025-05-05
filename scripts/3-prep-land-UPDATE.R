@@ -59,6 +59,7 @@ harv30m <- reproducible::prepInputs(url = harvURL,
 harv[harv==0]<-NA
 writeRaster(harv, file.path(derived, 'nmc_harv30m_1985-2020.tif'))
 
+# TODO need (average) year of harvest at the larger resolutions
 # TODO need (average) distance to per year of harvest at the larger resolutions
 # TODO need presence/absence of harvest (active) in cell per year
 
