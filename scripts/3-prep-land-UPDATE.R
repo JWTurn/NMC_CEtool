@@ -44,12 +44,17 @@ rasterToMatch_extendedLandscape250m  <- terra::mask(rasterToMatch_extendedLandsc
 
 rasterToMatch_extendedLandscape1000m <- terra::aggregate(rasterToMatch_extendedLandscape250m, 4)
 
+# Do 5000m for once per week?
+
+### years we need data for
+historicLandYears <- 2012:2013 # update to last year of data
+# historicHarvYears <- 2012:2020
 ## Harvest ----
 
 harvURL <- "https://opendata.nfis.org/downloads/forest_change/CA_Forest_Harvest_1985-2020.zip"
 
 
-
+# update to larger resolutions
 harv30m <- reproducible::prepInputs(url = harvURL,
                                  destinationPath = canada,
                                  to = rasterToMatch_extendedLandscape30m, 
@@ -59,23 +64,33 @@ harv30m <- reproducible::prepInputs(url = harvURL,
 harv[harv==0]<-NA
 writeRaster(harv, file.path(derived, 'nmc_harv30m_1985-2020.tif'))
 
+harv250m <- reproducible::prepInputs(url = harvURL,
+                                    destinationPath = canada,
+                                    to = rasterToMatch_extendedLandscape250m, 
+                                    fun = 'terra::rast', 
+                                    method = 'average') |>
+  Cache()
+harv[harv==0]<-NA
+writeRaster(harv, file.path(derived, 'nmc_harv250m_1985-2020.tif'))
+
 # TODO need (average) year of harvest at the larger resolutions
-# TODO need (average) distance to per year of harvest at the larger resolutions
-# TODO need presence/absence of harvest (active) in cell per year
+# TODO need (average) distance to of harvest at the larger resolutions FOR LAST YEAR
+# TODO need presence/absence of harvest (active) in cell per year 1000 and 5000
 
 ## prop landcover ----
 
 #landURL <- "https://opendata.nfis.org/downloads/forest_change/CA_forest_VLCE2_2010.zip"
 
+buffer <- 750 
 rtms <- list(rasterToMatch_extendedLandscape250m, rasterToMatch_extendedLandscape1000m)
 names(rtms)  <- c("window250", 'agg1000') 
 rtmsFuns <- list(paste0('make_landforest_prop(targetFile = targetFile, trast = rtm, buff = ',
                      buffer, ', where2save = saveName)'),
               paste('aggregate_landforest(targetFile = targetFile, trast = rtm, where2save = saveName)'))
-historicLandYears <- 2012:2013
+
 names(historicLandYears) <- paste0('year_',historicLandYears)
 
-st<- Sys.time()
+# st<- Sys.time()
 
 propLand <- Map(rtmname = names(rtms), rtm = rtms, rtmFun = rtmsFuns, 
                 function(rtm, rtmname, rtmFun) {
@@ -88,7 +103,7 @@ propLand <- Map(rtmname = names(rtms), rtm = rtms, rtmFun = rtmsFuns,
                               targetFile = paste0('CA_forest_VLCE2_',ii, '.tif'),
                               destinationPath = canada, # end preprocess
                               fun = eval(parse(text = rtmFun)),
-                              make_landforest_prop = make_landforest_prop,
+                             # make_landforest_prop = make_landforest_prop,
                               rtmFun = rtmFun#, # end process, doing postprocess within fun
                               #where2save = file.path(path, paste0('propLand_', ii, '.tif'))
                               ) |> Cache()
