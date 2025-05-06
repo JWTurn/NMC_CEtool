@@ -74,6 +74,7 @@ harv30m <- reproducible::prepInputs(url = harvURL,
 harv30m[harv30m==0]<-NA
 writeRaster(harv30m, file.path(derived, 'nmc_harv30m_1985-2020.tif'))
 
+#harv30m <- rast(file.path(derived, 'nmc_harv30m_1985-2020.tif'))
 #plot(harv30m)
 
 harv250m <- reproducible::prepInputs(url = harvURL,
@@ -84,7 +85,7 @@ harv250m <- reproducible::prepInputs(url = harvURL,
   Cache()
 harv250m[harv250m==0]<-NA
 writeRaster(harv250m, file.path(derived, 'nmc_harv250m_1985-2020.tif'))
-
+#harv250m <- rast(file.path(derived, 'nmc_harv250m_1985-2020.tif'))
 #plot(harv250m)
 
 harv1000m <- reproducible::prepInputs(url = harvURL,
@@ -95,7 +96,7 @@ harv1000m <- reproducible::prepInputs(url = harvURL,
   Cache()
 harv1000m[harv1000m==0]<-NA
 writeRaster(harv1000m, file.path(derived, 'nmc_harv1000m_1985-2020.tif'))
-
+#harv1000m <- rast(file.path(derived, 'nmc_harv1000m_1985-2020.tif'))
 #plot(harv1000m)
 
 harv5000m <- reproducible::prepInputs(url = harvURL,
@@ -106,20 +107,104 @@ harv5000m <- reproducible::prepInputs(url = harvURL,
   Cache()
 harv5000m[harv5000m==0]<-NA
 writeRaster(harv5000m, file.path(derived, 'nmc_harv5000m_1985-2020.tif'))
-
-plot(harv5000m)
-
-
-# TODO need (average) year of harvest at the larger resolutions COMPLETED
+#harv5000m <- rast(file.path(derived, 'nmc_harv5000m_1985-2020.tif'))
+#plot(harv5000m)
 
 
+##Just checkin'
+#harv30m
+#cellFromRowCol(harv30m, 7, 10)
+#summary(harv30m)
+
+## Calculating average distance to harvest for each year of harvest at the larger resolutions (1000, and 5000)
+
+dist_results <- list()
+
+# Loop over years
+for (year in 2012:2020) {
+  message("Processing year ", year)
+  
+  # Binary raster: 1 where harvest occurred that year, NA elsewhere
+  harvest_bin <- harv30m == year
+  harvest_bin[harvest_bin == 0] <- NA
+  
+  # Compute Euclidean distance
+  dist_rast <- distance(harvest_bin)
+  
+  # Resample to coarser resolutions
+  dist_1000 <- resample(dist_rast, harv1000m, method = "average")
+  dist_5000 <- resample(dist_rast, harv5000m, method = "average")
+  
+  # Save all rasters, even if they contain only NA
+  writeRaster(dist_1000, file.path(derived, paste0("harvdist_1000m_", year, ".tif")),
+              filetype = "GTiff", overwrite = TRUE)
+  writeRaster(dist_5000, file.path(derived, paste0("harvdist_5000m_", year, ".tif")),
+              filetype = "GTiff", overwrite = TRUE)
+  
+  message("  Done: ", year)
+}
+
+#harv1000m_2012 <- rast(file.path(derived, 'harvdist_1000m_2012.tif'))
+#harv1000m_2015 <- rast(file.path(derived, 'harvdist_1000m_2015.tif'))
+
+#plot(harv1000m_2012)
+#plot(harv1000m_2015)
+
+#QC - Making sure they aren't just all NAs
+#raster_folder <- "C:/Users/peteb/OneDrive/Documents/BP/Yukoncfx/data/derived"
+
+## List all .tif files
+#raster_files <- list.files(raster_folder, pattern = "\\.tif$", full.names = TRUE)
+
+# Check each raster
+#for (f in raster_files) {
+  #r <- rast(f)
+  #if (all(is.na(values(r)))) {
+    #message("All NA: ", basename(f))
+  #} else {
+    #message("Has data: ", basename(f))
+  #}
+#}
 
 
 
-# TODO need (average) distance to for each of harvest at the larger resolutions (1000 and 5000)
-# TODO need presence/absence of harvest (active) in cell per year 1000 and 5000
+## Making presence/absence rasters of harvest (active) in cell per year for 1000 and 5000 res
 
-## prop landcover ----
+for (year in 2012:2020) {
+  message("Processing year ", year)
+  
+  # Binary raster: 1 = harvest that year, NA = no harvest
+  harvest_bin <- harv30m == year
+  harvest_bin[harvest_bin == 0] <- NA
+  
+  # Replace NA with 0 for aggregation (presence/absence)
+  harvest_pa <- classify(harvest_bin, cbind(NA, 0))  # all NAs become 0
+  
+  # Aggregate
+  pa_1000 <- aggregate(harvest_pa, fact = res(harv1000m) / res(harv30m), fun = max, na.rm = TRUE)
+  pa_5000 <- aggregate(harvest_pa, fact = res(harv5000m) / res(harv30m), fun = max, na.rm = TRUE)
+  
+  # Save rasters
+  writeRaster(pa_1000, file.path(derived, paste0("harvpres_1000m_", year, ".tif")),
+              filetype = "GTiff", overwrite = TRUE)
+  writeRaster(pa_5000, file.path(derived, paste0("harvpres_5000m_", year, ".tif")),
+              filetype = "GTiff", overwrite = TRUE)
+  
+  message("  Done: ", year)
+}
+
+#Checkin plots
+#harv1000m_2012 <- rast(file.path(derived, 'harvpres_1000m_2012.tif'))
+#harv1000m_2015 <- rast(file.path(derived, 'harvpres_1000m_2015.tif'))
+#harv1000m_2020 <- rast(file.path(derived, 'harvpres_1000m_2020.tif'))
+
+#plot(harv1000m_2012)
+#plot(harv1000m_2015)
+#plot(harv1000m_2020)
+
+
+
+## Landcover ----
 
 #landURL <- "https://opendata.nfis.org/downloads/forest_change/CA_forest_VLCE2_2010.zip"
 
