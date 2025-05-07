@@ -150,12 +150,3 @@ yt.lf <- yt.lf %>%
 ### Save updated files
 st_write(yt.poly, file.path(raw, 'NMC_ArealFeatures_Reclassified_final_20240517', 'NMC_ArealFeatures_Reclassified_final.shp'), append = FALSE)
 st_write(yt.lf, file.path(raw, 'NMC_LinearFeatures_Reclassified_final_20240517', 'NMC_LinearFeatures_Reclassified_final.shp'), append = FALSE)
-
-
-#Exploring fire file: delete after
-
-fire <- file.path(raw, 'fires', 'fires_1920_2023.shp')
-
-fires <- st_read(fire)
-
-bad_years <- fires[fires$YEAR == -9999, ]

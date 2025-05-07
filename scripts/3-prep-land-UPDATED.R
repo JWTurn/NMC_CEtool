@@ -57,9 +57,6 @@ rasterToMatch_extendedLandscape5000m <- terra::aggregate(rasterToMatch_extendedL
 
 ## Harvest ----
 
-# years we need data for
-historicHarvYears <- 2012:2020
-
 
 harvURL <- "https://opendata.nfis.org/downloads/forest_change/CA_Forest_Harvest_1985-2020.zip"
 
@@ -206,20 +203,171 @@ for (year in 2012:2020) {
 
 ## Landcover ----
 
+#IF PRE-DOWNLOADING ZIP FILE, SEE BELOW THIS CODE
+
 #landURL <- "https://opendata.nfis.org/downloads/forest_change/CA_forest_VLCE2_2010.zip"
 
+source("C:/Users/peteb/NMC_CEtool_PB/R/make_landforest_prop.R")
+source("C:/Users/peteb/NMC_CEtool_PB/R/aggregate_landforest.R")
+
+# Define years
+historicLandYears <- 2012:2022
+names(historicLandYears) <- paste0('year_', historicLandYears)
+
+# Buffer
 buffer <- 750
-rtms <- list(rasterToMatch_extendedLandscape250m, rasterToMatch_extendedLandscape1000m)
-names(rtms)  <- c("window250", 'agg1000')
-rtmsFuns <- list(paste0('make_landforest_prop(targetFile = targetFile, trast = rtm, buff = ',
-                        buffer, ', where2save = saveName)'),
-                 paste('aggregate_landforest(targetFile = targetFile, trast = rtm, where2save = saveName)'))
+
+# Raster templates
+rtms <- list(
+  window250 = rasterToMatch_extendedLandscape250m,
+  agg1000 = rasterToMatch_extendedLandscape1000m,
+  agg5000 = rasterToMatch_extendedLandscape5000m
+)
+
+# Function wrappers (actual functions, not strings)
+rtmsFuns <- list(
+  window250 = function(targetFile, rtm, saveName) {
+    make_landforest_prop(
+      targetFile = targetFile,
+      trast = rtm,
+      buff = buffer,
+      where2save = saveName
+    )
+  },
+  agg1000 = function(targetFile, rtm, saveName) {
+    aggregate_landforest(
+      targetFile = targetFile,
+      trast = rtm,
+      where2save = saveName
+    )
+  },
+  agg5000 = function(targetFile, rtm, saveName) {
+    aggregate_landforest(
+      targetFile = targetFile,
+      trast = rtm,
+      where2save = saveName
+    )
+  }
+)
+
+# Main processing
+propLand <- Map(function(rtmname, rtm, rtmFun) {
+  Map(function(nn, ii) {
+    
+    # Create save path
+    path <- file.path(derived, "prop_land", rtmname)
+    checkPath(path, create = TRUE)
+    
+    saveName <- file.path(path, paste0("propLand_", ii, ".tif"))
+    targetFileName <- paste0("CA_forest_VLCE2_", ii, ".tif")
+    
+    reproducible::prepInputs(
+      url = paste0("https://opendata.nfis.org/downloads/forest_change/CA_forest_VLCE2_", ii, ".zip"),
+      targetFile = targetFileName,
+      destinationPath = canada,
+      fun = function(targetFile) {
+        rtmFun(targetFile = targetFile, rtm = rtm, saveName = saveName)
+      }
+    ) |> Cache()
+    
+  }, names(historicLandYears), as.character(historicLandYears))
+  
+}, names(rtms), rtms, rtmsFuns)
+
+#If zip is pre-downloaded
+#propLand <- Map(function(rtmname, rtm, rtmFun) {
+ # Map(function(yearName, year) {
+    
+  #  message("➡️  Processing year ", year, " at resolution: ", rtmname)
+    
+    # Output file path
+   # path <- file.path(derived, 'prop_land', rtmname) |> checkPath(create = TRUE)
+    #saveName <- file.path(path, paste0('propLand_', year, '.tif'))
+    
+    #if (file.exists(saveName)) {
+     # message("✅ Output already exists: ", saveName)
+      #return(raster::raster(saveName))
+    #}
+    
+    # Local archive and target file
+  #  archiveFile <- file.path(canada, paste0("CA_forest_VLCE2_", year, ".zip"))
+    
+    # List file(s) in the archive and find the .tif
+   # tifInArchive <- utils::unzip(archiveFile, list = TRUE)$Name
+    #tifInArchive <- tifInArchive[grepl("\\.tif$", tifInArchive, ignore.case = TRUE)][1]
+    
+    #if (is.na(tifInArchive)) {
+     # message("❌ No .tif found in archive for year ", year)
+      #return(NULL)
+    #}
+    
+    # Define processing function
+    #processingFunction <- eval(parse(text = paste0(
+      #"function(targetFile) { ",
+     # rtmFun,
+    #  " }"
+    #)))
+    
+    # Processing with local archive
+    #tryCatch({
+     # reproducible::prepInputs(
+      #  url = NULL,
+       # archive = archiveFile,
+        #targetFile = tifInArchive,
+        #destinationPath = canada,
+        #fun = processingFunction,
+        #verbose = TRUE
+      #) |> Cache()
+    #}, error = function(e) {
+     # message("⚠️  Error in year ", year, " [", rtmname, "]: ", e$message)
+      #return(NULL)
+    #})
+    
+  #}, names(historicLandYears), as.character(historicLandYears))
+  
+#}, names(rtms), rtms, rtmsFuns)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#OLD CODE
+
+# years we need data for
+historicLandYears <- 2012:2022
+
+
+buffer <- 750
+rtms <- list(rasterToMatch_extendedLandscape250m, rasterToMatch_extendedLandscape1000m, rasterToMatch_extendedLandscape5000m)
+names(rtms)  <- c("window250", 'agg1000', 'agg5000')
+
+rtmsFuns <- list(
+  window250 = paste0('make_landforest_prop(targetFile = targetFile, trast = rtm, buff = ', buffer, ', where2save = saveName)'),
+  agg1000 = paste('aggregate_landforest(targetFile = targetFile, trast = rtm, where2save = saveName)'),
+  agg5000 = paste('aggregate_landforest(targetFile = targetFile, trast = rtm, where2save = saveName)')
+)
 
 names(historicLandYears) <- paste0('year_',historicLandYears)
 
 # st<- Sys.time()
 
-propLand <- Map(rtmname = names(rtms), rtm = rtms, rtmFun = rtmsFuns,
+propLand <- Map(rtmname = names(rtms), rtm = rtms, rtmFun = rtmsFuns[names(rtms)],
                 function(rtm, rtmname, rtmFun) {
                   
                   Map(nn = names(historicLandYears),ii=as.character(historicLandYears), function(nn,ii){
