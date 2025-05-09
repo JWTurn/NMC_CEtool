@@ -207,166 +207,37 @@ for (year in 2012:2020) {
 
 #landURL <- "https://opendata.nfis.org/downloads/forest_change/CA_forest_VLCE2_2010.zip"
 
+# Source necessary R scripts
 source("C:/Users/peteb/NMC_CEtool_PB/R/make_landforest_prop.R")
 source("C:/Users/peteb/NMC_CEtool_PB/R/aggregate_landforest.R")
 
-# Define years
+# Define years for which we need data
 historicLandYears <- 2012:2022
-names(historicLandYears) <- paste0('year_', historicLandYears)
 
-# Buffer
+# Buffer value for spatial operations
 buffer <- 750
 
-# Raster templates
+# List of rasters to match, with window sizes of 250m, 1000m, and 5000m
 rtms <- list(
-  window250 = rasterToMatch_extendedLandscape250m,
-  agg1000 = rasterToMatch_extendedLandscape1000m,
-  agg5000 = rasterToMatch_extendedLandscape5000m
+  rasterToMatch_extendedLandscape250m,
+  rasterToMatch_extendedLandscape1000m,
+  rasterToMatch_extendedLandscape5000m
 )
 
-# Function wrappers (actual functions, not strings)
-rtmsFuns <- list(
-  window250 = function(targetFile, rtm, saveName) {
-    make_landforest_prop(
-      targetFile = targetFile,
-      trast = rtm,
-      buff = buffer,
-      where2save = saveName
-    )
-  },
-  agg1000 = function(targetFile, rtm, saveName) {
-    aggregate_landforest(
-      targetFile = targetFile,
-      trast = rtm,
-      where2save = saveName
-    )
-  },
-  agg5000 = function(targetFile, rtm, saveName) {
-    aggregate_landforest(
-      targetFile = targetFile,
-      trast = rtm,
-      where2save = saveName
-    )
-  }
-)
+# Name the rasters for easier reference
+names(rtms) <- c("window250", "agg1000", "agg5000")
 
-# Main processing
-propLand <- Map(function(rtmname, rtm, rtmFun) {
-  Map(function(nn, ii) {
-    
-    # Create save path
-    path <- file.path(derived, "prop_land", rtmname)
-    checkPath(path, create = TRUE)
-    
-    saveName <- file.path(path, paste0("propLand_", ii, ".tif"))
-    targetFileName <- paste0("CA_forest_VLCE2_", ii, ".tif")
-    
-    reproducible::prepInputs(
-      url = paste0("https://opendata.nfis.org/downloads/forest_change/CA_forest_VLCE2_", ii, ".zip"),
-      targetFile = targetFileName,
-      destinationPath = canada,
-      fun = function(targetFile) {
-        rtmFun(targetFile = targetFile, rtm = rtm, saveName = saveName)
-      }
-    ) |> Cache()
-    
-  }, names(historicLandYears), as.character(historicLandYears))
-  
-}, names(rtms), rtms, rtmsFuns)
-
-#If zip is pre-downloaded
-#propLand <- Map(function(rtmname, rtm, rtmFun) {
- # Map(function(yearName, year) {
-    
-  #  message("➡️  Processing year ", year, " at resolution: ", rtmname)
-    
-    # Output file path
-   # path <- file.path(derived, 'prop_land', rtmname) |> checkPath(create = TRUE)
-    #saveName <- file.path(path, paste0('propLand_', year, '.tif'))
-    
-    #if (file.exists(saveName)) {
-     # message("✅ Output already exists: ", saveName)
-      #return(raster::raster(saveName))
-    #}
-    
-    # Local archive and target file
-  #  archiveFile <- file.path(canada, paste0("CA_forest_VLCE2_", year, ".zip"))
-    
-    # List file(s) in the archive and find the .tif
-   # tifInArchive <- utils::unzip(archiveFile, list = TRUE)$Name
-    #tifInArchive <- tifInArchive[grepl("\\.tif$", tifInArchive, ignore.case = TRUE)][1]
-    
-    #if (is.na(tifInArchive)) {
-     # message("❌ No .tif found in archive for year ", year)
-      #return(NULL)
-    #}
-    
-    # Define processing function
-    #processingFunction <- eval(parse(text = paste0(
-      #"function(targetFile) { ",
-     # rtmFun,
-    #  " }"
-    #)))
-    
-    # Processing with local archive
-    #tryCatch({
-     # reproducible::prepInputs(
-      #  url = NULL,
-       # archive = archiveFile,
-        #targetFile = tifInArchive,
-        #destinationPath = canada,
-        #fun = processingFunction,
-        #verbose = TRUE
-      #) |> Cache()
-    #}, error = function(e) {
-     # message("⚠️  Error in year ", year, " [", rtmname, "]: ", e$message)
-      #return(NULL)
-    #})
-    
-  #}, names(historicLandYears), as.character(historicLandYears))
-  
-#}, names(rtms), rtms, rtmsFuns)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#OLD CODE
-
-# years we need data for
-historicLandYears <- 2012:2022
-
-
-buffer <- 750
-rtms <- list(rasterToMatch_extendedLandscape250m, rasterToMatch_extendedLandscape1000m, rasterToMatch_extendedLandscape5000m)
-names(rtms)  <- c("window250", 'agg1000', 'agg5000')
-
+# Define corresponding functions for each raster window size
 rtmsFuns <- list(
   window250 = paste0('make_landforest_prop(targetFile = targetFile, trast = rtm, buff = ', buffer, ', where2save = saveName)'),
-  agg1000 = paste('aggregate_landforest(targetFile = targetFile, trast = rtm, where2save = saveName)'),
-  agg5000 = paste('aggregate_landforest(targetFile = targetFile, trast = rtm, where2save = saveName)')
+  agg1000 = 'aggregate_landforest(targetFile = targetFile, trast = rtm, where2save = saveName)',
+  agg5000 = 'aggregate_landforest(targetFile = targetFile, trast = rtm, where2save = saveName)'
 )
 
-names(historicLandYears) <- paste0('year_',historicLandYears)
+# Convert historicLandYears to named vector for easier reference
+names(historicLandYears) <- paste0('year_', historicLandYears)
 
-# st<- Sys.time()
-
+# Main processing loop for each raster and each historic year
 propLand <- Map(rtmname = names(rtms), rtm = rtms, rtmFun = rtmsFuns[names(rtms)],
                 function(rtm, rtmname, rtmFun) {
                   
@@ -379,7 +250,8 @@ propLand <- Map(rtmname = names(rtms), rtm = rtms, rtmFun = rtmsFuns[names(rtms)
                       destinationPath = canada, # end preprocess
                       fun = eval(parse(text = rtmFun)),
                       # make_landforest_prop = make_landforest_prop,
-                      rtmFun = rtmFun#, # end process, doing postprocess within fun
+                      rtmFun = rtmFun,#, # end process, doing postprocess within fun
+                      overwrite = TRUE
                       #where2save = file.path(path, paste0('propLand_', ii, '.tif'))
                     ) |> Cache()
                   })
@@ -387,13 +259,120 @@ propLand <- Map(rtmname = names(rtms), rtm = rtms, rtmFun = rtmsFuns[names(rtms)
 )#|> Cache()
 
 
-## human disturbances -----
+## Human disturbances -----
 # Features to disentangle
 ## LFs: paved road, unpaved road, other lf
 ## Polys: quartz, placer, other mines, all other polygons (not including harvest)
+
+#TEST CODE
+# Paths to your shapefiles
+poly_path <- "path/to/polygon_disturbance.shp"
+line_path <- "path/to/linear_features.shp"
+
+# Load vectors
+poly_sf <- st_read(poly_path)
+line_sf <- st_read(line_path)
+
+# Reproject to match base raster
+poly_sf <- st_transform(poly_sf, crs(rasterToMatch_extendedLandscape30m))
+line_sf <- st_transform(line_sf, crs(rasterToMatch_extendedLandscape30m))
+
+# Define years, resolutions, categories
+years <- 2012:2024
+poly_categories <- c("quartz", "placer", "othermines", "otherpoly")
+line_categories <- c("paved", "unpaved", "otherlf")
+
+# Reference rasters
+r30 <- rasterToMatch_extendedLandscape30m
+r1000 <- rasterToMatch_extendedLandscape1000m
+r5000 <- rasterToMatch_extendedLandscape5000m
+
+
 # TODO need distance to at larger resolutions per year for each feature
+for (year in 2012:2024) {
+  for (cat in c("quartz", "placer", "othermines", "otherpoly", "paved", "unpaved", "otherlf")) {
+    message("Processing distance-to for ", cat, " in ", year)
+    
+    # Filter features
+    if (cat %in% c("quartz", "placer", "othermines", "otherpoly")) {
+      feat <- poly_sf %>% filter(category == cat, year == !!year)
+    } else {
+      feat <- line_sf %>% filter(category == cat, year == !!year)
+    }
+    
+    if (nrow(feat) == 0) next
+    
+    # Rasterize binary layer at 30m
+    bin_ras <- terra::rasterize(feat, rasterToMatch_extendedLandscape30m, field = NULL, touches = TRUE)
+    bin_ras[!is.na(bin_ras)] <- 1
+    
+    # Distance
+    dist_ras <- terra::distance(bin_ras)
+    
+    # Resample to coarse resolutions
+    dist_1000 <- terra::resample(dist_ras, rasterToMatch_extendedLandscape1000m, method = "average")
+    dist_5000 <- terra::resample(dist_ras, rasterToMatch_extendedLandscape5000m, method = "average")
+    
+    # Save
+    writeRaster(dist_1000, file.path(derived, paste0(cat, "_distance_1000m_", year, ".tif")), filetype = "GTiff", overwrite = TRUE)
+    writeRaster(dist_5000, file.path(derived, paste0(cat, "_distance_5000m_", year, ".tif")), filetype = "GTiff", overwrite = TRUE)
+  }
+}
+
+
+
 # TODO need presence/absence of each feature per year at large resolution
+for (year in 2012:2024) {
+  for (cat in c("quartz", "placer", "othermines", "otherpoly", "paved", "unpaved", "otherlf")) {
+    message("Processing presence/absence for ", cat, " in ", year)
+    
+    # Filter features by category and year
+    if (cat %in% c("quartz", "placer", "othermines", "otherpoly")) {
+      feat <- poly_sf %>% filter(category == cat, year == !!year)
+    } else {
+      feat <- line_sf %>% filter(category == cat, year == !!year)
+    }
+    
+    if (nrow(feat) == 0) next
+    
+    # Rasterize to 30m
+    bin_ras <- terra::rasterize(feat, rasterToMatch_extendedLandscape30m, field = NULL, touches = TRUE)
+    bin_ras[!is.na(bin_ras)] <- 1
+    
+    # Aggregate to 1000m and 5000m
+    pa_1000 <- terra::aggregate(bin_ras, fact = res(rasterToMatch_extendedLandscape1000m) / res(rasterToMatch_extendedLandscape30m), fun = max, na.rm = TRUE)
+    pa_5000 <- terra::aggregate(bin_ras, fact = res(rasterToMatch_extendedLandscape5000m) / res(rasterToMatch_extendedLandscape30m), fun = max, na.rm = TRUE)
+    
+    # Save rasters
+    writeRaster(pa_1000, file.path(derived, paste0(cat, "_presence_1000m_", year, ".tif")), filetype = "GTiff", overwrite = TRUE)
+    writeRaster(pa_5000, file.path(derived, paste0(cat, "_presence_5000m_", year, ".tif")), filetype = "GTiff", overwrite = TRUE)
+  }
+}
+
+
 # TODO need each lf density per year at larger resolutions
+for (year in 2012:2024) {
+  for (cat in c("paved", "unpaved", "otherlf")) {
+    message("Processing presence/absence and density for ", cat, " in ", year)
+    
+    # Filter features by category and year
+    feat <- line_sf %>% filter(category == cat, year == !!year)
+    if (nrow(feat) == 0) next
+    
+    # Rasterize as presence/absence (1 for road, 0 for no road)
+    bin_ras <- terra::rasterize(feat, rasterToMatch_extendedLandscape30m, fun = "lengths", background = 0)
+    bin_ras[bin_ras > 0] <- 1  # Ensure presence (1) for any road, absence (0) otherwise
+    
+    # Aggregate the binary presence/absence to the larger resolutions (1000m, 5000m)
+    dens1000 <- terra::aggregate(bin_ras, fact = res(rasterToMatch_extendedLandscape1000m) / res(rasterToMatch_extendedLandscape30m), fun = mean, na.rm = TRUE)
+    dens5000 <- terra::aggregate(bin_ras, fact = res(rasterToMatch_extendedLandscape5000m) / res(rasterToMatch_extendedLandscape30m), fun = mean, na.rm = TRUE)
+    
+    # Save the results
+    writeRaster(dens1000, file.path(derived, paste0(cat, "_roadPresenceAvg_1000m_", year, ".tif")), filetype = "GTiff", overwrite = TRUE)
+    writeRaster(dens5000, file.path(derived, paste0(cat, "_roadPresenceAvg_5000m_", year, ".tif")), filetype = "GTiff", overwrite = TRUE)
+  }
+}
+
 
 # pseudo set up density (may be presence/absences?)
 roadDensity250m <- reproducible::prepInputs(url = ROADS,
