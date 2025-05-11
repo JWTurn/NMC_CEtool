@@ -14,8 +14,6 @@ lapply(dir('R', '*.R', full.names = TRUE), source)
 ## Input data ----
 raw <- file.path('data','raw')
 derived <- file.path('data','derived')
-# I like setting a folder shared across projects that share large files so I don't have to download many times
-# could use raw if want to keep with this project
 canada <- file.path('C:','Users', 'peteb', 'OneDrive', 'Documents', 'BP', 'Yukoncfx', 'reproducibleInputs')
 
 
@@ -56,12 +54,9 @@ rasterToMatch_extendedLandscape1000m <- terra::aggregate(rasterToMatch_extendedL
 rasterToMatch_extendedLandscape5000m <- terra::aggregate(rasterToMatch_extendedLandscape1000m, 5)
 
 ## Harvest ----
-
-
 harvURL <- "https://opendata.nfis.org/downloads/forest_change/CA_Forest_Harvest_1985-2020.zip"
 
 
-# update to larger resolutions
 harv30m <- reproducible::prepInputs(url = harvURL,
                                     destinationPath = canada,
                                     to = rasterToMatch_extendedLandscape30m,
@@ -113,7 +108,7 @@ writeRaster(harv5000m, file.path(derived, 'nmc_harv5000m_1985-2020.tif'))
 #cellFromRowCol(harv30m, 7, 10)
 #summary(harv30m)
 
-## Calculating average distance to harvest for each year of harvest at the larger resolutions (1000, and 5000)
+## Calculating average distance to harvest for each year of harvest at the larger resolutions (250, 1000, and 5000)
 
 dist_results <- list()
 
@@ -129,10 +124,13 @@ for (year in 2012:2020) {
   dist_rast <- distance(harvest_bin)
   
   # Resample to coarser resolutions
+  dist_250 <- resample(dist_rast, harv250m, method = "average")
   dist_1000 <- resample(dist_rast, harv1000m, method = "average")
   dist_5000 <- resample(dist_rast, harv5000m, method = "average")
   
   # Save all rasters, even if they contain only NA
+  writeRaster(dist_250, file.path(derived, paste0("harvdist_250m_", year, ".tif")),
+              filetype = "GTiff", overwrite = TRUE)
   writeRaster(dist_1000, file.path(derived, paste0("harvdist_1000m_", year, ".tif")),
               filetype = "GTiff", overwrite = TRUE)
   writeRaster(dist_5000, file.path(derived, paste0("harvdist_5000m_", year, ".tif")),
@@ -141,28 +139,18 @@ for (year in 2012:2020) {
   message("  Done: ", year)
 }
 
-#harv1000m_2012 <- rast(file.path(derived, 'harvdist_1000m_2012.tif'))
-#harv1000m_2015 <- rast(file.path(derived, 'harvdist_1000m_2015.tif'))
+#QC
+#dist250 <- rast(file.path(derived, "harvdist_250m_2015.tif"))
+#dist1000 <- rast(file.path(derived, "harvdist_1000m_2015.tif"))
+#dist5000 <- rast(file.path(derived, "harvdist_5000m_2015.tif"))
 
-#plot(harv1000m_2012)
-#plot(harv1000m_2015)
+#plot(dist250, main = "Distance to Harvest (250m, 2015)")
+#plot(dist1000, main = "Distance to Harvest (1000m, 2015)")
+#plot(dist5000, main = "Distance to Harvest (5000m, 2015)")
 
-#QC - Making sure they aren't just all NAs
-#raster_folder <- "C:/Users/peteb/OneDrive/Documents/BP/Yukoncfx/data/derived"
-
-## List all .tif files
-#raster_files <- list.files(raster_folder, pattern = "\\.tif$", full.names = TRUE)
-
-# Check each raster
-#for (f in raster_files) {
-  #r <- rast(f)
-  #if (all(is.na(values(r)))) {
-    #message("All NA: ", basename(f))
-  #} else {
-    #message("Has data: ", basename(f))
-  #}
-#}
-
+#global(dist250, fun = c("min", "max", "mean", "sd"), na.rm = TRUE)
+#global(dist1000, fun = c("min", "max", "mean", "sd"), na.rm = TRUE)
+#global(dist5000, fun = c("min", "max", "mean", "sd"), na.rm = TRUE)
 
 
 ## Making presence/absence rasters of harvest (active) in cell per year for 1000 and 5000 res
@@ -174,14 +162,17 @@ for (year in 2012:2020) {
   harvest_bin <- harv30m == year
   harvest_bin[harvest_bin == 0] <- NA
   
-  # Replace NA with 0 for aggregation (presence/absence)
-  harvest_pa <- classify(harvest_bin, cbind(NA, 0))  # all NAs become 0
+  # Replace NA with 0 for presence/absence aggregation
+  harvest_pa <- classify(harvest_bin, cbind(NA, 0))  # all NAs become 0, so 1 = harvest, 0 = no harvest
   
-  # Aggregate
+  # Aggregate to coarser resolutions using max (i.e., presence if any pixel in block was harvested)
+  pa_250 <- aggregate(harvest_pa, fact = res(harv250m) / res(harv30m), fun = max, na.rm = TRUE)
   pa_1000 <- aggregate(harvest_pa, fact = res(harv1000m) / res(harv30m), fun = max, na.rm = TRUE)
   pa_5000 <- aggregate(harvest_pa, fact = res(harv5000m) / res(harv30m), fun = max, na.rm = TRUE)
   
   # Save rasters
+  writeRaster(pa_250, file.path(derived, paste0("harvpres_250m_", year, ".tif")),
+              filetype = "GTiff", overwrite = TRUE)
   writeRaster(pa_1000, file.path(derived, paste0("harvpres_1000m_", year, ".tif")),
               filetype = "GTiff", overwrite = TRUE)
   writeRaster(pa_5000, file.path(derived, paste0("harvpres_5000m_", year, ".tif")),
@@ -190,26 +181,27 @@ for (year in 2012:2020) {
   message("  Done: ", year)
 }
 
-#Checkin plots
+
+#QC
 #harv1000m_2012 <- rast(file.path(derived, 'harvpres_1000m_2012.tif'))
-#harv1000m_2015 <- rast(file.path(derived, 'harvpres_1000m_2015.tif'))
-#harv1000m_2020 <- rast(file.path(derived, 'harvpres_1000m_2020.tif'))
+#harv5000m_2015 <- rast(file.path(derived, 'harvpres_5000m_2015.tif'))
+#harv250m_2020 <- rast(file.path(derived, 'harvpres_250m_2020.tif'))
 
 #plot(harv1000m_2012)
-#plot(harv1000m_2015)
-#plot(harv1000m_2020)
+#plot(harv5000m_2015)
+#plot(harv250m_2020)
 
-
+#unique(values(harv1000m_2012))
+#unique(values(harv5000m_2015))
+#unique(values(harv250m_2020))
 
 ## Landcover ----
-
-#IF PRE-DOWNLOADING ZIP FILE, SEE BELOW THIS CODE
 
 #landURL <- "https://opendata.nfis.org/downloads/forest_change/CA_forest_VLCE2_2010.zip"
 
 # Source necessary R scripts
-source("C:/Users/peteb/NMC_CEtool_PB/R/make_landforest_prop.R")
-source("C:/Users/peteb/NMC_CEtool_PB/R/aggregate_landforest.R")
+#source("C:/Users/peteb/NMC_CEtool_PB/R/make_landforest_prop.R")
+#source("C:/Users/peteb/NMC_CEtool_PB/R/aggregate_landforest.R")
 
 # Define years for which we need data
 historicLandYears <- 2012:2022
@@ -224,39 +216,47 @@ rtms <- list(
   rasterToMatch_extendedLandscape5000m
 )
 
-# Name the rasters for easier reference
 names(rtms) <- c("window250", "agg1000", "agg5000")
 
-# Define corresponding functions for each raster window size
+
+# Define corresponding functions for each raster window size with dummy code to make each unique for Cache()
 rtmsFuns <- list(
-  window250 = paste0('make_landforest_prop(targetFile = targetFile, trast = rtm, buff = ', buffer, ', where2save = saveName)'),
-  agg1000 = 'aggregate_landforest(targetFile = targetFile, trast = rtm, where2save = saveName)',
-  agg5000 = 'aggregate_landforest(targetFile = targetFile, trast = rtm, where2save = saveName)'
+  window250 = paste0(
+    'make_landforest_prop(targetFile = targetFile, trast = rtm, buff = ', buffer,
+    ', where2save = saveName); dummy_tag <- "window250"'
+  ),
+  agg1000 = 'aggregate_landforest(targetFile = targetFile, trast = rtm, where2save = saveName); dummy_tag <- "agg1000"',
+  agg5000 = 'aggregate_landforest(targetFile = targetFile, trast = rtm, where2save = saveName); dummy_tag <- "agg5000"'
 )
 
-# Convert historicLandYears to named vector for easier reference
+
 names(historicLandYears) <- paste0('year_', historicLandYears)
 
-# Main processing loop for each raster and each historic year
+#Main processing loop for each raster resolution and each year
 propLand <- Map(rtmname = names(rtms), rtm = rtms, rtmFun = rtmsFuns[names(rtms)],
                 function(rtm, rtmname, rtmFun) {
                   
-                  Map(nn = names(historicLandYears),ii=as.character(historicLandYears), function(nn,ii){
+                  Map(nn = names(historicLandYears), ii = as.character(historicLandYears), function(nn, ii) {
                     path <- file.path(derived, 'prop_land', rtmname) |> checkPath(create = TRUE)
                     saveName <- file.path(path, paste0('propLand_', ii, '.tif'))
+                    
+                    if (file.exists(saveName)) {
+                      message("[✔] Skipping ", rtmname, " year ", ii, " — already exists at: ", saveName)
+                      return(NULL)
+                    }
+                    
+                    message("[→] Processing ", rtmname, " for year ", ii)
+                    
                     reproducible::prepInputs(
                       url = paste0("https://opendata.nfis.org/downloads/forest_change/CA_forest_VLCE2_", ii, ".zip"),
-                      targetFile = paste0('CA_forest_VLCE2_',ii, '.tif'),
-                      destinationPath = canada, # end preprocess
+                      targetFile = paste0("CA_forest_VLCE2_", ii, ".tif"),
+                      destinationPath = canada,
                       fun = eval(parse(text = rtmFun)),
-                      # make_landforest_prop = make_landforest_prop,
-                      rtmFun = rtmFun,#, # end process, doing postprocess within fun
                       overwrite = TRUE
-                      #where2save = file.path(path, paste0('propLand_', ii, '.tif'))
                     ) |> Cache()
                   })
-                }
-)#|> Cache()
+                })
+
 
 
 ## Human disturbances -----
@@ -385,10 +385,13 @@ roadDensity250m <- reproducible::prepInputs(url = ROADS,
 
 
 ## FIRES ----
-# TODO this needs to be updated as above, but this is the old code
+
+#NBACURL <- "https://cwfis.cfs.nrcan.gc.ca/downloads/nbac/nbac_1972_2023_20240530_shp.zip"
+#NFDBURL <- ""
+
+
 
 ## FIRES #####
-## this has been run already
 # combine nbac (which seems to be more error checked) with older fires from NFDB
 # TODO replace with URL
 fires <- vect(file.path(canada, 'fire_nbac_1972_2023', 'nbac_1972_2023_20240530.shp'))
