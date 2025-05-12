@@ -23,7 +23,7 @@ dat.in <- readRDS(file.path(derived, 'prepDat_nmc.RDS'))
 range(dat.in$longitude, na.rm = T)
 # [1] -140.50307   13.53413
 range(dat.in$latitude, na.rm = T)
-# [1]  0.00000 65.17495
+# [1]  0.00000 65.48225
 
 
 crs <- st_crs(4326)$wkt
@@ -58,16 +58,18 @@ plot(dat.within$geometry)
 
 
 DT.filter <- setDT(sfheaders::sf_to_df(dat.within, fill = T))
+#DT.filter[, c("x", "y") := NULL]
+#setnames(DT.filter, old = c("x..1", "y..1"), new = c("x", "y"))
 
 
 # convert from long/lat to NAD83/Canada Atlas Lambert (need units to be m)
 range(DT.filter$x, na.rm = T)
 # [1] -140.5031 -120.0000
 range(DT.filter$y, na.rm = T)
-# [1] 53.92103 65.17842
+# [1] 53.92103 65.48225
 quantile(DT.filter$y, na.rm = T)
-# 0%      25%      50%      75%     100% 
-# 53.92103 59.44654 61.22696 62.25718 65.17842 
+#   0%      25%      50%      75%     100% 
+#53.92103 59.36092 61.17853 62.23798 65.48225 
 
 # filter out those that are from the office further south
 DT.filter2 <- DT.filter[y>50]
@@ -81,10 +83,12 @@ dat.trans <- setDT(sfheaders::sf_to_df(out.filter.sf, fill = T))
 
 
 ### initial clean ####
-# remove old collars with infrequent fixes
-dat.gps <- dat.trans[!(duty_cycle %in% c("1 fix every 1-7 d (varied by season see notes)", 
-                                  "1 fix every 5 d", '23-hourly fixes'))]
-# check for duplicated time stamps
+# remove old collars with infrequent fixes - SKIPPING FOR NOW (May 2025)
+#dat.gps <- dat.trans[!(duty_cycle %in% c("1 fix every 1-7 d (varied by season see notes)", 
+                                  #"1 fix every 5 d", '23-hourly fixes'))]
+dat.gps <- dat.trans
+
+# check for duplicated time stamps 
 dat.gps[,any(duplicated(datetime)), by = .(id)]
 
 
@@ -130,13 +134,13 @@ trk <- dat.ids %>%
            all_cols = T) 
 
 #Removing two obvious outliers, two lowest values on y axis
-#trk %>% 
-  #summarise(min_value = min(y_, na.rm = TRUE)) %>% pull(min_value)
-# [1] 6025758
-#trk <- trk[-c(198431), ]
-#trk %>% 
-  #summarise(min_value = min(y_, na.rm = TRUE)) %>% pull(min_value)
-#trk <- trk[-c(262969), ]
+trk %>% 
+  summarise(min_value = min(y_, na.rm = TRUE)) %>% pull(min_value)
+ #[1] 6025758
+trk <- trk[-c(198431), ]
+trk %>% 
+  summarise(min_value = min(y_, na.rm = TRUE)) %>% pull(min_value)
+trk <- trk[-c(262969), ]
 
 # Now we plot it
 plot(trk, main = "All Data")

@@ -264,7 +264,7 @@ propLand <- Map(rtmname = names(rtms), rtm = rtms, rtmFun = rtmsFuns[names(rtms)
 ## LFs: paved road, unpaved road, other lf
 ## Polys: quartz, placer, other mines, all other polygons (not including harvest)
 
-#TEST CODE
+#TEST CODE - WAITING FOR UPDATED DATA
 # Paths to your shapefiles
 poly_path <- "path/to/polygon_disturbance.shp"
 line_path <- "path/to/linear_features.shp"
@@ -281,11 +281,6 @@ line_sf <- st_transform(line_sf, crs(rasterToMatch_extendedLandscape30m))
 years <- 2012:2024
 poly_categories <- c("quartz", "placer", "othermines", "otherpoly")
 line_categories <- c("paved", "unpaved", "otherlf")
-
-# Reference rasters
-r30 <- rasterToMatch_extendedLandscape30m
-r1000 <- rasterToMatch_extendedLandscape1000m
-r5000 <- rasterToMatch_extendedLandscape5000m
 
 
 # TODO need distance to at larger resolutions per year for each feature
@@ -310,10 +305,12 @@ for (year in 2012:2024) {
     dist_ras <- terra::distance(bin_ras)
     
     # Resample to coarse resolutions
+    dist_250 <- terra::resample(dist_ras, rasterToMatch_extendedLandscape250m, method = "average")
     dist_1000 <- terra::resample(dist_ras, rasterToMatch_extendedLandscape1000m, method = "average")
     dist_5000 <- terra::resample(dist_ras, rasterToMatch_extendedLandscape5000m, method = "average")
     
     # Save
+    writeRaster(dist_250, file.path(derived, paste0(cat, "_distance_250m_", year, ".tif")), filetype = "GTiff", overwrite = TRUE)
     writeRaster(dist_1000, file.path(derived, paste0(cat, "_distance_1000m_", year, ".tif")), filetype = "GTiff", overwrite = TRUE)
     writeRaster(dist_5000, file.path(derived, paste0(cat, "_distance_5000m_", year, ".tif")), filetype = "GTiff", overwrite = TRUE)
   }
@@ -340,10 +337,12 @@ for (year in 2012:2024) {
     bin_ras[!is.na(bin_ras)] <- 1
     
     # Aggregate to 1000m and 5000m
+    pa_250 <- terra::aggregate(bin_ras, fact = res(rasterToMatch_extendedLandscape250m) / res(rasterToMatch_extendedLandscape30m), fun = max, na.rm = TRUE)
     pa_1000 <- terra::aggregate(bin_ras, fact = res(rasterToMatch_extendedLandscape1000m) / res(rasterToMatch_extendedLandscape30m), fun = max, na.rm = TRUE)
     pa_5000 <- terra::aggregate(bin_ras, fact = res(rasterToMatch_extendedLandscape5000m) / res(rasterToMatch_extendedLandscape30m), fun = max, na.rm = TRUE)
     
     # Save rasters
+    writeRaster(pa_250, file.path(derived, paste0(cat, "_presence_250m_", year, ".tif")), filetype = "GTiff", overwrite = TRUE)
     writeRaster(pa_1000, file.path(derived, paste0(cat, "_presence_1000m_", year, ".tif")), filetype = "GTiff", overwrite = TRUE)
     writeRaster(pa_5000, file.path(derived, paste0(cat, "_presence_5000m_", year, ".tif")), filetype = "GTiff", overwrite = TRUE)
   }
@@ -363,37 +362,29 @@ for (year in 2012:2024) {
     bin_ras <- terra::rasterize(feat, rasterToMatch_extendedLandscape30m, fun = "lengths", background = 0)
     bin_ras[bin_ras > 0] <- 1  # Ensure presence (1) for any road, absence (0) otherwise
     
-    # Aggregate the binary presence/absence to the larger resolutions (1000m, 5000m)
+    # Aggregate the binary presence/absence to the larger resolutions
+    dens250 <- terra::aggregate(bin_ras, fact = res(rasterToMatch_extendedLandscape250m) / res(rasterToMatch_extendedLandscape30m), fun = mean, na.rm = TRUE)
     dens1000 <- terra::aggregate(bin_ras, fact = res(rasterToMatch_extendedLandscape1000m) / res(rasterToMatch_extendedLandscape30m), fun = mean, na.rm = TRUE)
     dens5000 <- terra::aggregate(bin_ras, fact = res(rasterToMatch_extendedLandscape5000m) / res(rasterToMatch_extendedLandscape30m), fun = mean, na.rm = TRUE)
     
     # Save the results
+    writeRaster(dens250, file.path(derived, paste0(cat, "_roadPresenceAvg_250m_", year, ".tif")), filetype = "GTiff", overwrite = TRUE)
     writeRaster(dens1000, file.path(derived, paste0(cat, "_roadPresenceAvg_1000m_", year, ".tif")), filetype = "GTiff", overwrite = TRUE)
     writeRaster(dens5000, file.path(derived, paste0(cat, "_roadPresenceAvg_5000m_", year, ".tif")), filetype = "GTiff", overwrite = TRUE)
   }
 }
 
 
-# pseudo set up density (may be presence/absences?)
-roadDensity250m <- reproducible::prepInputs(url = ROADS,
-                                            destinationPath = canada, # maybe change to raw
-                                            to = rasterToMatch_extendedLandscape250m,
-                                            fun = 'terra::vect',
-                                            method = 'average') |>
-  Cache()
-# if that doesn't give average density -- bring in at 30m, then average when aggregating up
-
-
 ## FIRES ----
 
 #NBACURL <- "https://cwfis.cfs.nrcan.gc.ca/downloads/nbac/nbac_1972_2023_20240530_shp.zip"
-#NFDBURL <- ""
+#NFDBURL <- "https://cwfis.cfs.nrcan.gc.ca/datamart/download/nfdbpoly/NFDB_poly.zip"
 
 
 
 ## FIRES #####
 # combine nbac (which seems to be more error checked) with older fires from NFDB
-# TODO replace with URL
+# TODO replace with URL once we need to update data
 fires <- vect(file.path(canada, 'fire_nbac_1972_2023', 'nbac_1972_2023_20240530.shp'))
 fires.proj <- project(fires, crs)
 fires.old <- vect(file.path(canada, 'NFDB_poly', 'NFDB_poly_20210707.shp'))
@@ -414,14 +405,84 @@ nmc.fires.all$REP_YEAR <- as.integer(gsub("/.*$", "", nmc.fires.all$REP_DATE))
 nmc.fires.all$YEAR <- ifelse(!is.na(nmc.fires.all$year_burn), nmc.fires.all$year_burn,
                              nmc.fires.all$REP_YEAR)
 
-# NOTE: there are still some years that = -9999 that only have a decade associated with them
-## current plan is to set them to NA in analysis since it's unknown and not too many
 
 writeVector(nmc.fires.all, file.path(raw, 'fires', 'fires_1920_2023.shp'), overwrite = T)
+#fires_1920_2023 <- vect(file.path(raw, "fires", "fires_1920_2023.shp"))
 
-# make rasters from polygonal fires by year
+fires <- as.data.frame(fires_1920_2023)
+
+#Clean up years. Use info from fire_ID if available, otherwise set to NA
+library(stringr)
+
+fires_clean <- fires_1920_2023
+
+fire_ids <- as.character(fires_clean$FIRE_ID)
+year_guess <- str_extract(fire_ids, "^19[0-9]{2}")
+
+invalid_years <- fires_clean$YEAR %in% c(-9999, -2147483648)
+
+fires_clean$YEAR[invalid_years] <- ifelse(!is.na(year_guess[invalid_years]),
+                                          as.integer(year_guess[invalid_years]),
+                                          NA)
+writeVector(fires_clean, file.path(canada, "fires_1920_2023_cleaned.shp"), overwrite = TRUE)
+#plot(fires_clean)
+#fires <- as.data.frame(fires_clean)
+
+#Resolution rasterization
+fire250m <- reproducible::prepInputs(
+  targetFile = "fires_1920_2023_cleaned.shp",
+  destinationPath = canada,
+  fun = "terra::vect",
+  to = rasterToMatch_extendedLandscape250m
+) |> Cache()
+
+writeVector(fire250m, file.path(derived, "fires_1920_2023_250m.shp"))
+
+
+fire1000m <- reproducible::prepInputs(
+  targetFile = "fires_1920_2023_cleaned.shp",
+  destinationPath = canada,
+  fun = "terra::vect",
+  to = rasterToMatch_extendedLandscape1000m
+) |> Cache()
+
+writeVector(fire1000m, file.path(derived, "fires_1920_2023_1000m.shp"))
+
+
+fire5000m <- reproducible::prepInputs(
+  targetFile = "fires_1920_2023_cleaned.shp",
+  destinationPath = canada,
+  fun = "terra::vect",
+  to = rasterToMatch_extendedLandscape5000m
+) |> Cache()
+
+writeVector(fire5000m, file.path(derived, "fires_1920_2023_5000m.shp"))
+
+
+#source("C:/Users/peteb/NMC_CEtool_PB/R/make_fire_rast.R")
 gc()
 
-make_fire_rast(layer = file.path(raw, 'fires', 'fires_1920_2023.shp'),
-               rast = land, minyr = minyr,
-               where2save = file.path(raw, 'fires'))
+dir.create(file.path(derived, "fireRasters250m"), recursive = TRUE, showWarnings = FALSE)
+dir.create(file.path(derived, "fireRasters1000m"), recursive = TRUE, showWarnings = FALSE)
+dir.create(file.path(derived, "fireRasters5000m"), recursive = TRUE, showWarnings = FALSE)
+
+make_fire_rast(
+  layer = file.path(derived, "fires_1920_2023_250m.shp"),
+  rast = rasterToMatch_extendedLandscape250m,
+  minyr = 2012,
+  where2save = file.path(derived, "fireRasters250m")
+)
+
+make_fire_rast(
+  layer = file.path(derived, "fires_1920_2023_1000m.shp"),
+  rast = rasterToMatch_extendedLandscape1000m,
+  minyr = 2012,
+  where2save = file.path(derived, "fireRasters1000m")
+)
+
+make_fire_rast(
+  layer = file.path(derived, "fires_1920_2023_5000m.shp"),
+  rast = rasterToMatch_extendedLandscape5000m,
+  minyr = 2012,
+  where2save = file.path(derived, "fireRasters5000m")
+)

@@ -30,11 +30,11 @@ movebank_store_credentials("username", "password")
 
 # study names to fill in loop
 # had to go through names on movebank and accept terms for each...
-dsNames <-c('Aishihik Caribou', 'Clear Creek caribou', 
+dsNames <-c('Aishihik Caribou', 'Bonnet Plume caribou - Yukon Collars', 'Clear Creek caribou', 
             'Coal River caribou', 'Hart River caribou', 
             'Klaza caribou', 'Kluane caribou',
             'Little Rancheria caribou - B.C. collars NO SHARING', 'Little Rancheria caribou - Yukon collars',
-            'Nahanni caribou', 'Southern Lakes caribou - Updated V4', 
+            'Pelly Caribou Herds' ,'South Nahanni caribou', 'Southern Lakes caribou - Updated V4', 
             'Tay River caribou', 'Wolf Lake caribou') 
 
 # aishihik <- movebank_download_study('Aishihik Caribou')
@@ -43,29 +43,31 @@ dsNames <-c('Aishihik Caribou', 'Clear Creek caribou',
 
 # make a list of all data from Movebank
 # TODO: update this with prepInputs()
-# LAST Tried 1 NOV 2023 -- KB said several studies updated
+# LAST downloaded May 2025
 move <- list()
 for (ds in 1:length(dsNames)) {
   #hh = 1
   move[[ds]]<-movebank_download_study(study =dsNames[[ds]], )
 }
+
 saveRDS(move, file.path(raw, 'YTdata_DL.RDS'))
-move <- readRDS(file.path(raw, 'YTdata_DL.RDS'))
+#move <- readRDS(file.path(raw, 'YTdata_DL.RDS'))
 
 move.meta <- list()
 for (ds in 1:length(dsNames)) {
   #hh = 1
   move.meta[[ds]]<-movebank_download_deployment(study =dsNames[[ds]])
 }
+
 saveRDS(move.meta, file.path(raw, 'YTmetadata_DL.RDS'))
-move.meta <- readRDS(file.path(raw, 'YTmetadata_DL.RDS'))
+#move.meta <- readRDS(file.path(raw, 'YTmetadata_DL.RDS'))
 
 # pull just the data
-hab <-c('Aishihik', 'ClearCreek', 
+hab <-c('Aishihik', 'BonnetPlume', 'ClearCreek', 
         'CoalRiver', 'HartRiver', 
         'Klaza', 'Kluane',
         'LittleRancheriaBC', 'LittleRancheriaYT',
-        'Nahanni', 'SouthernLakes',
+        'Pelly', 'SouthNahanni', 'SouthernLakes',
         'TayRiver', 'WolfLake') 
 
 # convert from long/lat to NAD83/Canada Atlas Lambert (need units to be m)
@@ -115,7 +117,7 @@ yt.clean[,`:=`(deploy_start = min(datetime),
                deploy_end = max(datetime)), by = .(id)]
 
 # save 'clean' data 
-saveRDS(move.clean, paste0(derived, 'data_all_yt.RDS'))
+#saveRDS(yt.clean, paste0(derived, 'data_all_yt.RDS'))
 
 # BC DATA ----
 bc <- fread(file.path(raw, 'BC_NMC_Telemetry.csv'))
@@ -151,6 +153,7 @@ bcmn.clean <- bcmn.trans[,.(prov = 'bc', area = Pop_Unit, id=as.character(WLH_ID
                         deploy_start, deploy_end,
                         datetime = Acquisition_Date, Longitude, Latitude)]
 
+setnames(bcmn.clean, old = c("Latitude", "Longitude"), new = c("latitude", "longitude"))
 
 # COMBO DATA ----
 yt.clean <- readRDS(file.path(derived, 'data_all_yt.RDS'))
