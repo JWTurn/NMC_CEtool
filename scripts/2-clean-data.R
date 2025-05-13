@@ -111,8 +111,7 @@ sum.pts <- dat3 %>%
                    deployment.date = as.Date(as.character(min(datetime))),
                    last.date = as.Date(as.character(max(datetime))),
                    number.fix = n_distinct(datetime))
-# there are 11659 fixes from BC with no id... oy veh 
-# also NAs
+ 
 dat.ids <- dat3[!is.na(id)&id!=""]
 
 
@@ -124,6 +123,17 @@ plot(coords$geometry)
 
 # ok major weirdos gone but still some likely not real points, two obvious ones removed below.
 
+#Check on map
+library(ggplot2)
+library(sf)
+library(ggspatial)
+
+ggplot() +
+  annotation_map_tile(type = "osm", zoomin = -1) +  # base map
+  geom_sf(data = coords$geometry, size = 0.1, alpha = 0.3, color = "blue") +
+  theme_minimal()
+
+
 
 # Clean data for movement ----
 trk <- dat.ids %>%
@@ -134,19 +144,19 @@ trk <- dat.ids %>%
            all_cols = T) 
 
 #Removing two obvious outliers, two lowest values on y axis
-trk %>% 
-  summarise(min_value = min(y_, na.rm = TRUE)) %>% pull(min_value)
- #[1] 6025758
-trk <- trk[-c(198431), ]
-trk %>% 
-  summarise(min_value = min(y_, na.rm = TRUE)) %>% pull(min_value)
-trk <- trk[-c(262969), ]
+lowest_values <- trk %>%
+  arrange(y_) %>%
+  slice(1:2)
+
+trk <- anti_join(trk, lowest_values)
+
 
 # Now we plot it
 plot(trk, main = "All Data")
 lines(trk)
 
 # We can also take a look on a map.
+
 trk %>%
  inspect(cluster=FALSE)
 
@@ -196,7 +206,7 @@ range(fixrate$median)
 median(fixrate$median)
 # 8 hours
 mean(fixrate$median)
-# 10.8
+# 10.5
 
 # quick check steps
 
@@ -204,12 +214,12 @@ step.lengths <- unlist(map(trkid$data, step_lengths))
 hist(step.lengths, main="Histogram of step lengths", xlab="Step lengths", ylim = c(0,1000))
 
 median(step.lengths, na.rm = T)
-# 320.0361
+# 325.4736
 
 quantile(diff(trk4$t_))
-# Time differences in secs
-# 0%    25%    50%    75%   100% 
-# 0      0      0      3 633600 
+#Time differences in secs
+#0%     25%     50%     75%    100% 
+#0       0       0       2 6476400 
 
 #  For hourly data, much larger values are still safe.
 
@@ -255,6 +265,7 @@ head(trk7)
 # How did we do?
 trk7 %>% 
   filter(fast_step_)
+
 
 # We're going to remove a couple of "real" locations and a "fast_rt" location,
 # but we mostly got it right. Here, we can afford to lose a few "real" locations
@@ -353,9 +364,19 @@ trk9 <- trk8.remove %>%
 trk9 %>% 
   filter(defunct_cluster_) 
 
+#Getting rid of remaining obvious outliers
+trk9_clean <- trk9 %>%
+  filter(y_ >= 6200000, x_ <= 1650000)
+
+
+plot(trk9_clean$x_, trk9_clean$y_,
+     xlab = "Longitude", ylab = "Latitude",
+     pch = 20, col = rgb(0, 0, 1, 0.3), cex = 0.5)
+
+#Much better!
 
 # final ----
-final <- trk9 # down to 1571776 from 1952419
+final <- trk9_clean # down to 1673644 from 1982056
 
 final.dt <- setDT(final)
 
@@ -377,7 +398,7 @@ st_write(sa.union, file.path(derived, 'prepped', 'clean_NMC_20kmBuff.shp'), appe
 
 
 # checking fix rate now clean
-fixrate.clean <- trk9 %>% make_track(x_,y_, t_, crs = crs, all_cols = T) %>% 
+fixrate.clean <- trk9_clean %>% make_track(x_,y_, t_, crs = crs, all_cols = T) %>% 
   nest(data = -"id") %>% 
   mutate(sr = lapply(data, summarize_sampling_rate)) %>%
   dplyr::select(id, sr) %>% unnest(cols = c(sr))
@@ -387,7 +408,7 @@ range(fixrate$median)
 median(fixrate$median)
 # 8 hours
 mean(fixrate$median)
-# 10.8
+# 10.45918
 ### steps ----
 steps <- 
   final %>% 
@@ -398,12 +419,12 @@ hist(step.lengths, ylim = c(0, 1000), main="Histogram of step lengths", xlab="St
 
 range(step.lengths, na.rm = T)
 quantile(step.lengths, na.rm = T)
-# 0%          25%          50%          75%         100% 
-# 0.0000     101.0349     353.8098    1026.6534 1004097.3727 
+#           0%         25%         50%         75%        100% 
+#0.0000    101.7988    358.7581   1052.1574 364213.1197 
 quantile(step.lengths, na.rm = T, probs = c(0.9, 0.95, 0.99))
-# 90%      95%      99% 
-# 2321.981 3648.561 7992.475
+#  90%      95%      99% 
+#2418.884 3859.316 8876.558 
 mean(step.lengths, na.rm = T)
-# 991.0208
+#  989.5847
 
 # there are some REALLY big steps

@@ -52,7 +52,7 @@ range(fixrate.clean$median)
 median(fixrate.clean$median)
 # 8 hours
 mean(fixrate.clean$median)
-# 10.9
+# 10.5119
 
 
 ### steps ----
@@ -62,7 +62,6 @@ steps <-
   mutate(track = map(data, ~ mk_track(., x_, y_, t_, crs= crs)))
 step.lengths <- unlist(map(steps$track, step_lengths))
 hist(step.lengths, ylim = c(0, 1000), main="Histogram of step lengths", xlab="Step lengths")
-
 
 
 trk.fr <- dat |> 
@@ -89,15 +88,15 @@ steps.id <- steps.fr |> select(id,  steps)|>
   unnest(cols = steps)
 
 quantile(steps.id$sl_)
-# 0%         25%         50%         75%        100% 
-# 0.0000   173.8541   494.0337  1238.2478 32015.2891 
+#  0%        25%        50%        75%       100% 
+#0.0000   172.0587   486.6992  1220.7022 32015.2891 
 quantile(steps.id$sl_, probs = c(0.9, 0.95, 0.99))
 # 90%      95%      99% 
-# 2574.592 3913.722 8067.054  
+# 2541.657 3868.712 7978.692   
 mean(steps.id$sl_)
-# [1] 1046.018
+# [1] 1033.364
 median(steps.id$sl_)
-# [1] 494.0337
+# [1] 486.6992
 
 
 
@@ -128,10 +127,10 @@ steps.id13 <- steps.fr13 |> select(id,  steps)|>
 # this one has more points
 quantile(steps.id13$sl_)
 # 0%       25%       50%       75%      100% 
-# 0.0000   274.0547   747.9967  1741.7375 82427.1468 
+# 0.0000   275.1718   748.6220  1743.0098 82427.1468 
 quantile(steps.id13$sl_, probs = c(0.9, 0.95, 0.99))
 # 90%      95%      99% 
-# 3475.857  5153.962 10157.446 
+# 3480.750  5165.166 10171.974 
 mean(steps.id13$sl_)
-# [1] 1438.687
+# [1] 1440.936
 
