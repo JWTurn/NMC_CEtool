@@ -32,26 +32,40 @@ raw <- file.path('data','raw')
 derived <- file.path('data','derived')
 
 path <- file.path(derived, 'clean_NMC.RDS')
+#canada <- file.path('C:','Users', 'peteb', 'OneDrive', 'Documents', 'BP', 'Yukoncfx', 'reproducibleInputs')
 canada <- file.path('~/Dropbox', 'ActiveDocs', 'Git-local', 'Can_GIS_layers')
 studyArea <- file.path(derived, 'prepped', 'clean_NMC_20kmBuff_crop.shp')
+#canPoly <- st_read('lpr_000b16a_e.shp') For Pete, delete later
 
-prop700 <- file.path('data', 'raw', 'prop_land', '700')
-prop_water <- file.path('data', 'raw', 'prop_land', '700', 'prop_water')
-prop_snow <- file.path('data', 'raw', 'prop_land', '700', 'prop_snow')
-prop_rock <- file.path('data', 'raw', 'prop_land', '700', 'prop_rock')
-prop_barren <- file.path('data', 'raw', 'prop_land', '700', 'prop_barrenland')
-prop_bryoids <- file.path('data', 'raw', 'prop_land', '700', 'prop_bryoids')
-prop_shrub <- file.path('data', 'raw', 'prop_land', '700', 'prop_shrub')
-prop_wetland <- file.path('data', 'raw', 'prop_land', '700', 'prop_wetland')
-prop_wettreed <- file.path('data', 'raw', 'prop_land', '700', 'prop_wet_treed')
-prop_herbs <- file.path('data', 'raw', 'prop_land', '700', 'prop_herbs')
-prop_needleleaf <- file.path('data', 'raw','prop_land', '700', 'prop_needleleaf')
-prop_deciduous <- file.path('data', 'raw', 'prop_land', '700', 'prop_deciduous')
-prop_mixed <- file.path('data', 'raw', 'prop_land', '700', 'prop_mixed')
+#prop700 <- file.path('data', 'raw', 'prop_land', '700')
+#prop_water <- file.path('data', 'raw', 'prop_land', '700', 'prop_water')
+#prop_snow <- file.path('data', 'raw', 'prop_land', '700', 'prop_snow')
+#prop_rock <- file.path('data', 'raw', 'prop_land', '700', 'prop_rock')
+#prop_barren <- file.path('data', 'raw', 'prop_land', '700', 'prop_barrenland')
+#prop_bryoids <- file.path('data', 'raw', 'prop_land', '700', 'prop_bryoids')
+#prop_shrub <- file.path('data', 'raw', 'prop_land', '700', 'prop_shrub')
+#prop_wetland <- file.path('data', 'raw', 'prop_land', '700', 'prop_wetland')
+#prop_wettreed <- file.path('data', 'raw', 'prop_land', '700', 'prop_wet_treed')
+#prop_herbs <- file.path('data', 'raw', 'prop_land', '700', 'prop_herbs')
+#prop_needleleaf <- file.path('data', 'raw','prop_land', '700', 'prop_needleleaf')
+#prop_deciduous <- file.path('data', 'raw', 'prop_land', '700', 'prop_deciduous')
+#prop_mixed <- file.path('data', 'raw', 'prop_land', '700', 'prop_mixed')
 
-fires <- file.path('data', 'raw', 'fires', 'fires')
-fire_path <- file.path('data', 'raw', 'fires')
-harv <- file.path('data', 'raw', 'nmc_harv_1985-2020.tif')
+
+prop_land <- file.path('data', 'derived', 'prop_land')
+landcov250 <- file.path('data', 'derived', 'prop_land', 'window250')
+landcov1000 <- file.path('data', 'derived', 'prop_land', 'agg1000')
+landcov5000 <- file.path('data', 'derived', 'prop_land', 'agg5000')
+
+fires_250 <- file.path('data', 'derived', 'fireRasters250m')
+fires_1000 <- file.path('data', 'derived', 'fireRasters1000m')
+fires_5000 <- file.path('data', 'derived', 'fireRasters5000m')
+
+harv_250 <- file.path('data', 'derived', 'harv250')
+harv_1000 <- file.path('data', 'derived', 'harv1000')
+hav_5000 <- file.path('data', 'derived', 'harv5000')
+
+#Needs to be updated once done prepland ***
 for.age <- file.path('data', 'raw', 'nmc_forestage_meanbuff700_2019.tif')
 anthropolys <- file.path('data', 'raw', 'polygonal_features', 'anthropolys.shp')
 miningpolys <- file.path('data', 'raw', 'polygonal_features', 'miningpolys.shp')
@@ -72,7 +86,7 @@ n_rand <- 30 # number of random steps to generate
 
 # minimum year we want to pull data for
 minyr <- 2012
-maxyr <- 2023
+maxyr <- 2024
 
 
 # Split by: within which column or set of columns (eg. c(id, yr))
@@ -111,7 +125,7 @@ targets_prep <- c(
   ),
   
   
-  # load paved linear features
+  # load paved linear features **UPDATE**
   tar_target(
     lf_paved.path,
     lf_paved,
@@ -122,7 +136,7 @@ targets_prep <- c(
     load_sf(lf_paved.path, crs)
   ),
 
-  # load unpaved linear features
+  # load unpaved linear features **UPDATE**
   tar_target(
     lf_unpaved.path,
     lf_unpaved,
@@ -133,7 +147,7 @@ targets_prep <- c(
     load_sf(lf_unpaved.path, crs)
   ),
 
-  # load other linear features
+  # load other linear features **UPDATE**
   tar_target(
     lf_other.path,
     lf_other,
@@ -144,7 +158,7 @@ targets_prep <- c(
     load_sf(lf_other.path, crs)
   ),
   
-  # load anthropolys
+  # load anthropolys **UPDATE**
   tar_target(
     anthropolys.path,
     anthropolys,
@@ -160,7 +174,7 @@ targets_prep <- c(
     format = 'file'
   ),
   
-  # load miningpolys
+  # load miningpolys **UPDATE**
   tar_target(
     miningpolys.path,
     miningpolys,
@@ -171,7 +185,7 @@ targets_prep <- c(
     load_sf(miningpolys.path, crs)
   ),
   
-  # load miningpolys for just Yukon
+  # load miningpolys for just Yukon **UPDATE**
   tar_target(
     miningpolys.yt.path,
     miningpolys.yt,
@@ -183,7 +197,7 @@ targets_prep <- c(
   ),
 
   # load harvest
-  tar_target(
+  tar_target( #OLD ***
     harv.path,
     harv,
     format = 'file'
@@ -193,13 +207,46 @@ targets_prep <- c(
     make_harv_sf(harv.path)
   ),
   
+  tar_target(
+    derived,
+    harv250,
+    format = "file"
+  ),
+  
+  tar_target(
+    derived,
+    harv1000,
+    format = "file"
+  ),
+  
+  tar_target(
+    derived,
+    harv5000,
+    format = "file"
+  ),
+  
+  tar_target(
+    harv250,
+    make_harv_rast(harv250)
+  ),
+  
+  tar_target(
+    harv1000,
+    make_harv_rast(harv1000)
+  ),
+  tar_target(
+    harv5000,
+    make_harv_rast(harv5000)
+  ),
+  
+  
   # load fires
   # tar_files(
   #   fires.path,
   #   list.files(path = fires_path, full.names = T)
   # ),
  
-  # load forest age
+  # load forest age 
   tar_target(
     for.age.path,
     for.age,

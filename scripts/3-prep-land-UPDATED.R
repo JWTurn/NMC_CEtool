@@ -112,6 +112,16 @@ writeRaster(harv5000m, file.path(derived, 'nmc_harv5000m_1985-2020.tif'))
 
 dist_results <- list()
 
+# Define output folders for each resolution
+dir_250 <- file.path(derived, "harv250")
+dir_1000 <- file.path(derived, "harv1000")
+dir_5000 <- file.path(derived, "harv5000")
+
+# Create directories if they don't exist
+dir.create(dir_250, recursive = TRUE, showWarnings = FALSE)
+dir.create(dir_1000, recursive = TRUE, showWarnings = FALSE)
+dir.create(dir_5000, recursive = TRUE, showWarnings = FALSE)
+
 # Loop over years
 for (year in 2012:2020) {
   message("Processing year ", year)
@@ -128,12 +138,12 @@ for (year in 2012:2020) {
   dist_1000 <- resample(dist_rast, harv1000m, method = "average")
   dist_5000 <- resample(dist_rast, harv5000m, method = "average")
   
-  # Save all rasters, even if they contain only NA
-  writeRaster(dist_250, file.path(derived, paste0("harvdist_250m_", year, ".tif")),
+  # Save rasters into their corresponding folders
+  writeRaster(dist_250, file.path(dir_250, paste0("harvdist_250m_", year, ".tif")),
               filetype = "GTiff", overwrite = TRUE)
-  writeRaster(dist_1000, file.path(derived, paste0("harvdist_1000m_", year, ".tif")),
+  writeRaster(dist_1000, file.path(dir_1000, paste0("harvdist_1000m_", year, ".tif")),
               filetype = "GTiff", overwrite = TRUE)
-  writeRaster(dist_5000, file.path(derived, paste0("harvdist_5000m_", year, ".tif")),
+  writeRaster(dist_5000, file.path(dir_5000, paste0("harvdist_5000m_", year, ".tif")),
               filetype = "GTiff", overwrite = TRUE)
   
   message("  Done: ", year)
@@ -165,22 +175,21 @@ for (year in 2012:2020) {
   # Replace NA with 0 for presence/absence aggregation
   harvest_pa <- classify(harvest_bin, cbind(NA, 0))  # all NAs become 0, so 1 = harvest, 0 = no harvest
   
-  # Aggregate to coarser resolutions using max (i.e., presence if any pixel in block was harvested)
+  # Aggregate to coarser resolutions using max (presence if any pixel in block was harvested)
   pa_250 <- aggregate(harvest_pa, fact = res(harv250m) / res(harv30m), fun = max, na.rm = TRUE)
   pa_1000 <- aggregate(harvest_pa, fact = res(harv1000m) / res(harv30m), fun = max, na.rm = TRUE)
   pa_5000 <- aggregate(harvest_pa, fact = res(harv5000m) / res(harv30m), fun = max, na.rm = TRUE)
   
-  # Save rasters
-  writeRaster(pa_250, file.path(derived, paste0("harvpres_250m_", year, ".tif")),
+  # Save rasters in appropriate folders
+  writeRaster(pa_250, file.path(dir_250, paste0("harvpres_250m_", year, ".tif")),
               filetype = "GTiff", overwrite = TRUE)
-  writeRaster(pa_1000, file.path(derived, paste0("harvpres_1000m_", year, ".tif")),
+  writeRaster(pa_1000, file.path(dir_1000, paste0("harvpres_1000m_", year, ".tif")),
               filetype = "GTiff", overwrite = TRUE)
-  writeRaster(pa_5000, file.path(derived, paste0("harvpres_5000m_", year, ".tif")),
+  writeRaster(pa_5000, file.path(dir_5000, paste0("harvpres_5000m_", year, ".tif")),
               filetype = "GTiff", overwrite = TRUE)
   
   message("  Done: ", year)
 }
-
 
 #QC
 #harv1000m_2012 <- rast(file.path(derived, 'harvpres_1000m_2012.tif'))
