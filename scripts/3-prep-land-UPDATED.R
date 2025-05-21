@@ -473,7 +473,7 @@ df$year <- dplyr::coalesce(df$year_road, df$year_start, df$year_datemin)
 df <- df[, !(names(df) %in% c("year_road", "year_start", "year_datemin"))]
 df$year[df$year < 2012] <- 2012
 values(paved.rail.all) <- df
-table(paved.rail.all$year)
+table(paved.rail.all$feature_type)
 writeVector(paved.rail.all, file.path(raw, 'linear_features', 'roadpaved.shp'), overwrite = TRUE)
 
 unpaved.yt <- project(vect(dplyr::filter(yt.lf, LF_TYPE == 'Unpaved Road')), crs)
@@ -539,13 +539,36 @@ peat <- vect(file.path(resmgmt, 'peat_2.shp')) # poly
 rsmgt.mines <- union(aggr, ore2)
 nt.mines <- crop(project(rsmgt.mines, crs), nt)
 nt.mines$feature_type <- "othermines"
+#Get year in there
+head(nt.mines)
+table(nt.mines$datemin)
+df <- as.data.frame(nt.mines)
+df$year <- as.numeric(format(as.Date(df$datemin, format = "%Y-%m-%d"), "%Y"))
+df$year[is.na(df$year)] <- 2012
+df$year[df$year < 2012] <- 2012
+values(nt.mines) <- df
+table(nt.mines$year)
+
 rsmgt.otherpolys <- union(peat, oilgas2)
 nt.otherpolys <- crop(project(rsmgt.otherpolys, crs), nt)
 
 #yt.poly.proj <- project(vect(yt.poly), crs)
 miningpolys.yt <- project(vect(dplyr::filter(yt.poly, RC_Dstr %in% c('Quartz Mining', 'Placer Mining'))), crs)
 miningpolys.yt$feature_type <- ifelse(miningpolys.yt$RC_Dstr == "Placer Mining", "placer", "quartz")
+#Add year in there
+head(miningpolys.yt)
+table(miningpolys.yt$yr_strt)
+df <- as.data.frame(miningpolys.yt)
+df$year <- as.numeric(df$yr_strt)
+df$year[is.na(df$year)] <- 2012
+df$year[df$year < 2012] <- 2012
+values(miningpolys.yt) <- df
+table(miningpolys.yt$year)
+
+#Add all mining poly's together
 miningpolys.all <- rbind(miningpolys.yt, nt.mines, bc.mines)
+table(miningpolys.all$year)
+table(miningpolys.all$feature_type)
 writeVector(miningpolys.all, file.path(raw, 'polygonal_features', 'miningpolys.shp'), overwrite = T)
 writeVector(miningpolys.yt, file.path(raw, 'polygonal_features', 'mining_nmc_yt.shp'), overwrite = T)
 
@@ -554,22 +577,83 @@ yt.otherpolys <- project(vect(dplyr::filter(yt.poly, !(RC_Dstr %in% c('Quartz Mi
 
 anthropolys.all <- rbind(yt.otherpolys, nt.otherpolys, bc.polys)
 anthropolys.all$feature_type <- "otherpoly"
+head(anthropolys.all)
+table(anthropolys.all$IMAGE_D)
+df <- as.data.frame(anthropolys.all)
+df$year_road <- as.numeric(df$yr_strt)
+df$year_start <- as.numeric(format(as.Date(df$OPERATIONS_EFFECTIVE_DATE, format = "%Y-%m-%d"), "%Y"))
+df$year_datemin <- as.numeric(format(as.Date(df$PROJECT_ESTABLISHED_DATE, format = "%Y-%m-%d"), "%Y"))
+df$year_image <- as.numeric(format(as.Date(df$IMAGE_D, format = "%Y-%m-%d"), "%Y"))
+df$year <- dplyr::coalesce(df$year_road, df$year_start, df$year_datemin, df$year_image)
+df <- df[, !(names(df) %in% c("year_road", "year_start", "year_datemin", "year_image"))]
+df$year[df$year < 2012] <- 2012
+df$year[is.na(df$year)] <- 2012 #Assign 2012 to ones with no data
+values(anthropolys.all) <- df
+table(anthropolys.all$year)
+
 writeVector(anthropolys.all, file.path(raw, 'polygonal_features', 'anthropolys.shp'), overwrite = T)
 
 
 unpaved <- vect(file.path(raw, 'linear_features', 'roadunpaved.shp'))
 paved <- vect(file.path(raw, 'linear_features', 'roadpaved.shp'))
 roads <- union(paved, unpaved)
-anthropolys <- vect(file.path(raw, 'polygonal_features', 'anthropolys.shp'))
-anthro.all <- c(roads, anthropolys)
+otherpoly <- vect(file.path(raw, 'polygonal_features', 'anthropolys.shp'))
+miningpoly <- vect(file.path(raw, 'polygonal_features', 'miningpolys.shp'))
+anthro.all <- c(roads, otherpoly)
+lfother <- vect(file.path(raw, 'linear_features', 'lfother.shp'))
+
+
+#Combine all lf's into single shp
+table(unpaved$year)
+table(paved$year)
+table(lfother$year)
+
+names(paved)
+table(unpaved$feature_t0) 
+table(paved$feature_t0)
+table(lfother$feature_t0)
+
+
+gc()
+
+sf_paved   <- st_as_sf(paved)
+sf_unpaved <- st_as_sf(unpaved)
+sf_lfother <- st_as_sf(lfother)
+
+sf_all <- bind_rows(sf_paved, sf_unpaved, sf_lfother)
+
+line_sf <- vect(sf_all)
+names(line_sf)
+table(line_sf$year)
+table(line_sf$feature_t0)
+
+#Looking good! Phew! Now combine all poly's
+
+table(miningpoly$year)
+table(otherpoly$year)
+
+table(miningpoly$feature_t0) 
+table(otherpoly$feature_t0)
+
+gc()
+
+sf_otherpoly   <- st_as_sf(otherpoly)
+sf_miningpoly  <- st_as_sf(miningpoly)
+
+sf_poly_all <- dplyr::bind_rows(sf_otherpoly, sf_miningpoly)
+
+poly_sf <- terra::vect(sf_poly_all)
+
+table(poly_sf$year)           
+table(poly_sf$feature_t0)   
+
+#Looking good, year and feature type carried over! Now for the re-rasterization
 
 
 # STARTING RASTER CALCULATIONS
-
-
 # Reproject to match base raster
-poly_sf <- st_transform(poly_sf, crs(rasterToMatch_extendedLandscape30m))
-line_sf <- st_transform(line_sf, crs(rasterToMatch_extendedLandscape30m))
+poly_sf <- terra::project(poly_sf, crs(rasterToMatch_extendedLandscape30m))
+line_sf <- terra::project(line_sf, crs(rasterToMatch_extendedLandscape30m))
 
 
 # Define years, resolutions, categories
@@ -585,9 +669,9 @@ for (year in 2012:2024) {
     
     # Filter features
     if (cat %in% c("quartz", "placer", "othermines", "otherpoly")) {
-      feat <- poly_sf %>% filter(category == cat, year == !!year)
+      feat <- poly_sf %>% filter(category == feature_t0, year == !!year)
     } else {
-      feat <- line_sf %>% filter(category == cat, year == !!year)
+      feat <- line_sf %>% filter(category == feature_t0, year == !!year)
     }
     
     if (nrow(feat) == 0) next
