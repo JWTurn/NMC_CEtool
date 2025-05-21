@@ -461,20 +461,38 @@ other.nt <- trail.proj
 paved.yt <- project(vect(dplyr::filter(yt.lf, RECLS_D %in% c('Highway', 'Railway'))), crs)
 paved.rail.all <- rbind(paved.yt, paved.nt, bc.paved.rail)
 paved.rail.all$feature_type <- "paved"
-#Add years
+
+#Add years according to year start, or year end if unavailable
 head(paved.rail.all)
-
-
-
+table(paved.rail.all$RoadYear)
+df <- as.data.frame(paved.rail.all)
+df$year_road <- as.numeric(df$RoadYear)
+df$year_start <- as.numeric(df$yr_strt)
+df$year_datemin <- as.numeric(format(as.Date(df$datemin, format = "%Y-%m-%d"), "%Y"))
+df$year <- dplyr::coalesce(df$year_road, df$year_start, df$year_datemin)
+df <- df[, !(names(df) %in% c("year_road", "year_start", "year_datemin"))]
+df$year[df$year < 2012] <- 2012
+values(paved.rail.all) <- df
+table(paved.rail.all$year)
 writeVector(paved.rail.all, file.path(raw, 'linear_features', 'roadpaved.shp'), overwrite = TRUE)
 
 unpaved.yt <- project(vect(dplyr::filter(yt.lf, LF_TYPE == 'Unpaved Road')), crs)
 unpaved.all <- rbind(unpaved.yt, unpaved.nt, bc.unpaved.proj)
 unpaved.all$feature_type <- "unpaved"
+head(unpaved.all)
+table(unpaved.all$RoadYear)
+df <- as.data.frame(unpaved.all)
+df$year_road <- as.numeric(df$RoadYear)
+df$year_start <- as.numeric(df$yr_strt)
+df$year_datemin <- as.numeric(format(as.Date(df$datemin, format = "%Y-%m-%d"), "%Y"))
+df$year <- dplyr::coalesce(df$year_road, df$year_start, df$year_datemin)
+df <- df[, !(names(df) %in% c("year_road", "year_start", "year_datemin"))]
+df$year[df$year < 2012] <- 2012
+values(unpaved.all) <- df
+table(unpaved.all$year)
 writeVector(unpaved.all, file.path(raw, 'linear_features', 'roadunpaved.shp'), overwrite = TRUE)
 
 gc()
-
 
 # other LFs
 commline <- project(vect(file.path(resmgmt, 'communication_line_1.shp')), crs)
@@ -491,6 +509,19 @@ lf.resmgmt.trail <- union(resmgmt.lf, other.nt)
 other.yt <- project(vect(dplyr::filter(yt.lf, LF_TYPE == 'Other LF' & RECLS_D != 'Railway')), crs)
 other.all <- rbind(other.yt, lf.resmgmt.trail, bc.other)
 other.all$feature_type <- "otherlf"
+head(other.all)
+table(other.all$SOURCE_DATE)
+df <- as.data.frame(other.all)
+df$year_road <- as.numeric(df$ASRC_YEAR)
+df$year_start <- as.numeric(df$yr_strt)
+df$year_datemin <- as.numeric(df$COMMISSIONED_YEAR)
+df$year <- dplyr::coalesce(df$year_road, df$year_start, df$year_datemin)
+df <- df[, !(names(df) %in% c("year_road", "year_start", "year_datemin"))]
+df$year[df$year < 2012] <- 2012
+df$year[is.na(df$year)] <- 2012 #About 200,000 without a date, should assume they have been there since at least 2012
+values(other.all) <- df
+table(other.all$year)
+
 writeVector(other.all, file.path(raw, 'linear_features', 'lfother.shp'), overwrite = TRUE)
 
 gc()
