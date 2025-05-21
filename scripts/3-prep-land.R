@@ -225,6 +225,7 @@ unpaved.all <- rbind(unpaved.yt, unpaved.nt, bc.unpaved.proj)
 writeVector(unpaved.all, file.path(raw, 'linear_features', 'roadunpaved.shp'))
 
 gc()
+
 # other LFs
 commline <- project(vect(file.path(resmgmt, 'communication_line_1.shp')), crs)
 pipeline <- project(vect(file.path(resmgmt, 'pipeline_1.shp')), crs)

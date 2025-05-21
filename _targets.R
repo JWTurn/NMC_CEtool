@@ -208,36 +208,17 @@ targets_prep <- c(
   ),
   
   tar_target(
-    derived,
-    harv250,
+    harv250.path,
+    harv_250,
     format = "file"
   ),
   
   tar_target(
-    derived,
-    harv1000,
-    format = "file"
+    harv250.sf,
+    make_harv_rast(harv250.path)
   ),
   
-  tar_target(
-    derived,
-    harv5000,
-    format = "file"
-  ),
-  
-  tar_target(
-    harv250,
-    make_harv_rast(harv250)
-  ),
-  
-  tar_target(
-    harv1000,
-    make_harv_rast(harv1000)
-  ),
-  tar_target(
-    harv5000,
-    make_harv_rast(harv5000)
-  ),
+
   
   
   # load fires
@@ -359,7 +340,7 @@ targets_propland <- c(
 
   tar_target(
     extr_propwater,
-    extract_by_year(addyear, var = prop_water, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+    extract_by_year(addyear, var = landcov250, startyr = minyr, endyr = 2022, maxyr, where = 'end')
   ),
 
   tar_target(
