@@ -15,8 +15,8 @@ lapply(dir('R', '*.R', full.names = TRUE), source)
 raw <- file.path('data','raw')
 derived <- file.path('data','derived')
 canada <- file.path('C:','Users', 'peteb', 'OneDrive', 'Documents', 'BP', 'Yukoncfx', 'reproducibleInputs')
-roads.yt <- file.path(raw, 'disturbances', 'yukon', 'NMC_LinearFeatures_Reclassified_final_20240517', 'NMC_LinearFeatures_Reclassified_final.shp')
-polys.yt <- file.path(raw, 'disturbances', 'yukon', 'NMC_ArealFeatures_Reclassified_final_20240517', 'NMC_ArealFeatures_Reclassified_final.shp')
+roads.yt <- file.path(raw, 'NMC_LinearFeatures_Reclassified_final_20240517', 'NMC_LinearFeatures_Reclassified_final.shp')
+polys.yt <- file.path(raw, 'NMC_ArealFeatures_Reclassified_final_20240517', 'NMC_ArealFeatures_Reclassified_final.shp')
 roads.nt <- file.path(raw, 'CA_rd_data', 'canvec', 'canvec_50K_NT_Transport_shp', 'canvec_50K_NT_Transport')
 resmgmt <- file.path(raw, 'Canvec-ResourceManagement', 'canvec_50K_CA_Res_MGT_shp', 'canvec_50K_CA_Res_MGT')
 
@@ -39,6 +39,7 @@ nt <- vect(subset(ytbc.wgs, ytbc.wgs$PREABBR %in% c('N.W.T.')))
 #plot(studyArea.buff)
 
 # make one continuous study area
+
 studyArea.sf <- st_as_sf(studyArea.buff)
 studyArea.ch <- st_convex_hull(studyArea.sf)
 #st_write(studyArea.ch, file.path(derived, 'NMC_studyArea_extended.shp'))
@@ -303,12 +304,15 @@ bc.dam <- st_read(file.path(raw, 'BC_disturb', '20250501_finallayers__urbanrural
 bc.paved <- bc.roads %>%
   filter(Industry %in% c("Transportation", "Urban/Rural"))
 
+
 bc.unpaved <- bc.roads %>%
   filter(!Industry %in% c("Transportation", "Urban/Rural"))
+
 
 bc.paved.proj <- project(vect(bc.paved), crs)
 bc.unpaved.proj <- project(vect(bc.unpaved), crs)
 bc.rail.proj <- project(vect(bc.rail), crs)
+
 
 bc.tl.proj <- project(vect(bc.tl), crs)
 bc.pipeline.proj <- project(vect(bc.pipeline), crs)
@@ -349,8 +353,44 @@ bc.mineral.proj <- project(vect(bc.mineral), crs)
 bc.placer.proj <- project(vect(bc.placer), crs)
 bc.minesother.proj <- project(vect(bc.minesother), crs)
 
+bc.mineral.proj$feature_type <- "othermines" 
+bc.placer.proj$feature_type <- "placer"
+bc.minesother.proj$feature_type <- "othermines"
+
 bc.mines <- union(bc.mineral.proj, bc.placer.proj)
 bc.mines <- union(bc.mines, bc.minesother.proj)
+
+head(bc.mines)
+table(bc.mines$feature_type)
+
+#Adding year column using Work_Date_First column, if not available, use Work_Date_Date if >2012
+df <- as.data.frame(bc.mines)
+
+df$year_1 <- as.numeric(format(as.Date(df$Work_Date_First, format = "%Y-%m-%d"), "%Y"))
+df$year_2 <- as.numeric(format(as.Date(df$Work_Date_First_1, format = "%Y-%m-%d"), "%Y"))
+df$year_3 <- as.numeric(format(as.Date(df$Work_Date_First_2, format = "%Y-%m-%d"), "%Y"))
+
+df$year <- dplyr::coalesce(df$year_1, df$year_2, df$year_3)
+
+last_1 <- as.numeric(format(as.Date(df$Work_Date_Last, format = "%Y-%m-%d"), "%Y"))
+last_2 <- as.numeric(format(as.Date(df$Work_Date_Last_1, format = "%Y-%m-%d"), "%Y"))
+last_3 <- as.numeric(format(as.Date(df$Work_Date_Last_2, format = "%Y-%m-%d"), "%Y"))
+
+fill_2012 <- is.na(df$year) & (
+  (!is.na(last_1) & last_1 <= 2012) |
+    (!is.na(last_2) & last_2 <= 2012) |
+    (!is.na(last_3) & last_3 <= 2012)
+)
+
+df$year[fill_2012] <- 2012
+
+df$year[!is.na(df$year) & df$year < 2012] <- 2012
+
+df <- df[, !(names(df) %in% c("year_1", "year_2", "year_3"))]
+
+values(bc.mines) <- df
+
+table(bc.mines$year)
 
 #Poly's that aren't mines (or harvest)
 bc.ag <- st_read(file.path(raw, 'BC_disturb', '20250501_finallayers__agriculture_agriculture.gpkg'))
@@ -377,7 +417,6 @@ bc.urlandfill.proj <- project(vect(bc.urlandfill), crs)
 bc.urrec.proj <- project(vect(bc.urrec), crs)
 bc.urresidence.proj <- project(vect(bc.urresidence), crs)
 
-
 bc.union <- union(bc.ag.proj, bc.ogbuild.proj)
 bc.union <- union(bc.union, bc.ogwells.proj)
 bc.union <- union(bc.union, bc.airstrip.proj)
@@ -397,7 +436,7 @@ yt.poly.ls <- list(unique(yt.poly$RC_Dstr))
 summary(as.factor(yt.poly$RC_Dstr))
 yt.poly.ls
 
-#NWT - NEED ACCESS TO FILES
+#NWT
 roadseg.nt <- file.path(roads.nt, 'road_segment_1.shp')
 trackseg.nt <- file.path(roads.nt, 'track_segment_1.shp')
 trail.nt <- file.path(roads.nt, 'trail_1.shp')
@@ -418,16 +457,25 @@ unpaved.nt <- subset(roadseg.proj, roadseg.proj$ispaved_en == 'False')
 
 other.nt <- trail.proj
 
-
+#Combining paved and unpaved into single shapefile to save
 paved.yt <- project(vect(dplyr::filter(yt.lf, RECLS_D %in% c('Highway', 'Railway'))), crs)
 paved.rail.all <- rbind(paved.yt, paved.nt, bc.paved.rail)
+paved.rail.all$feature_type <- "paved"
+#Add years
+head(paved.rail.all)
+
+
+
 writeVector(paved.rail.all, file.path(raw, 'linear_features', 'roadpaved.shp'), overwrite = TRUE)
 
 unpaved.yt <- project(vect(dplyr::filter(yt.lf, LF_TYPE == 'Unpaved Road')), crs)
 unpaved.all <- rbind(unpaved.yt, unpaved.nt, bc.unpaved.proj)
+unpaved.all$feature_type <- "unpaved"
 writeVector(unpaved.all, file.path(raw, 'linear_features', 'roadunpaved.shp'), overwrite = TRUE)
 
 gc()
+
+
 # other LFs
 commline <- project(vect(file.path(resmgmt, 'communication_line_1.shp')), crs)
 pipeline <- project(vect(file.path(resmgmt, 'pipeline_1.shp')), crs)
@@ -442,11 +490,11 @@ resmgmt.lf <- union(union(union(commline.crop, pipeline.crop), powerline.crop))
 lf.resmgmt.trail <- union(resmgmt.lf, other.nt)
 other.yt <- project(vect(dplyr::filter(yt.lf, LF_TYPE == 'Other LF' & RECLS_D != 'Railway')), crs)
 other.all <- rbind(other.yt, lf.resmgmt.trail, bc.other)
+other.all$feature_type <- "otherlf"
 writeVector(other.all, file.path(raw, 'linear_features', 'lfother.shp'), overwrite = TRUE)
 
 gc()
 
-#PETE START HERE AGAIN
 
 ## POLYGONAL ANTHRO DISTURBANCE - CANVEC RESOURCE MANAGMENT ----
 aggr <- vect(file.path(resmgmt, 'aggregate_2.shp')) # poly
@@ -459,53 +507,24 @@ peat <- vect(file.path(resmgmt, 'peat_2.shp')) # poly
 
 rsmgt.mines <- union(aggr, ore2)
 nt.mines <- crop(project(rsmgt.mines, crs), nt)
+nt.mines$feature_type <- "othermines"
 rsmgt.otherpolys <- union(peat, oilgas2)
 nt.otherpolys <- crop(project(rsmgt.otherpolys, crs), nt)
 
 #yt.poly.proj <- project(vect(yt.poly), crs)
-miningpolys.yt <- project(vect(dplyr::filter(yt.poly, RC_Disturb %in% c('Quartz Mining', 'Placer Mining'))), crs)
-miningpolys.all <- rbind(miningpolys.yt, nt.mines, bc.mines.proj)
+miningpolys.yt <- project(vect(dplyr::filter(yt.poly, RC_Dstr %in% c('Quartz Mining', 'Placer Mining'))), crs)
+miningpolys.yt$feature_type <- ifelse(miningpolys.yt$RC_Dstr == "Placer Mining", "placer", "quartz")
+miningpolys.all <- rbind(miningpolys.yt, nt.mines, bc.mines)
 writeVector(miningpolys.all, file.path(raw, 'polygonal_features', 'miningpolys.shp'), overwrite = T)
 writeVector(miningpolys.yt, file.path(raw, 'polygonal_features', 'mining_nmc_yt.shp'), overwrite = T)
 
-yt.otherpolys <- project(vect(dplyr::filter(yt.poly, !(RC_Disturb %in% c('Quartz Mining', 'Placer Mining',
+yt.otherpolys <- project(vect(dplyr::filter(yt.poly, !(RC_Dstr %in% c('Quartz Mining', 'Placer Mining',
                                                                          'Harvest')))), crs)
-anthropolys.all <- rbind(yt.otherpolys, nt.otherpolys, bc.polys.proj)
+
+anthropolys.all <- rbind(yt.otherpolys, nt.otherpolys, bc.polys)
+anthropolys.all$feature_type <- "otherpoly"
 writeVector(anthropolys.all, file.path(raw, 'polygonal_features', 'anthropolys.shp'), overwrite = T)
 
-
-
-#### Polygonal disturbance Zone ----
-gc()
-Buff <- focalMat(rast(land), d=buff.diam, type = 'circle')
-# rasterize polys
-anthropolys.rast <- rasterize(vect(file.path(raw, 'polygonal_features', 'anthropolys.shp')), rast(land))
-anthropolys.rast[is.na(anthropolys.rast)]<-0
-mean.anthropolys <- focal(anthropolys.rast, Buff, na.rm = TRUE, pad = TRUE, padValue = 0, fun = 'mean')
-writeRaster(mean.anthropolys, file.path(raw, 'anthroDisturbance', 'antro_polys_prop700.tif'), overwrite = T)
-
-
-
-miningpolys.rast <- rasterize(miningpolys.all, rast(land))
-miningpolys.rast[is.na(miningpolys.rast)]<-0
-mean.miningpolys <- focal(miningpolys.rast, Buff, na.rm = TRUE, pad = TRUE, padValue = 0, fun = 'mean')
-writeRaster(mean.miningpolys, file.path(raw, 'anthroDisturbance', 'mining_polys_prop700.tif'), overwrite = T)
-
-
-###
-land.crop <- crop(land.proj, trast500)
-anthropolys.rast500 <- rasterize(vect(file.path(raw, 'polygonal_features', 'anthropolys.shp')), land.crop)
-anthropolys.rast500[is.na(anthropolys.rast500)]<-0
-anthropolys01 <- classify(anthropolys.rast500,cbind(from = c(TRUE, FALSE), to = c(1, 0)))
-anthropolysagg <- resample(anthropolys01, trast, method ='average')
-
-make_prop_use <- function(dat, crs, trast){
-  #dat.sub <- dat[case_==TRUE]
-  dat.coords<- vect(cbind(dat$x2_, dat$y2_), crs =crs, type = 'points')
-  res <- res(trast)[[1]]
-  rast<- rasterize(dat.coords, trast, fun = 'sum')/(res*res)
-  return(rast)
-}
 
 unpaved <- vect(file.path(raw, 'linear_features', 'roadunpaved.shp'))
 paved <- vect(file.path(raw, 'linear_features', 'roadpaved.shp'))
@@ -514,37 +533,18 @@ anthropolys <- vect(file.path(raw, 'polygonal_features', 'anthropolys.shp'))
 anthro.all <- c(roads, anthropolys)
 
 
+# STARTING RASTER CALCULATIONS
 
-
-
-
-
-# Paths to your shapefiles
-poly_path <- "path/to/polygon_disturbance.shp"
-line_path <- "path/to/linear_features.shp"
-
-# Load vectors
-poly_sf <- st_read(poly_path)
-line_sf <- st_read(line_path)
 
 # Reproject to match base raster
 poly_sf <- st_transform(poly_sf, crs(rasterToMatch_extendedLandscape30m))
 line_sf <- st_transform(line_sf, crs(rasterToMatch_extendedLandscape30m))
 
+
 # Define years, resolutions, categories
 years <- 2012:2024
 poly_categories <- c("quartz", "placer", "othermines", "otherpoly")
 line_categories <- c("paved", "unpaved", "otherlf")
-
-
-
-
-
-
-
-
-
-
 
 
 # TODO need distance to at larger resolutions per year for each feature
