@@ -650,301 +650,202 @@ table(poly_sf$feature_t0)
 
 
 # STARTING RASTER CALCULATIONS
+#For all of the below, I set the code up so that features persist into future years (2012 road will be on 2013 raster)
 # Reproject to match base raster
 poly_sf <- terra::project(poly_sf, crs(rasterToMatch_extendedLandscape30m))
 line_sf <- terra::project(line_sf, crs(rasterToMatch_extendedLandscape30m))
 
+#Files too large leading to memory crashes - taking only the necessary columns
 poly_sf <- poly_sf[, c("feature_t0", "year")]
 line_sf <- line_sf[, c("feature_t0", "year")]
-
-
 
 # Define years, resolutions, categories
 years <- 2012:2024
 poly_categories <- c("quartz", "placer", "othermines", "otherpoly")
 line_categories <- c("paved", "unpaved", "otherlf")
-test_mode <- TRUE  # Set TRUE to run only 1 feature/year
 
 res_levels <- c("250m", "1000m", "5000m")
 types <- c("dist", "pa", "dens")
 
+#Create directories
 for (type in types) {
   for (res in res_levels) {
     dir.create(file.path(derived, paste0(type, "_disturb_", res)), recursive = TRUE, showWarnings = FALSE)
   }
 }
 
-#TESTING
-# Set test parameters
-cat <- "unpaved"
-year <- 2015
+# ---- DISTANCE-TO ------
 
-gc()
-message("Testing distance-to for ", cat, " in ", year)
-
-# Filter features present at or before the selected year
-feat <- line_sf[line_sf$feature_t0 == cat & line_sf$year <= year, ]
-
-if (nrow(feat) > 0) {
-  # Save filtered features to disk to avoid memory spike
-  temp_vec_file <- paste0("temp_", cat, "_", year, ".gpkg")
-  writeVector(feat, temp_vec_file, overwrite = TRUE)
-  feat <- vect(temp_vec_file)
+for (cat in c(line_categories, poly_categories)) {
+  message("======= Processing feature type: ", cat, " =======")
   
-  # Rasterize at 30m resolution
-  bin_ras <- terra::rasterize(feat, rasterToMatch_extendedLandscape30m, touches = TRUE)
-  bin_ras[!is.na(bin_ras)] <- 1
-  
-  # Compute distance and write directly to disk to reduce memory usage
-  dist_ras_30m <- terra::distance(bin_ras)
-  
-  # Reproject to 250m resolution
-  dist_ras_250m <- terra::resample(dist_ras_30m, rasterToMatch_extendedLandscape250m, method = "average")
-  
-  # Save the reprojected distance raster to disk
-  dist_file <- file.path("data", "derived", "dist_disturb_250m", paste0(cat, "_distance_250m_", year, ".tif"))
-  writeRaster(dist_ras_250m, dist_file, filetype = "GTiff", overwrite = TRUE)
-  
-  # Clean up memory
-  rm(feat, bin_ras, dist_ras_30m, dist_ras_250m)
-  gc()
-} else {
-  message("No features found for ", cat, " in ", year)
-}
-
-#SINGLE ONE WORKED - TRYING ALL YEARS FOR UNPAVED 250 NOW
-
-# Set parameters for one category (e.g., "unpaved")
-cat <- "unpaved"
-
-# Iterate over all years (2012-2024)
-for (year in 2012:2024) {
-  message("Testing distance-to for ", cat, " in ", year)
-  
-  # Define output file path
-  dist_file <- file.path("data", "derived", "dist_disturb_250m", paste0(cat, "_distance_250m_", year, ".tif"))
-  
-  # Check if the output file already exists
-  if (file.exists(dist_file)) {
-    message("Distance file for ", cat, " in ", year, " already exists. Skipping...")
-    next  # Skip this year if the file already exists
-  }
-  
-  # Filter features present at or before the selected year
-  feat <- line_sf[line_sf$feature_t0 == cat & line_sf$year <= year, ]
-  
-  if (nrow(feat) > 0) {
-    # Save filtered features to disk to avoid memory spike
-    temp_vec_file <- paste0("temp_", cat, "_", year, ".gpkg")
-    writeVector(feat, temp_vec_file, overwrite = TRUE)
-    feat <- vect(temp_vec_file)
+  for (year in years) {
+    message("→ Year ", year)
     
-    # Rasterize
-    bin_ras <- terra::rasterize(feat, rasterToMatch_extendedLandscape30m, touches = TRUE)
-    bin_ras[!is.na(bin_ras)] <- 1
+    # Output file paths
+    out_file_250m   <- file.path("data", "derived", "dist_disturb_250m",  paste0(cat, "_distance_250m_", year, ".tif"))
+    out_file_1000m  <- file.path("data", "derived", "dist_disturb_1000m", paste0(cat, "_distance_1000m_", year, ".tif"))
+    out_file_5000m  <- file.path("data", "derived", "dist_disturb_5000m", paste0(cat, "_distance_5000m_", year, ".tif"))
     
-    # Compute distance at 30m resolution
-    dist_ras_30m <- terra::distance(bin_ras)
-    
-    # Resample distance raster to 250m resolution
-    dist_ras_250m <- terra::resample(dist_ras_30m, rasterToMatch_extendedLandscape250m, method = "average")
-    
-    # Save to disk (at 250m resolution)
-    writeRaster(dist_ras_250m, dist_file, filetype = "GTiff", overwrite = TRUE)
-    
-    # Clean up memory
-    rm(feat, bin_ras, dist_ras_30m, dist_ras_250m)
-    gc()
-  } else {
-    message("No features found for ", cat, " in ", year)
-  }
-}
-
-
-
-
-
-
-
-cat <- "unpaved"
-years <- 2012:2024
-
-gc()
-
-for (year in years) {
-  message("Processing ", cat, " for year ", year)
-  
-  out_file_30m    <- paste0("temp_", cat, "_distance_30m_", year, ".tif")
-  out_file_250m   <- file.path("data", "derived", "dist_disturb_250m",  paste0(cat, "_distance_250m_", year, ".tif"))
-  out_file_1000m  <- file.path("data", "derived", "dist_disturb_1000m", paste0(cat, "_distance_1000m_", year, ".tif"))
-  out_file_5000m  <- file.path("data", "derived", "dist_disturb_5000m", paste0(cat, "_distance_5000m_", year, ".tif"))
-  
-  # If all 3 outputs exist, skip
-  if (file.exists(out_file_250m) && file.exists(out_file_1000m) && file.exists(out_file_5000m)) {
-    message("→ Skipping year ", year, " (all outputs exist)")
-    next
-  }
-  
-  # Load or compute 30m distance raster
-  if (file.exists(out_file_30m)) {
-    dist_ras_30m <- rast(out_file_30m)
-    message("→ Loaded cached 30m distance raster")
-  } else {
-    feat <- line_sf[line_sf$feature_t0 == cat & line_sf$year <= year, ]
-    if (nrow(feat) == 0) {
-      message("→ No features for ", cat, " in ", year)
+    # Skip if already exists
+    if (file.exists(out_file_250m) && file.exists(out_file_1000m) && file.exists(out_file_5000m)) {
+      message("  Skipping (already done)")
       next
     }
     
-    # Save to disk to reduce memory usage
+    # Select source
+    if (cat %in% line_categories) {
+      feat <- line_sf[line_sf$feature_t0 == cat & line_sf$year <= year, ]
+    } else {
+      feat <- poly_sf[poly_sf$feature_t0 == cat & poly_sf$year <= year, ]
+    }
+    
+    if (nrow(feat) == 0) {
+      message("  No features found, skipping")
+      next
+    }
+    
     temp_vec_file <- paste0("temp_", cat, "_", year, ".gpkg")
     writeVector(feat, temp_vec_file, overwrite = TRUE)
     feat <- vect(temp_vec_file)
     
     bin_ras_30m <- terra::rasterize(feat, rasterToMatch_extendedLandscape30m, touches = TRUE)
     bin_ras_30m[!is.na(bin_ras_30m)] <- 1
+    rm(feat)
+    gc()
+    
     dist_ras_30m <- terra::distance(bin_ras_30m)
+    rm(bin_ras_30m)
+    gc()
     
-    # Save the 30m distance raster temporarily
-    writeRaster(dist_ras_30m, out_file_30m, overwrite = TRUE)
-    rm(feat, bin_ras_30m)
-  }
-  
-  # Write missing outputs
-  if (!file.exists(out_file_250m)) {
-    writeRaster(
-      terra::resample(dist_ras_30m, rasterToMatch_extendedLandscape250m, method = "average"),
-      out_file_250m, filetype = "GTiff", overwrite = TRUE
-    )
-  }
-  
-  if (!file.exists(out_file_1000m)) {
-    writeRaster(
-      terra::resample(dist_ras_30m, rasterToMatch_extendedLandscape1000m, method = "average"),
-      out_file_1000m, filetype = "GTiff", overwrite = TRUE
-    )
-  }
-  
-  if (!file.exists(out_file_5000m)) {
-    writeRaster(
-      terra::resample(dist_ras_30m, rasterToMatch_extendedLandscape5000m, method = "average"),
-      out_file_5000m, filetype = "GTiff", overwrite = TRUE
-    )
-  }
-  
-  # Clean up
-  rm(dist_ras_30m)
-  gc()
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#For all of the below, I set the code up so that features persist into future years (2012 road will be on 2013 raster)
-
-for (year in if (test_mode) 2012 else years) {
-  for (cat in if (test_mode) "unpaved" else c(poly_categories, line_categories)) {
-    message("Processing distance-to for ", cat, " in ", year)
-    
-    try({
-      # Select features present at or before current year
-      feat <- if (cat %in% poly_categories) {
-        poly_sf[poly_sf$feature_t0 == cat & poly_sf$year <= year, ]
-      } else {
-        line_sf[line_sf$feature_t0 == cat & line_sf$year <= year, ]
-      }
-      
-      # Skip if none
-      if (nrow(feat) == 0) {
-        message("No features for ", cat, " in ", year)
-        next
-      }
-      
-      # Rasterize to 30m
-      bin_ras <- terra::rasterize(feat, rasterToMatch_extendedLandscape30m, field = NULL, touches = TRUE)
-      bin_ras[!is.na(bin_ras)] <- 1
-      
-      # Calculate distance raster
-      dist_ras <- terra::distance(bin_ras)
-      
-      # Save at different resolutions
-      writeRaster(terra::resample(dist_ras, rasterToMatch_extendedLandscape250m, method = "average"),
-                  file.path("dist_disturb_250m", paste0(cat, "_distance_250m_", year, ".tif")),
-                  filetype = "GTiff", overwrite = TRUE)
-      
-      writeRaster(terra::resample(dist_ras, rasterToMatch_extendedLandscape1000m, method = "average"),
-                  file.path("dist_disturb_1000m", paste0(cat, "_distance_1000m_", year, ".tif")),
-                  filetype = "GTiff", overwrite = TRUE)
-      
-      writeRaster(terra::resample(dist_ras, rasterToMatch_extendedLandscape5000m, method = "average"),
-                  file.path("dist_disturb_5000m", paste0(cat, "_distance_5000m_", year, ".tif")),
-                  filetype = "GTiff", overwrite = TRUE)
-      
-      gc()  # Free memory
-      
-    }, silent = FALSE)
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-for (year in years) {
-  for (cat in c(poly_categories, line_categories)) {
-    message("Processing distance-to for ", cat, " in ", year)
-    
-    # Select features present at or before current year
-    if (cat %in% poly_categories) {
-      feat <- poly_sf[poly_sf$feature_t0 == cat & poly_sf$year <= year, ]
-    } else {
-      feat <- line_sf[line_sf$feature_t0 == cat & line_sf$year <= year, ]
+    if (!file.exists(out_file_250m)) {
+      dist_ras_250m <- terra::resample(dist_ras_30m, rasterToMatch_extendedLandscape250m, method = "average")
+      writeRaster(dist_ras_250m, out_file_250m, filetype = "GTiff", overwrite = TRUE)
+      rm(dist_ras_250m)
+      gc()
     }
     
-    if (nrow(feat) == 0) next
+    if (!file.exists(out_file_1000m)) {
+      dist_ras_1000m <- terra::resample(dist_ras_30m, rasterToMatch_extendedLandscape1000m, method = "average")
+      writeRaster(dist_ras_1000m, out_file_1000m, filetype = "GTiff", overwrite = TRUE)
+      rm(dist_ras_1000m)
+      gc()
+    }
     
-    bin_ras <- terra::rasterize(feat, rasterToMatch_extendedLandscape30m, field = NULL, touches = TRUE)
-    bin_ras[!is.na(bin_ras)] <- 1
-    dist_ras <- terra::distance(bin_ras)
+    if (!file.exists(out_file_5000m)) {
+      dist_ras_5000m <- terra::resample(dist_ras_30m, rasterToMatch_extendedLandscape5000m, method = "average")
+      writeRaster(dist_ras_5000m, out_file_5000m, filetype = "GTiff", overwrite = TRUE)
+      rm(dist_ras_5000m)
+      gc()
+    }
     
-    # Save to specific resolution folders
-    writeRaster(terra::resample(dist_ras, rasterToMatch_extendedLandscape250m, method = "average"),
-                file.path("dist_disturb_250m", paste0(cat, "_distance_250m_", year, ".tif")),
-                filetype = "GTiff", overwrite = TRUE)
-    writeRaster(terra::resample(dist_ras, rasterToMatch_extendedLandscape1000m, method = "average"),
-                file.path("dist_disturb_1000m", paste0(cat, "_distance_1000m_", year, ".tif")),
-                filetype = "GTiff", overwrite = TRUE)
-    writeRaster(terra::resample(dist_ras, rasterToMatch_extendedLandscape5000m, method = "average"),
-                file.path("dist_disturb_5000m", paste0(cat, "_distance_5000m_", year, ".tif")),
-                filetype = "GTiff", overwrite = TRUE)
+    rm(dist_ras_30m)
+    unlink(temp_vec_file)
+    terra::tmpFiles(remove = TRUE)
+    gc()
   }
 }
+
+
+# ---- PRESENCE/ABSENCE ------
+
+for (cat in c(line_categories, poly_categories)) {
+  message("======= Processing presence/absence for: ", cat, " =======")
+  
+  for (year in years) {
+    message("→ Year ", year)
+    
+    # Output file paths
+    out_file_250m   <- file.path("data", "derived", "pa_disturb_250m",  paste0(cat, "_pa_250m_", year, ".tif"))
+    out_file_1000m  <- file.path("data", "derived", "pa_disturb_1000m", paste0(cat, "_pa_1000m_", year, ".tif"))
+    out_file_5000m  <- file.path("data", "derived", "pa_disturb_5000m", paste0(cat, "_pa_5000m_", year, ".tif"))
+    
+    # Skip if already exists
+    if (file.exists(out_file_250m) && file.exists(out_file_1000m) && file.exists(out_file_5000m)) {
+      message("  Skipping (already done)")
+      next
+    }
+    
+    # Select source
+    if (cat %in% line_categories) {
+      feat <- line_sf[line_sf$feature_t0 == cat & line_sf$year <= year, ]
+    } else {
+      feat <- poly_sf[poly_sf$feature_t0 == cat & poly_sf$year <= year, ]
+    }
+    
+    if (nrow(feat) == 0) {
+      message("  No features found, skipping")
+      next
+    }
+    
+    # Write to disk and reload to limit memory
+    temp_vec_file <- paste0("temp_", cat, "_", year, ".gpkg")
+    writeVector(feat, temp_vec_file, overwrite = TRUE)
+    feat <- vect(temp_vec_file)
+    
+    # Rasterize at 30m
+    bin_ras_30m <- terra::rasterize(feat, rasterToMatch_extendedLandscape30m, touches = TRUE)
+    bin_ras_30m[!is.na(bin_ras_30m)] <- 1
+    bin_ras_30m[is.na(bin_ras_30m)] <- 0  # Make 0 = absent
+    rm(feat)
+    gc()
+    
+    # Reproject and write 250m
+    if (!file.exists(out_file_250m)) {
+      bin_250 <- terra::resample(bin_ras_30m, rasterToMatch_extendedLandscape250m, method = "max")
+      bin_250 <- round(bin_250)  # Round to 0 or 1
+      bin_250[is.na(bin_250)] <- 0
+      writeRaster(bin_250, out_file_250m, filetype = "GTiff", overwrite = TRUE)
+      rm(bin_250)
+      gc()
+    }
+    
+    # Reproject and write 1000m
+    if (!file.exists(out_file_1000m)) {
+      bin_1000 <- terra::resample(bin_ras_30m, rasterToMatch_extendedLandscape1000m, method = "max")
+      bin_1000 <- round(bin_1000)
+      bin_1000[is.na(bin_1000)] <- 0
+      writeRaster(bin_1000, out_file_1000m, filetype = "GTiff", overwrite = TRUE)
+      rm(bin_1000)
+      gc()
+    }
+    
+    # Reproject and write 5000m
+    if (!file.exists(out_file_5000m)) {
+      bin_5000 <- terra::resample(bin_ras_30m, rasterToMatch_extendedLandscape5000m, method = "max")
+      bin_5000 <- round(bin_5000)
+      bin_5000[is.na(bin_5000)] <- 0
+      writeRaster(bin_5000, out_file_5000m, filetype = "GTiff", overwrite = TRUE)
+      rm(bin_5000)
+      gc()
+    }
+    
+    # Final cleanup
+    rm(bin_ras_30m)
+    unlink(temp_vec_file)
+    terra::tmpFiles(remove = TRUE)
+    gc()
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Presence/absence rasters
 for (year in years) {
