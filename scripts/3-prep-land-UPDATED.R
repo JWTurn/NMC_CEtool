@@ -755,18 +755,15 @@ for (cat in c(line_categories, poly_categories)) {
   for (year in years) {
     message("→ Year ", year)
     
-    # Output file paths
     out_file_250m   <- file.path("data", "derived", "pa_disturb_250m",  paste0(cat, "_pa_250m_", year, ".tif"))
     out_file_1000m  <- file.path("data", "derived", "pa_disturb_1000m", paste0(cat, "_pa_1000m_", year, ".tif"))
     out_file_5000m  <- file.path("data", "derived", "pa_disturb_5000m", paste0(cat, "_pa_5000m_", year, ".tif"))
     
-    # Skip if already exists
     if (file.exists(out_file_250m) && file.exists(out_file_1000m) && file.exists(out_file_5000m)) {
       message("  Skipping (already done)")
       next
     }
     
-    # Select source
     if (cat %in% line_categories) {
       feat <- line_sf[line_sf$feature_t0 == cat & line_sf$year <= year, ]
     } else {
@@ -778,19 +775,16 @@ for (cat in c(line_categories, poly_categories)) {
       next
     }
     
-    # Write to disk and reload to limit memory
     temp_vec_file <- paste0("temp_", cat, "_", year, ".gpkg")
     writeVector(feat, temp_vec_file, overwrite = TRUE)
     feat <- vect(temp_vec_file)
     
-    # Rasterize at 30m
     bin_ras_30m <- terra::rasterize(feat, rasterToMatch_extendedLandscape30m, touches = TRUE)
     bin_ras_30m[!is.na(bin_ras_30m)] <- 1
     bin_ras_30m[is.na(bin_ras_30m)] <- 0  # Make 0 = absent
     rm(feat)
     gc()
-    
-    # Reproject and write 250m
+
     if (!file.exists(out_file_250m)) {
       bin_250 <- terra::resample(bin_ras_30m, rasterToMatch_extendedLandscape250m, method = "max")
       bin_250 <- round(bin_250)  # Round to 0 or 1
@@ -800,7 +794,6 @@ for (cat in c(line_categories, poly_categories)) {
       gc()
     }
     
-    # Reproject and write 1000m
     if (!file.exists(out_file_1000m)) {
       bin_1000 <- terra::resample(bin_ras_30m, rasterToMatch_extendedLandscape1000m, method = "max")
       bin_1000 <- round(bin_1000)
@@ -809,8 +802,7 @@ for (cat in c(line_categories, poly_categories)) {
       rm(bin_1000)
       gc()
     }
-    
-    # Reproject and write 5000m
+
     if (!file.exists(out_file_5000m)) {
       bin_5000 <- terra::resample(bin_ras_30m, rasterToMatch_extendedLandscape5000m, method = "max")
       bin_5000 <- round(bin_5000)
@@ -820,7 +812,6 @@ for (cat in c(line_categories, poly_categories)) {
       gc()
     }
     
-    # Final cleanup
     rm(bin_ras_30m)
     unlink(temp_vec_file)
     terra::tmpFiles(remove = TRUE)
@@ -830,73 +821,87 @@ for (cat in c(line_categories, poly_categories)) {
 
 
 
+# ---- DENSITY (FOR LF ONLY) ------ (basically avg of p/a rasters instead of max)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Presence/absence rasters
-for (year in years) {
-  for (cat in c(poly_categories, line_categories)) {
-    message("Processing presence/absence for ", cat, " in ", year)
+for (cat in c(line_categories)) {
+  message("======= Processing presence/absence for: ", cat, " =======")
+  
+  for (year in years) {
+    message("→ Year ", year)
     
-    if (cat %in% poly_categories) {
-      feat <- poly_sf[poly_sf$feature_t0 == cat & poly_sf$year <= year, ]
-    } else {
-      feat <- line_sf[line_sf$feature_t0 == cat & line_sf$year <= year, ]
+    out_file_250m   <- file.path("data", "derived", "dens_disturb_250m",  paste0(cat, "_dens_250m_", year, ".tif"))
+    out_file_1000m  <- file.path("data", "derived", "dens_disturb_1000m", paste0(cat, "_dens_1000m_", year, ".tif"))
+    out_file_5000m  <- file.path("data", "derived", "dens_disturb_5000m", paste0(cat, "_dens_5000m_", year, ".tif"))
+    
+    if (file.exists(out_file_250m) && file.exists(out_file_1000m) && file.exists(out_file_5000m)) {
+      message("  Skipping (already done)")
+      next
     }
     
-    if (nrow(feat) == 0) next
+    if (cat %in% line_categories) {
+      feat <- line_sf[line_sf$feature_t0 == cat & line_sf$year <= year, ]
+    } else {
+      feat <- poly_sf[poly_sf$feature_t0 == cat & poly_sf$year <= year, ]
+    }
     
-    bin_ras <- terra::rasterize(feat, rasterToMatch_extendedLandscape30m, field = NULL, touches = TRUE)
-    bin_ras[!is.na(bin_ras)] <- 1
+    if (nrow(feat) == 0) {
+      message("  No features found, skipping")
+      next
+    }
     
-    writeRaster(terra::aggregate(bin_ras, fact = res(rasterToMatch_extendedLandscape250m) / res(rasterToMatch_extendedLandscape30m), fun = max),
-                file.path("pa_disturb_250m", paste0(cat, "_presence_250m_", year, ".tif")),
-                filetype = "GTiff", overwrite = TRUE)
-    writeRaster(terra::aggregate(bin_ras, fact = res(rasterToMatch_extendedLandscape1000m) / res(rasterToMatch_extendedLandscape30m), fun = max),
-                file.path("pa_disturb_1000m", paste0(cat, "_presence_1000m_", year, ".tif")),
-                filetype = "GTiff", overwrite = TRUE)
-    writeRaster(terra::aggregate(bin_ras, fact = res(rasterToMatch_extendedLandscape5000m) / res(rasterToMatch_extendedLandscape30m), fun = max),
-                file.path("pa_disturb_5000m", paste0(cat, "_presence_5000m_", year, ".tif")),
-                filetype = "GTiff", overwrite = TRUE)
+    temp_vec_file <- paste0("temp_", cat, "_", year, ".gpkg")
+    writeVector(feat, temp_vec_file, overwrite = TRUE)
+    feat <- vect(temp_vec_file)
+    
+    bin_ras_30m <- terra::rasterize(feat, rasterToMatch_extendedLandscape30m, touches = TRUE)
+    bin_ras_30m[!is.na(bin_ras_30m)] <- 1
+    bin_ras_30m[is.na(bin_ras_30m)] <- 0  # Make 0 = absent
+    rm(feat)
+    gc()
+    
+    if (!file.exists(out_file_250m)) {
+      bin_250 <- terra::resample(bin_ras_30m, rasterToMatch_extendedLandscape250m, method = "average")
+      bin_250[is.na(bin_250)] <- 0
+      writeRaster(bin_250, out_file_250m, filetype = "GTiff", overwrite = TRUE)
+      rm(bin_250)
+      gc()
+    }
+    
+    if (!file.exists(out_file_1000m)) {
+      bin_1000 <- terra::resample(bin_ras_30m, rasterToMatch_extendedLandscape1000m, method = "average")
+      bin_1000[is.na(bin_1000)] <- 0
+      writeRaster(bin_1000, out_file_1000m, filetype = "GTiff", overwrite = TRUE)
+      rm(bin_1000)
+      gc()
+    }
+    
+    if (!file.exists(out_file_5000m)) {
+      bin_5000 <- terra::resample(bin_ras_30m, rasterToMatch_extendedLandscape5000m, method = "average")
+      bin_5000[is.na(bin_5000)] <- 0
+      writeRaster(bin_5000, out_file_5000m, filetype = "GTiff", overwrite = TRUE)
+      rm(bin_5000)
+      gc()
+    }
+    
+    rm(bin_ras_30m)
+    unlink(temp_vec_file)
+    terra::tmpFiles(remove = TRUE)
+    gc()
   }
 }
 
-# Density rasters (only for line features)
-for (year in years) {
-  for (cat in line_categories) {
-    message("Processing density for ", cat, " in ", year)
-    
-    feat <- line_sf[line_sf$feature_t0 == cat & line_sf$year <= year, ]
-    if (nrow(feat) == 0) next
-    
-    bin_ras <- terra::rasterize(feat, rasterToMatch_extendedLandscape30m, fun = "lengths", background = 0)
-    bin_ras[bin_ras > 0] <- 1
-    
-    writeRaster(terra::aggregate(bin_ras, fact = res(rasterToMatch_extendedLandscape250m) / res(rasterToMatch_extendedLandscape30m), fun = mean),
-                file.path("dens_disturb_250m", paste0(cat, "_roadDensity_250m_", year, ".tif")),
-                filetype = "GTiff", overwrite = TRUE)
-    writeRaster(terra::aggregate(bin_ras, fact = res(rasterToMatch_extendedLandscape1000m) / res(rasterToMatch_extendedLandscape30m), fun = mean),
-                file.path("dens_disturb_1000m", paste0(cat, "_roadDensity_1000m_", year, ".tif")),
-                filetype = "GTiff", overwrite = TRUE)
-    writeRaster(terra::aggregate(bin_ras, fact = res(rasterToMatch_extendedLandscape5000m) / res(rasterToMatch_extendedLandscape30m), fun = mean),
-                file.path("dens_disturb_5000m", paste0(cat, "_roadDensity_5000m_", year, ".tif")),
-                filetype = "GTiff", overwrite = TRUE)
-  }
-}
+cat  <- "otherlf"   # Replace with an actual category in your data
+year <- 2018         # Replace with a year you have data for
+
+# Construct the raster file path (250m resolution as an example)
+ras_path <- file.path("data", "derived", "dens_disturb_5000m", paste0(cat, "_dens_5000m_", year, ".tif"))
+
+# Load raster
+r <- rast(ras_path)
+
+# Plot it
+plot(r, main = paste("Density (5000m) for", cat, "in", year))
+
 
 ## FIRES ----
 
