@@ -281,6 +281,46 @@ propLand <- Map(rtmname = names(rtms), rtm = rtms, rtmFun = rtmsFuns[names(rtms)
                 })
 
 
+#Extract-out diff raster layers X year into their own files
+input_dir <- file.path(derived, "prop_land")
+output_dir <- file.path(derived, "prop_land", "prop_land_split")
+
+dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+
+years <- 2012:2022
+res_map <- list(window250 = "250", agg1000 = "1000", agg5000 = "5000")
+
+for (res in names(res_map)) {
+  res_suffix <- res_map[[res]]
+  
+  for (yr in years) {
+    
+    input_file <- file.path(input_dir, res, paste0("propLand_", yr, ".tif"))
+    
+    if (!file.exists(input_file)) {
+      message("[!] Skipping missing file: ", input_file)
+      next
+    }
+    
+    rstack <- rast(input_file)
+    layer_names <- names(rstack)
+    
+    for (i in seq_along(layer_names)) {
+      layer <- rstack[[i]]
+      layer_name <- layer_names[i]
+      
+      subfolder <- file.path(output_dir, paste0(layer_name, "_", res_suffix))
+      dir.create(subfolder, recursive = TRUE, showWarnings = FALSE)
+      
+      output_file <- file.path(subfolder, paste0(layer_name, "_", yr, "_", res_suffix, ".tif"))
+      
+      writeRaster(layer, filename = output_file, overwrite = TRUE)
+      message("[✔] Saved: ", output_file)
+    }
+  }
+}
+
+
 
 ## Human disturbances -----
 
@@ -427,7 +467,7 @@ bc.union <- union(bc.union, bc.urresidence.proj)
 
 bc.polys <- bc.union
 
-#Yukon
+#Yukon- UPDATE WITH NEW DATA WHEN IN
 yt.lf <- st_read(roads.yt)
 yt.lf.ls <- summary(as.factor(yt.lf$TYPE_DI))
 yt.lf.ls
@@ -437,9 +477,7 @@ summary(as.factor(yt.poly$RC_Dstr))
 yt.poly.ls
 
 
-
 #NWT
-#New NWT data - combine with old? Or scrap old?
 #Linear features
 nt.roads <- st_read(file.path(raw, 'NWT_disturb', 'transportation_roads.gpkg'))
 nt.pipeline <- st_read(file.path(raw, 'NWT_disturb', 'oilgas_piplines.gpkg'))
@@ -451,31 +489,10 @@ nt.pipeline.proj <- project(vect(nt.pipeline), crs)
 nt.seismic.proj <- project(vect(nt.seismic), crs)
 nt.trail.proj <- project(vect(nt.trail), crs)
 
+paved.nt <- nt.roads.proj
+other.nt <- union(nt.pipeline.proj, nt.seismic.proj)
+other.nt <- union(other.nt, nt.trail.proj)
 
-
-
-
-
-
-roadseg.nt <- file.path(roads.nt, 'road_segment_1.shp')
-trackseg.nt <- file.path(roads.nt, 'track_segment_1.shp')
-trail.nt <- file.path(roads.nt, 'trail_1.shp')
-
-# convert to crs
-roadseg.proj <- project(vect(roadseg.nt), crs)
-trackseg.proj <- project(vect(trackseg.nt), crs)
-trail.proj <- project(vect(trail.nt), crs)
-
-summary(as.factor(roadseg.proj$ispaved_en))
-summary(as.factor(trackseg.proj$classif_en))
-summary(as.factor(trackseg.proj$mode_en))
-summary(as.factor(trackseg.proj$use_en))
-
-paved.nt <- subset(roadseg.proj, roadseg.proj$ispaved_en == 'True')
-nt.paved.rail <- union(trackseg.proj, paved.nt)
-unpaved.nt <- subset(roadseg.proj, roadseg.proj$ispaved_en == 'False')
-
-other.nt <- trail.proj
 
 #Combining paved and unpaved into single shapefile to save
 paved.yt <- project(vect(dplyr::filter(yt.lf, RECLS_D %in% c('Highway', 'Railway'))), crs)
@@ -514,20 +531,8 @@ writeVector(unpaved.all, file.path(raw, 'linear_features', 'roadunpaved.shp'), o
 
 gc()
 
-# other LFs
-commline <- project(vect(file.path(resmgmt, 'communication_line_1.shp')), crs)
-pipeline <- project(vect(file.path(resmgmt, 'pipeline_1.shp')), crs)
-powerline <- project(vect(file.path(resmgmt, 'power_line_1.shp')), crs)
-
-# right now doing this NT where we dont have data
-commline.crop <- crop(commline, nt)
-pipeline.crop <- crop(pipeline, nt)
-powerline.crop <- crop(powerline, nt)
-
-resmgmt.lf <- union(union(union(commline.crop, pipeline.crop), powerline.crop))
-lf.resmgmt.trail <- union(resmgmt.lf, other.nt)
 other.yt <- project(vect(dplyr::filter(yt.lf, LF_TYPE == 'Other LF' & RECLS_D != 'Railway')), crs)
-other.all <- rbind(other.yt, lf.resmgmt.trail, bc.other)
+other.all <- rbind(other.yt, other.nt, bc.other)
 other.all$feature_type <- "otherlf"
 head(other.all)
 table(other.all$SOURCE_DATE)
@@ -547,14 +552,7 @@ writeVector(other.all, file.path(raw, 'linear_features', 'lfother.shp'), overwri
 gc()
 
 
-## POLYGONAL ANTHRO DISTURBANCE - CANVEC RESOURCE MANAGMENT ----
-aggr <- vect(file.path(resmgmt, 'aggregate_2.shp')) # poly
-#oilgas <- vect(file.path(resmgmt, 'oil_gas_site_0.shp')) # point
-oilgas2 <- vect(file.path(resmgmt, 'oil_gas_site_2.shp')) # poly
-#ore <- vect(file.path(resmgmt, 'ore_0.shp')) # point
-ore2 <- vect(file.path(resmgmt, 'ore_2.shp')) # poly
-peat <- vect(file.path(resmgmt, 'peat_2.shp')) # poly
-#well <- vect(file.path(resmgmt, 'petroleum_well_0.shp')) # point
+## POLYGONAL ANTHRO DISTURBANCE 
 
 #New poly NWT Data
 nt.minesbuild <- st_read(file.path(raw, 'NWT_disturb', 'mining_buildings.gpkg'))
@@ -573,24 +571,21 @@ nt.airstrip.proj <- project(vect(nt.airstrip), crs)
 nt.urbuilds.proj <- project(vect(nt.urbuilds), crs)
 nt.urrec.proj <- project(vect(nt.urrec), crs)
 
+nt.mines <- nt.mines.proj
 
-
-
-rsmgt.mines <- union(aggr, ore2)
-nt.mines <- crop(project(rsmgt.mines, crs), nt)
 nt.mines$feature_type <- "othermines"
 #Get year in there
 head(nt.mines)
-table(nt.mines$datemin)
 df <- as.data.frame(nt.mines)
-df$year <- as.numeric(format(as.Date(df$datemin, format = "%Y-%m-%d"), "%Y"))
-df$year[is.na(df$year)] <- 2012
-df$year[df$year < 2012] <- 2012
+df$year <- 2012 #No dates available, so assigning 2012 to all
 values(nt.mines) <- df
 table(nt.mines$year)
 
-rsmgt.otherpolys <- union(peat, oilgas2)
-nt.otherpolys <- crop(project(rsmgt.otherpolys, crs), nt)
+nt.otherpolys <- union(nt.minesbuild.proj, nt.minesclear)
+nt.otherpolys <- union(nt.otherpolys, nt.wells.proj)
+nt.otherpolys <- union(nt.otherpolys, nt.airstrip.proj)
+nt.otherpolys <- union(nt.otherpolys, nt.urbuilds.proj)
+nt.otherpolys <- union(nt.otherpolys, nt.urrec.proj)
 
 #yt.poly.proj <- project(vect(yt.poly), crs)
 miningpolys.yt <- project(vect(dplyr::filter(yt.poly, RC_Dstr %in% c('Quartz Mining', 'Placer Mining'))), crs)
@@ -1042,3 +1037,10 @@ make_fire_rast(
   minyr = 2012,
   where2save = file.path(derived, "fireRasters5000m")
 )
+
+
+#### Forest age #####
+
+
+
+
