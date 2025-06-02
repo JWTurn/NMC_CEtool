@@ -436,7 +436,27 @@ yt.poly.ls <- list(unique(yt.poly$RC_Dstr))
 summary(as.factor(yt.poly$RC_Dstr))
 yt.poly.ls
 
+
+
 #NWT
+#New NWT data - combine with old? Or scrap old?
+#Linear features
+nt.roads <- st_read(file.path(raw, 'NWT_disturb', 'transportation_roads.gpkg'))
+nt.pipeline <- st_read(file.path(raw, 'NWT_disturb', 'oilgas_piplines.gpkg'))
+nt.seismic <- st_read(file.path(raw, 'NWT_disturb', 'oilgas_seismic.gpkg'))
+nt.trail <- st_read(file.path(raw, 'NWT_disturb', 'transportation_trails.gpkg'))
+
+nt.roads.proj <- project(vect(nt.roads), crs)
+nt.pipeline.proj <- project(vect(nt.pipeline), crs)
+nt.seismic.proj <- project(vect(nt.seismic), crs)
+nt.trail.proj <- project(vect(nt.trail), crs)
+
+
+
+
+
+
+
 roadseg.nt <- file.path(roads.nt, 'road_segment_1.shp')
 trackseg.nt <- file.path(roads.nt, 'track_segment_1.shp')
 trail.nt <- file.path(roads.nt, 'trail_1.shp')
@@ -535,6 +555,26 @@ oilgas2 <- vect(file.path(resmgmt, 'oil_gas_site_2.shp')) # poly
 ore2 <- vect(file.path(resmgmt, 'ore_2.shp')) # poly
 peat <- vect(file.path(resmgmt, 'peat_2.shp')) # poly
 #well <- vect(file.path(resmgmt, 'petroleum_well_0.shp')) # point
+
+#New poly NWT Data
+nt.minesbuild <- st_read(file.path(raw, 'NWT_disturb', 'mining_buildings.gpkg'))
+nt.minesclear <- st_read(file.path(raw, 'NWT_disturb', 'mining_clearings.gpkg'))
+nt.mines <- st_read(file.path(raw, 'NWT_disturb', 'mining_mining.gpkg'))
+nt.wells <- st_read(file.path(raw, 'NWT_disturb', 'oilgas_wellsites.gpkg'))
+nt.airstrip <- st_read(file.path(raw, 'NWT_disturb', 'transportation_airstrip.gpkg'))
+nt.urbuilds <- st_read(file.path(raw, 'NWT_disturb', 'urbanrural_buildings.gpkg'))
+nt.urrec <- st_read(file.path(raw, 'NWT_disturb', 'urbanrural_recreation.gpkg'))
+
+nt.minesbuild.proj <- project(vect(nt.minesbuild), crs)
+nt.minesclear.proj <- project(vect(nt.minesclear), crs)
+nt.mines.proj <- project(vect(nt.mines), crs)
+nt.wells.proj <- project(vect(nt.wells), crs)
+nt.airstrip.proj <- project(vect(nt.airstrip), crs)
+nt.urbuilds.proj <- project(vect(nt.urbuilds), crs)
+nt.urrec.proj <- project(vect(nt.urrec), crs)
+
+
+
 
 rsmgt.mines <- union(aggr, ore2)
 nt.mines <- crop(project(rsmgt.mines, crs), nt)
@@ -820,7 +860,6 @@ for (cat in c(line_categories, poly_categories)) {
 }
 
 
-
 # ---- DENSITY (FOR LF ONLY) ------ (basically avg of p/a rasters instead of max)
 
 for (cat in c(line_categories)) {
@@ -890,17 +929,6 @@ for (cat in c(line_categories)) {
   }
 }
 
-cat  <- "otherlf"   # Replace with an actual category in your data
-year <- 2018         # Replace with a year you have data for
-
-# Construct the raster file path (250m resolution as an example)
-ras_path <- file.path("data", "derived", "dens_disturb_5000m", paste0(cat, "_dens_5000m_", year, ".tif"))
-
-# Load raster
-r <- rast(ras_path)
-
-# Plot it
-plot(r, main = paste("Density (5000m) for", cat, "in", year))
 
 
 ## FIRES ----

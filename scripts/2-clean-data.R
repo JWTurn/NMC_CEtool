@@ -123,17 +123,6 @@ plot(coords$geometry)
 
 # ok major weirdos gone but still some likely not real points, two obvious ones removed below.
 
-#Check on map
-library(ggplot2)
-library(sf)
-library(ggspatial)
-
-ggplot() +
-  annotation_map_tile(type = "osm", zoomin = -1) +  # base map
-  geom_sf(data = coords$geometry, size = 0.1, alpha = 0.3, color = "blue") +
-  theme_minimal()
-
-
 
 # Clean data for movement ----
 trk <- dat.ids %>%
