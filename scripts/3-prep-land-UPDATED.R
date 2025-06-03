@@ -87,10 +87,10 @@ harv250m <- reproducible::prepInputs(url = harvURL,
                                      destinationPath = canada,
                                      to = rasterToMatch_extendedLandscape250m,
                                      fun = 'terra::rast',
-                                     method = 'average') |>
+                                     method = 'max') |>
   Cache()
 harv250m[harv250m==0]<-NA
-writeRaster(harv250m, file.path(derived, 'nmc_harv250m_1985-2020.tif'))
+writeRaster(harv250m, file.path(derived, 'nmc_harv250m_1985-2020.tif'), overwrite = TRUE)
 #harv250m <- rast(file.path(derived, 'nmc_harv250m_1985-2020.tif'))
 #plot(harv250m)
 
@@ -98,10 +98,10 @@ harv1000m <- reproducible::prepInputs(url = harvURL,
                                      destinationPath = canada,
                                      to = rasterToMatch_extendedLandscape1000m,
                                      fun = 'terra::rast',
-                                     method = 'average') |>
+                                     method = 'max') |>
   Cache()
 harv1000m[harv1000m==0]<-NA
-writeRaster(harv1000m, file.path(derived, 'nmc_harv1000m_1985-2020.tif'))
+writeRaster(harv1000m, file.path(derived, 'nmc_harv1000m_1985-2020.tif'), overwrite = TRUE)
 #harv1000m <- rast(file.path(derived, 'nmc_harv1000m_1985-2020.tif'))
 #plot(harv1000m)
 
@@ -109,18 +109,52 @@ harv5000m <- reproducible::prepInputs(url = harvURL,
                                      destinationPath = canada,
                                      to = rasterToMatch_extendedLandscape5000m,
                                      fun = 'terra::rast',
-                                     method = 'average') |>
+                                     method = 'max') |>
   Cache()
 harv5000m[harv5000m==0]<-NA
-writeRaster(harv5000m, file.path(derived, 'nmc_harv5000m_1985-2020.tif'))
+writeRaster(harv5000m, file.path(derived, 'nmc_harv5000m_1985-2020.tif'), overwrite = TRUE)
 #harv5000m <- rast(file.path(derived, 'nmc_harv5000m_1985-2020.tif'))
 #plot(harv5000m)
 
-
+#hist(harv30m, breaks = 50, main = "Harvest Year Distribution")
 ##Just checkin'
 #harv30m
-#cellFromRowCol(harv30m, 7, 10)
 #summary(harv30m)
+
+
+#Generating base rasters with year of harvest for each resolution and year (cumulative rasters to update cells if harvested again in cell)
+
+years <- 2012:2020
+
+resolutions <- list(
+  "harv250" = harv250m,
+  "harv1000" = harv1000m,
+  "harv5000" = harv5000m
+)
+
+for (res_name in names(resolutions)) {
+  out_dir <- file.path(derived, res_name) 
+  
+  original_rast <- resolutions[[res_name]]
+  
+  cumulative_rast <- classify(original_rast, matrix(c(-Inf, Inf, NA), ncol = 3, byrow = TRUE))
+  
+  for (yr in years) {
+    masked_rast <- mask(original_rast, original_rast <= yr, maskvalue = FALSE)
+    harvested_this_year <- masked_rast == yr
+    
+    values_to_update <- which(values(harvested_this_year) == 1)
+    if (length(values_to_update) > 0) {
+      v <- values(cumulative_rast)
+      v[values_to_update] <- yr
+      values(cumulative_rast) <- v
+    }
+    
+    out_path <- file.path(out_dir, paste0("harv_", yr, ".tif"))
+    writeRaster(cumulative_rast, out_path, overwrite = TRUE)
+  }
+}
+
 
 ## Calculating average distance to harvest for each year of harvest at the larger resolutions (250, 1000, and 5000)
 
@@ -1040,7 +1074,86 @@ make_fire_rast(
 
 
 #### Forest age #####
+forageURL <- "https://opendata.nfis.org/downloads/forest_change/CA_forest_age_2019.zip"
 
+# Had to manually unzip the file to get tiff, for some reason.
+unzip(file.path(raw, "CA_forest_age_2019.zip"), exdir = file.path(raw, "CA_forest_age_2019_unzipped"))
+unzipped_dir <- file.path(raw, "CA_forest_age_2019_unzipped")
+tif <- "CA_forest_age_2019.tif"
 
+forage_raster <- prepInputs(
+  archive = file.path(raw, "CA_forest_age_2019.zip"),
+  targetFile = tif,
+  destinationPath = unzipped_dir,
+  fun = terra::rast,
+  method = "near"
+) |> Cache()
 
+forage30m <- terra::project(forage_raster, rasterToMatch_extendedLandscape30m, method = "near")
+forage30m[forage30m==0]<-NA
+writeRaster(forage30m, file.path(derived, 'nmc_forest_age30.tif'))
+#forage30m <- rast(file.path(derived, 'nmc_forest_age30.tif'))
+#plot(forage30m)
 
+#Scale up
+
+forage_raster_scaleup <- prepInputs(
+  archive = file.path(raw, "CA_forest_age_2019.zip"),
+  targetFile = tif,
+  destinationPath = unzipped_dir,
+  fun = terra::rast,
+  method = "average"
+) |> Cache()
+
+forage250m <- terra::project(forage_raster_scaleup, rasterToMatch_extendedLandscape250m, method = "average")
+forage250m[forage250m==0]<-NA
+writeRaster(forage250m, file.path(derived, 'nmc_forest_age_250.tif'))
+#forage250m <- rast(file.path(derived, 'nmc_forest_age_250.tif'))
+#plot(forage250m)
+
+forage1000m <- terra::project(forage_raster_scaleup, rasterToMatch_extendedLandscape1000m, method = "average")
+forage1000m[forage1000m==0]<-NA
+writeRaster(forage1000m, file.path(derived, 'nmc_forest_age_1000.tif'))
+#forage1000m <- rast(file.path(derived, 'nmc_forest_age_1000.tif'))
+#plot(forage1000m)
+
+forage5000m <- terra::project(forage_raster_scaleup, rasterToMatch_extendedLandscape5000m, method = "average")
+forage5000m[forage5000m==0]<-NA
+writeRaster(forage5000m, file.path(derived, 'nmc_forest_age_5000.tif'))
+#forage5000m <- rast(file.path(derived, 'nmc_forest_age_5000.tif'))
+#plot(forage5000m)
+
+#Make rasters per year per res
+years <- 2012:2024
+
+ages <- list(
+  age250 = forage250m,
+  age1000 = forage1000m,
+  age5000 = forage5000m
+)
+
+for (res in names(ages)) {
+  age2019 <- ages[[res]]
+  
+  res_outdir <- file.path(raw, res)
+  dir.create(res_outdir, recursive = TRUE, showWarnings = FALSE)
+  
+  for (yr in years) {
+    delta_years <- 2019 - yr
+    age_year <- age2019 - delta_years
+    age_year[age_year < 0] <- NA  
+    
+    outname <- file.path(res_outdir, paste0("forest_age_", yr, ".tif"))
+    writeRaster(age_year, outname, overwrite = TRUE)
+  }
+}
+
+#Checking
+#forage250_2012 <- rast(file.path(raw, 'age250', 'forest_age_2012.tif'))
+#plot(forage250_2012)
+
+#forage250_2024 <- rast(file.path(raw, 'age250', 'forest_age_2024.tif'))
+#plot(forage250_2024)
+
+#forage5000_2012 <- rast(file.path(raw, 'age5000', 'forest_age_2012.tif'))
+#plot(forage5000_2012)

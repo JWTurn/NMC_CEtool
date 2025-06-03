@@ -61,9 +61,10 @@ fires_250 <- file.path('data', 'derived', 'fireRasters250m')
 #Harvest
 harv_dist_250 <- file.path('data', 'derived', 'harv_dist_250m')
 harv_pa_250 <- file.path('data', 'derived', 'harv_pa_250m')
+harv250 <- file.path('data', 'derived', 'harv250')
 
-#FIX FOREST AGE
-for.age.250 <- file.path('data', 'raw', 'nmc_forestage_2019.tif') #Update scales (250 and 1000)
+#Forest age
+for_age_250 <- file.path('data', 'raw', 'age250')
 
 #Anthro-disturbance
 dens_lfother_250 <- file.path('data', 'derived', 'dens_disturb_250m', 'otherlf')
@@ -339,8 +340,6 @@ targets_tracks <- c(
 
 # Targets: extract ------------------------------------------------------------------
 ## Proportion of land ----
-#Have stacks now - need target where extract layer from stack, then feed layer into extract_by_year function
-#
 
 targets_propland <- c(
   tar_target(
@@ -350,148 +349,201 @@ targets_propland <- c(
 
   tar_target(
     extr_propwater,
-    extract_by_year(addyear, var = landcov250, startyr = minyr, endyr = 2022, maxyr, where = 'end')
+    extract_by_year(addyear, var = prop_water, startyr = minyr, endyr = 2022, maxyr, where = 'end')
   ),
 
   tar_target(
     extr_propsnow,
-    extract_by_year(extr_propwater, var = prop_snow, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+    extract_by_year(extr_propwater, var = prop_snow, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
 
   tar_target(
     extr_proprock,
-    extract_by_year(extr_propsnow, var = prop_rock, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+    extract_by_year(extr_propsnow, var = prop_rock, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
 
   tar_target(
     extr_propbarren,
-    extract_by_year(extr_proprock, var = prop_barren, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+    extract_by_year(extr_proprock, var = prop_barren, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
 
   tar_target(
     extr_propbryoids,
-    extract_by_year(extr_propbarren, var = prop_bryoids, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+    extract_by_year(extr_propbarren, var = prop_bryoids, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
 
   tar_target(
     extr_propshrub,
-    extract_by_year(extr_propbryoids, var = prop_shrub, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+    extract_by_year(extr_propbryoids, var = prop_shrub, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
 
   tar_target(
     extr_propwetland,
-    extract_by_year(extr_propshrub, var = prop_wetland, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+    extract_by_year(extr_propshrub, var = prop_wetland, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
 
   tar_target(
     extr_propwettreed,
-    extract_by_year(extr_propwetland, var = prop_wettreed, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+    extract_by_year(extr_propwetland, var = prop_wettreed, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
 
   tar_target(
     extr_propherbs,
-    extract_by_year(extr_propwettreed, var = prop_herbs, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+    extract_by_year(extr_propwettreed, var = prop_herbs, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
 
   tar_target(
     extr_propneedle,
-    extract_by_year(extr_propherbs, var = prop_needleleaf, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+    extract_by_year(extr_propherbs, var = prop_needleleaf, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
 
   tar_target(
     extr_propdecid,
-    extract_by_year(extr_propneedle, var = prop_deciduous, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+    extract_by_year(extr_propneedle, var = prop_deciduous, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
 
   tar_target(
     extr_propmixed,
-    extract_by_year(extr_propdecid, var = prop_mixed, startyr = minyr, endyr = 2019, maxyr, where = 'both')
+    extract_by_year(extr_propdecid, var = prop_mixed, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   )
 )
 
 ## anthro disturbance ----
+#Distance-to
 targets_disturbance <- c(     
-  # Calculate distance to anthropogenic disturbances
-  tar_target( #Edit to extract by year, already have dist to (unless changed function)
+  tar_target(
     dist_paved,
-    extract_by_year(extr_propmixed, paved.sf, 'paved', where = 'both', crs)
+    extract_by_year(extr_propmixed, var = dist_paved_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
   tar_target(
     dist_unpaved,
-    extract_distto(dist_paved, unpaved.sf, 'unpaved', where = 'both', crs)
+    extract_by_year(dist_paved, var = dist_unpaved_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
   tar_target(
     dist_other,
-    extract_distto(dist_unpaved, lf_other.sf, 'lf_other', where = 'both', crs)
+    extract_by_year(dist_unpaved, var = dist_lfother_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
   tar_target(
-    dist_anthropolys,
-    extract_distto(dist_other, anthropolys.sf, 'anthro', where = 'both', crs)
+    dist_otherpolys,
+    extract_by_year(dist_other, var = dist_otherpoly_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
   tar_target(
     dist_miningpolys,
-    extract_distto(dist_anthropolys, miningpolys.sf, 'mining', where = 'both', crs)
+    extract_by_year(dist_otherpolys, var = dist_othermines_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
   tar_target(
     dist_placer,
-    extract_distto(dist_miningpolys, dplyr::filter(miningpolys.yt.sf, RC_Disturb == 'Placer Mining'), 'placer', where = 'both', crs)
+    extract_by_year(dist_miningpolys, var = dist_placer_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
   tar_target(
     dist_quartz,
-    extract_distto(dist_placer, dplyr::filter(miningpolys.yt.sf, RC_Disturb == 'Quartz Mining'), 'quartz', where = 'both', crs)
+    extract_by_year(dist_placer, var = dist_quartz_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
-  # Extract_by_year, same as all above
+  
+#Presence/absence
+  tar_target(
+    pa_paved,
+    extract_by_year(dist_quartz, var = pa_paved_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    pa_unpaved,
+    extract_by_year(pa_paved, var = pa_unpaved_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    pa_other,
+    extract_by_year(pa_unpaved, var = pa_lfother_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    pa_otherpolys,
+    extract_by_year(pa_other, var = pa_otherpoly_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    pa_miningpolys,
+    extract_by_year(pa_otherpolys, var = pa_othermines_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    pa_placer,
+    extract_by_year(pa_miningpolys, var = pa_placer_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    pa_quartz,
+    extract_by_year(pa_placer, var = pa_quartz_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  
+#Density
+  tar_target(
+    dens_paved,
+    extract_by_year(pa_quartz, var = dens_paved_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    dens_unpaved,
+    extract_by_year(dens_paved, var = dens_unpaved_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    dens_other,
+    extract_by_year(dens_unpaved, var = dens_lfother_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  
+#Distance to harv
   tar_target(
     dist_harv,
-    extract_recent(dist_quartz, var = harv.sf, name = 'harv', method = 'distto', where = 'both') #, time_recent = 0
+    extract_by_year(dens_other, var = harv_dist_250, startyr = minyr, endyr = 2020, maxyr, where = 'both')
   ),
-  
-  # extract point in disturbances -  don't need (Pete)
-  tar_target(
-    extr_anthropolys.prop,
-    extract_pt(dist_harv, anthropolys.rast.path, 'prop_disturbance', where = 'both')
-  )
+#Harv presence/absence
+tar_target(
+  pa_harv,
+  extract_by_year(dist_harv, var = harv_pa_250, startyr = minyr, endyr = 2020, maxyr, where = 'both')
+ )
 )
 
 
 ## time since ----
 targets_timesince <- c(   
-  # Extract forest age - create new rasters for each year for 250 and 1000 in prep land
+  # Extract forest age
   tar_target(
     extr_for.age,
-    extract_by_year(extr_anthropolys.prop, for.age.path, 'for.age', where = 'both')
+    extract_by_year(pa_harv, var = for_age_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
-  # TODO can't get tracked files to work for these two yet...it may have just been the fires path 
   # Extract harvest
   tar_target(
     extr_harv,
-    extract_by_year(extr_for.age, harv, 'harv', where = 'both')
+    extract_by_year(extr_for.age, var = harv250, startyr = minyr, endyr = 2020, maxyr, where = 'both')
   ),
 
   # calculate time since harvest
   tar_target(
     ts_harv,
-    calc_ts(extr_harv, var = 'harv', where = 'both', no.data=100)
+    calc_ts(extr_harv, var = 'harv250', where = 'both', no.data=100)
   ),
   
   # Extract fires
   tar_target(
     extr_fires,
-    extract_by_year(ts_harv, fires, startyr = minyr, endyr = 2023, maxyr = maxyr, where = 'both')
+    extract_by_year(ts_harv, var = fires_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
   # calculate time since fire
   tar_target(
     ts_fire,
-    calc_ts(extr_fires, var = 'fires', where = 'both', no.data=200) 
+    calc_ts(extr_fires, var = 'fires_250', where = 'both', no.data=200) 
   )
 )
 
