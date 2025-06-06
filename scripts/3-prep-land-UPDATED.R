@@ -690,10 +690,14 @@ sf_lfother <- st_as_sf(lfother)
 
 sf_all <- bind_rows(sf_paved, sf_unpaved, sf_lfother)
 
+
 line_sf <- vect(sf_all)
 names(line_sf)
 table(line_sf$year)
 table(line_sf$feature_t0)
+
+terra::writeVector(line_sf, file.path(derived, "combined_linear_features.shp"), overwrite = TRUE)
+line_sf <- vect(file.path(derived, "combined_linear_features.shp"))
 
 #Looking good! Phew! Now combine all poly's
 
@@ -715,6 +719,8 @@ poly_sf <- terra::vect(sf_poly_all)
 table(poly_sf$year)           
 table(poly_sf$feature_t0)   
 
+terra::writeVector(poly_sf, file.path(derived, "combined_poly_features.shp"), overwrite = TRUE)
+poly_sf <- vect(file.path(derived, "combined_poly_features.shp"))
 #Looking good, year and feature type carried over! Now for the re-rasterization
 
 
@@ -1157,3 +1163,50 @@ for (res in names(ages)) {
 
 #forage5000_2012 <- rast(file.path(raw, 'age5000', 'forest_age_2012.tif'))
 #plot(forage5000_2012)
+
+
+
+
+#Stuff for making plots
+# Check CRSs
+old_lf <- vect("C:/Users/peteb/OneDrive/Desktop/old_lf_combined.gpkg")
+crs(old_lf)
+crs(line_sf)
+
+old_lf_proj <- project(old_lf, crs(line_sf))
+old_lf_cropped <- crop(old_lf_proj, ext(line_sf))
+old_lf_clipped <- intersect(old_lf_proj, line_sf)
+terra::writeVector(old_lf_clipped, "C:/Users/peteb/OneDrive/Desktop/old_lf_clipped.shp", overwrite = TRUE)
+
+
+old_poly <- vect("C:/Users/peteb/OneDrive/Desktop/old_poly_combined.gpkg")
+old_poly_proj <- project(old_poly, crs(poly_sf))
+old_poly_cropped <- crop(old_poly_proj, ext(poly_sf))
+old_poly_clipped <- intersect(old_poly_proj, poly_sf)
+terra::writeVector(old_poly_clipped, "C:/Users/peteb/OneDrive/Desktop/old_poly_clipped.shp", overwrite = TRUE)
+
+
+boundary <- vect("C:/Users/peteb/OneDrive/Desktop/boundary.gpkg")
+
+old_lf <- vect("C:/Users/peteb/OneDrive/Desktop/oldlfproper.gpkg")
+old_poly <- vect("C:/Users/peteb/OneDrive/Desktop/oldpolyproper.gpkg")
+old_paved <- vect("C:/Users/peteb/OneDrive/Desktop/roadpaved.shp")
+old_unpaved <- vect("C:/Users/peteb/OneDrive/Desktop/roadunpaved.shp")
+old_lfother <- vect("C:/Users/peteb/OneDrive/Desktop/lfother.shp")
+old_mining <- vect("C:/Users/peteb/OneDrive/Desktop/miningpolys.shp")
+old_anthropoly <- vect("C:/Users/peteb/OneDrive/Desktop/anthropolys.shp")
+
+crs(boundary)
+crs(old_paved)
+boundary <- project(boundary, crs(old_paved))
+
+pavedclipped <- intersect(old_paved, boundary)
+unpavedclipped <- intersect(old_unpaved, boundary)
+lfotherclipped <- intersect(old_lfother, boundary)
+miningclipped <- intersect(old_mining, boundary)
+anthroclipped <- intersect(old_anthropoly, boundary)
+
+head(miningclipped)
+placer_mining <- miningclipped[miningclipped$RC_Disturb == "Placer Mining", ]
+quartz_mining <- miningclipped[miningclipped$RC_Disturb == "Quartz Mining", ]
+

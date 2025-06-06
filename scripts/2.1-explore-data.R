@@ -134,3 +134,69 @@ quantile(steps.id13$sl_, probs = c(0.9, 0.95, 0.99))
 mean(steps.id13$sl_)
 # [1] 1440.936
 
+
+#Summary stats
+unique_ids_per_prov <- dat[, .(unique_ids = uniqueN(id)), by = prov]
+print(unique_ids_per_prov)
+
+ids <- fixrate.clean$id            # vector of ids
+means <- fixrate.clean$mean        # vector of mean fix rates
+medians <- fixrate.clean$median    # vector of median fix rates
+id_prov_map <- setNames(as.character(dat$prov), as.character(dat$id))
+provs <- id_prov_map[as.character(ids)]
+
+aggregate_by_prov <- function(values, groups, FUN) {
+  tapply(values, groups, FUN, na.rm = TRUE)
+}
+
+mean_fixrate_mean <- aggregate_by_prov(means, provs, mean)
+median_fixrate_mean <- aggregate_by_prov(means, provs, median)
+mean_fixrate_median <- aggregate_by_prov(medians, provs, mean)
+median_fixrate_median <- aggregate_by_prov(medians, provs, median)
+
+summary_df <- data.frame(
+  prov = names(mean_fixrate_mean),
+  mean_fixrate_mean = as.numeric(mean_fixrate_mean),
+  median_fixrate_mean = as.numeric(median_fixrate_mean),
+  mean_fixrate_median = as.numeric(mean_fixrate_median),
+  median_fixrate_median = as.numeric(median_fixrate_median),
+  stringsAsFactors = FALSE
+)
+
+print(summary_df)
+
+
+#How many indivs in the filtered timing datasets?
+library(lubridate)
+dat[, ym := format(t_, "%Y-%m")]
+months_per_id <- dat[, .(n_months = uniqueN(ym)), by = .(id, prov)]
+valid_ids <- months_per_id[n_months > 9]
+individuals_per_prov <- valid_ids[, .N, by = prov]
+print(individuals_per_prov)
+
+
+
+dat[, `:=`(
+  year = year(t_),
+  month = month(t_),
+  day = day(t_)
+)]
+
+dat[, season := fifelse(
+  (month %in% c(11, 12, 1, 2, 3)) | (month == 4 & day <= 15),
+  "winter",
+  fifelse(month %in% c(7, 8, 9), "summer", NA_character_)
+)]
+
+dat[, ym := format(t_, "%Y-%m")]
+
+season_months <- dat[!is.na(season), .(n_months = uniqueN(ym)), by = .(id, prov, season)]
+
+season_wide <- dcast(season_months, id + prov ~ season, value.var = "n_months", fill = 0)
+
+summary <- season_wide[, .(
+  n_summer_ids = sum(summer >= 1),
+  n_winter_ids = sum(winter >= 3)
+), by = prov]
+
+print(summary)
