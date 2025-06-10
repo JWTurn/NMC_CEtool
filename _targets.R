@@ -22,7 +22,7 @@ lapply(dir('R', '*.R', full.names = TRUE), source)
 
 # Options -----------------------------------------------------------------
 tar_option_set(format = 'qs', 
-               #error = 'null',
+               error = 'null',
                workspace_on_error = T)
 
 
@@ -562,5 +562,4 @@ targets_stepID <- c(
 # Targets: all ------------------------------------------------------------------
 # Automatically grab and combine all the 'targets_*' lists above
 lapply(grep('targets', ls(), value = TRUE), get)
-
 
