@@ -349,7 +349,7 @@ targets_propland <- c(
 
   tar_target(
     extr_propwater,
-    extract_by_year(addyear, var = prop_water, startyr = minyr, endyr = 2022, maxyr, where = 'end')
+    extract_by_year(addyear, var = prop_water, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
 
   tar_target(
