@@ -772,7 +772,7 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 
 
 #Further work with seasonal datasets - filtering timing
-#Filter each seasonal dataset to at least 1 full month in summer and at least 3 months in winter
+#Filter each seasonal dataset to at least 1 full month in summer and at least 3 months in winter (want full month of data, so upping it for the filter by 1)
 #Winter
 dat.issa.10.winter$month <- format(as.Date(dat.issa.10.winter$t1_, format="%Y/%m/%d"),"%m") #Create new column that isolates the month
 dat.issa.10.winter$month #Confirming that the new column was created correctly

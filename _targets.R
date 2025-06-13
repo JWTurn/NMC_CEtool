@@ -41,32 +41,32 @@ studyArea <- file.path(derived, 'prepped', 'clean_NMC_20kmBuff_crop.shp')
 #Landcover for 250m resolution
 prop_land <- file.path('data', 'derived', 'prop_land')
 landcov250 <- file.path('data', 'derived', 'prop_land', 'window250')
-prop_water <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_water_250')
-prop_snow <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_snow_250')
-prop_rock <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_rock_250')
-prop_barren <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_barrenland_250')
-prop_bryoids <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_bryoids_250')
-prop_shrub <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_shrub_250')
-prop_wetland <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_wetland_250')
-prop_wettreed <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_wetreed_250')
-prop_herbs <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_herbs_250')
-prop_needleleaf <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_needleleaf_250')
-prop_deciduous <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_deciduous_250')
-prop_mixed <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_mixed_250')
+prop_water_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_water_250')
+prop_snow_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_snow_250')
+prop_rock_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_rock_250')
+prop_barren_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_barrenland_250')
+prop_bryoids_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_bryoids_250')
+prop_shrub_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_shrub_250')
+prop_wetland_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_wetland_250')
+prop_wettreed_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_wetreed_250')
+prop_herbs_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_herbs_250')
+prop_needleleaf_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_needleleaf_250')
+prop_deciduous_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_deciduous_250')
+prop_mixed_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_mixed_250')
 
 
-#Fires
+#Fires 250
 fires_250 <- file.path('data', 'derived', 'fireRasters250m')
 
-#Harvest
+#Harvest 250
 harv_dist_250 <- file.path('data', 'derived', 'harv_dist_250m')
 harv_pa_250 <- file.path('data', 'derived', 'harv_pa_250m')
 harv250 <- file.path('data', 'derived', 'harv250')
 
-#Forest age
+#Forest age 250
 for_age_250 <- file.path('data', 'raw', 'age250')
 
-#Anthro-disturbance
+#Anthro-disturbance 250
 dens_lfother_250 <- file.path('data', 'derived', 'dens_disturb_250m', 'otherlf')
 dens_paved_250 <- file.path('data', 'derived', 'dens_disturb_250m', 'paved')
 dens_unpaved_250 <- file.path('data', 'derived', 'dens_disturb_250m', 'unpaved')
@@ -84,6 +84,55 @@ pa_placer_250 <- file.path('data', 'derived', 'pa_disturb_250m', 'placer')
 pa_quartz_250 <- file.path('data', 'derived', 'pa_disturb_250m', 'quartz')
 pa_othermines_250 <- file.path('data', 'derived', 'pa_disturb_250m', 'othermines')
 pa_otherpoly_250 <- file.path('data', 'derived', 'pa_disturb_250m', 'otherpoly')
+
+
+#Landcover for 1000m resolution
+prop_land <- file.path('data', 'derived', 'prop_land')
+landcov1000 <- file.path('data', 'derived', 'prop_land', 'agg1000')
+prop_water_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_water_1000')
+prop_snow_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_snow_1000')
+prop_rock_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_rock_1000')
+prop_barren_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_barrenland_1000')
+prop_bryoids_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_bryoids_1000')
+prop_shrub_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_shrub_1000')
+prop_wetland_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_wetland_1000')
+prop_wettreed_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_wetreed_1000')
+prop_herbs_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_herbs_1000')
+prop_needleleaf_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_needleleaf_1000')
+prop_deciduous_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_deciduous_1000')
+prop_mixed_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_mixed_1000')
+
+
+#Fires 1000
+fires_1000 <- file.path('data', 'derived', 'fireRasters1000m')
+
+#Harvest 1000
+harv_dist_1000 <- file.path('data', 'derived', 'harv_dist_1000m')
+harv_pa_1000 <- file.path('data', 'derived', 'harv_pa_1000m')
+harv1000 <- file.path('data', 'derived', 'harv1000')
+
+#Forest age 1000
+for_age_1000 <- file.path('data', 'raw', 'age1000')
+
+#Anthro-disturbance 1000
+dens_lfother_1000 <- file.path('data', 'derived', 'dens_disturb_1000m', 'otherlf')
+dens_paved_1000 <- file.path('data', 'derived', 'dens_disturb_1000m', 'paved')
+dens_unpaved_1000 <- file.path('data', 'derived', 'dens_disturb_1000m', 'unpaved')
+dist_paved_1000 <- file.path('data', 'derived', 'dist_disturb_1000m', 'paved')
+dist_unpaved_1000 <- file.path('data', 'derived', 'dist_disturb_1000m', 'unpaved')
+dist_lfother_1000 <- file.path('data', 'derived', 'dist_disturb_1000m', 'otherlf')
+dist_placer_1000 <- file.path('data', 'derived', 'dist_disturb_1000m', 'placer')
+dist_quartz_1000 <- file.path('data', 'derived', 'dist_disturb_1000m', 'quartz')
+dist_othermines_1000 <- file.path('data', 'derived', 'dist_disturb_1000m', 'othermines')
+dist_otherpoly_1000 <- file.path('data', 'derived', 'dist_disturb_1000m', 'otherpoly')
+pa_paved_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'paved')
+pa_unpaved_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'unpaved')
+pa_lfother_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'otherlf')
+pa_placer_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'placer')
+pa_quartz_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'quartz')
+pa_othermines_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'othermines')
+pa_otherpoly_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'otherpoly')
+
 
 
 id <- 'id'
@@ -349,62 +398,122 @@ targets_propland <- c(
 
   tar_target(
     extr_propwater,
-    extract_by_year(addyear, var = prop_water, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+    extract_by_year(addyear, var = prop_water_250, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
 
   tar_target(
     extr_propsnow,
-    extract_by_year(extr_propwater, var = prop_snow, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+    extract_by_year(extr_propwater, var = prop_snow_250, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
 
   tar_target(
     extr_proprock,
-    extract_by_year(extr_propsnow, var = prop_rock, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+    extract_by_year(extr_propsnow, var = prop_rock_250, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
 
   tar_target(
     extr_propbarren,
-    extract_by_year(extr_proprock, var = prop_barren, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+    extract_by_year(extr_proprock, var = prop_barren_250, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
 
   tar_target(
     extr_propbryoids,
-    extract_by_year(extr_propbarren, var = prop_bryoids, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+    extract_by_year(extr_propbarren, var = prop_bryoids_250, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
 
   tar_target(
     extr_propshrub,
-    extract_by_year(extr_propbryoids, var = prop_shrub, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+    extract_by_year(extr_propbryoids, var = prop_shrub_250, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
 
   tar_target(
     extr_propwetland,
-    extract_by_year(extr_propshrub, var = prop_wetland, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+    extract_by_year(extr_propshrub, var = prop_wetland_250, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
 
   tar_target(
     extr_propwettreed,
-    extract_by_year(extr_propwetland, var = prop_wettreed, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+    extract_by_year(extr_propwetland, var = prop_wettreed_250, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
 
   tar_target(
     extr_propherbs,
-    extract_by_year(extr_propwettreed, var = prop_herbs, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+    extract_by_year(extr_propwettreed, var = prop_herbs_250, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
 
   tar_target(
     extr_propneedle,
-    extract_by_year(extr_propherbs, var = prop_needleleaf, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+    extract_by_year(extr_propherbs, var = prop_needleleaf_250, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
 
   tar_target(
     extr_propdecid,
-    extract_by_year(extr_propneedle, var = prop_deciduous, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+    extract_by_year(extr_propneedle, var = prop_deciduous_250, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
 
   tar_target(
     extr_propmixed,
-    extract_by_year(extr_propdecid, var = prop_mixed, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+    extract_by_year(extr_propdecid, var = prop_mixed_250, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    extr_propwater1000,
+    extract_by_year(extr_propmixed, var = prop_water_1000, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    extr_propsnow1000,
+    extract_by_year(extr_propwater1000, var = prop_snow_1000, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    extr_proprock1000,
+    extract_by_year(extr_propsnow1000, var = prop_rock_1000, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    extr_propbarren1000,
+    extract_by_year(extr_proprock1000, var = prop_barren_1000, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    extr_propbryoids1000,
+    extract_by_year(extr_propbarren1000, var = prop_bryoids_1000, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    extr_propshrub1000,
+    extract_by_year(extr_propbryoids1000, var = prop_shrub_1000, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    extr_propwetland1000,
+    extract_by_year(extr_propshrub1000, var = prop_wetland_1000, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    extr_propwettreed1000,
+    extract_by_year(extr_propwetland1000, var = prop_wettreed_1000, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    extr_propherbs1000,
+    extract_by_year(extr_propwettreed1000, var = prop_herbs_1000, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    extr_propneedle1000,
+    extract_by_year(extr_propherbs1000, var = prop_needleleaf_1000, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    extr_propdecid1000,
+    extract_by_year(extr_propneedle1000, var = prop_deciduous_1000, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    extr_propmixed1000,
+    extract_by_year(extr_propdecid1000, var = prop_mixed_1000, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   )
 )
 
@@ -413,7 +522,7 @@ targets_propland <- c(
 targets_disturbance <- c(     
   tar_target(
     dist_paved,
-    extract_by_year(extr_propmixed, var = dist_paved_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+    extract_by_year(extr_propmixed1000, var = dist_paved_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
   tar_target(
@@ -510,7 +619,110 @@ targets_disturbance <- c(
 tar_target(
   pa_harv,
   extract_by_year(dist_harv, var = harv_pa_250, startyr = minyr, endyr = 2020, maxyr, where = 'both')
- )
+ ),
+
+
+#1000
+tar_target(
+  dist_paved1000,
+  extract_by_year(pa_harv, var = dist_paved_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+),
+
+tar_target(
+  dist_unpaved1000,
+  extract_by_year(dist_paved1000, var = dist_unpaved_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+),
+
+tar_target(
+  dist_other1000,
+  extract_by_year(dist_unpaved1000, var = dist_lfother_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+),
+
+tar_target(
+  dist_otherpolys1000,
+  extract_by_year(dist_other1000, var = dist_otherpoly_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+),
+
+tar_target(
+  dist_miningpolys1000,
+  extract_by_year(dist_otherpolys1000, var = dist_othermines_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+),
+
+tar_target(
+  dist_placer1000,
+  extract_by_year(dist_miningpolys1000, var = dist_placer_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+),
+
+tar_target(
+  dist_quartz1000,
+  extract_by_year(dist_placer1000, var = dist_quartz_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+),
+
+
+#Presence/absence
+tar_target(
+  pa_paved1000,
+  extract_by_year(dist_quartz1000, var = pa_paved_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+),
+
+tar_target(
+  pa_unpaved1000,
+  extract_by_year(pa_paved1000, var = pa_unpaved_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+),
+
+tar_target(
+  pa_other1000,
+  extract_by_year(pa_unpaved1000, var = pa_lfother_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+),
+
+tar_target(
+  pa_otherpolys1000,
+  extract_by_year(pa_other1000, var = pa_otherpoly_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+),
+
+tar_target(
+  pa_miningpolys1000,
+  extract_by_year(pa_otherpolys1000, var = pa_othermines_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+),
+
+tar_target(
+  pa_placer1000,
+  extract_by_year(pa_miningpolys1000, var = pa_placer_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+),
+
+tar_target(
+  pa_quartz1000,
+  extract_by_year(pa_placer1000, var = pa_quartz_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+),
+
+
+#Density
+tar_target(
+  dens_paved1000,
+  extract_by_year(pa_quartz1000, var = dens_paved_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+),
+
+tar_target(
+  dens_unpaved1000,
+  extract_by_year(dens_paved1000, var = dens_unpaved_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+),
+
+tar_target(
+  dens_other1000,
+  extract_by_year(dens_unpaved1000, var = dens_lfother_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+),
+
+
+#Distance to harv
+tar_target(
+  dist_harv1000,
+  extract_by_year(dens_other1000, var = harv_dist_1000, startyr = minyr, endyr = 2020, maxyr, where = 'both')
+),
+#Harv presence/absence
+tar_target(
+  pa_harv1000,
+  extract_by_year(dist_harv1000, var = harv_pa_1000, startyr = minyr, endyr = 2020, maxyr, where = 'both')
+)
 )
 
 
@@ -519,7 +731,7 @@ targets_timesince <- c(
   # Extract forest age
   tar_target(
     extr_for.age,
-    extract_by_year(pa_harv, var = for_age_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+    extract_by_year(pa_harv1000, var = for_age_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
   # Extract harvest
@@ -544,6 +756,36 @@ targets_timesince <- c(
   tar_target(
     ts_fire,
     calc_ts(extr_fires, var = 'fires_250', where = 'both', no.data=200) 
+  ),
+  
+  
+  tar_target(
+    extr_for.age1000,
+    extract_by_year(ts_fire, var = for_age_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  # Extract harvest
+  tar_target(
+    extr_harv1000,
+    extract_by_year(extr_for.age1000, var = harv1000, startyr = minyr, endyr = 2020, maxyr, where = 'both')
+  ),
+  
+  # calculate time since harvest
+  tar_target(
+    ts_harv1000,
+    calc_ts(extr_harv1000, var = 'harv1000', where = 'both', no.data=100)
+  ),
+  
+  # Extract fires
+  tar_target(
+    extr_fires1000,
+    extract_by_year(ts_harv1000, var = fires_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  # calculate time since fire
+  tar_target(
+    ts_fire1000,
+    calc_ts(extr_fires1000, var = 'fires_1000', where = 'both', no.data=200) 
   )
 )
 
@@ -554,7 +796,7 @@ targets_stepID <- c(
   # create step ID across individuals
   tar_target(
     stepID,
-    setDT(ts_fire)[,indiv_step_id := paste(id, step_id_, sep = '_')]
+    setDT(ts_fire1000)[,indiv_step_id := paste(id, step_id_, sep = '_')]
   )
 )
 
