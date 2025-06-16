@@ -39,9 +39,10 @@ studyArea <- file.path(derived, 'prepped', 'clean_NMC_20kmBuff_crop.shp')
 
 
 #Landcover for 250m resolution
+prop_land_prefix <- file.path("data", "derived", "prop_land", "prop_land_split")
 prop_land <- file.path('data', 'derived', 'prop_land')
 landcov250 <- file.path('data', 'derived', 'prop_land', 'window250')
-prop_water_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_water_250')
+prop_water_250 <- file.path(prop_land_prefix, "prop_water_250")
 prop_snow_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_snow_250')
 prop_rock_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_rock_250')
 prop_barren_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_barrenland_250')
