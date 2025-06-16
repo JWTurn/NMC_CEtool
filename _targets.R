@@ -382,7 +382,7 @@ targets_tracks <- c(
   # add a year column
   tar_target(
     addyear,
-    dattab[,`:=`(year=lubridate::year(t2_), 
+    dattab[,`:=`(year=as.integer(lubridate::year(t2_)), 
                  int.year=plyr::round_any(lubridate::year(t2_), interval, floor))]
   )
 )
