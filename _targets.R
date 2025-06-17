@@ -39,17 +39,16 @@ studyArea <- file.path(derived, 'prepped', 'clean_NMC_20kmBuff_crop.shp')
 
 
 #Landcover for 250m resolution
-prop_land_prefix <- file.path("data", "derived", "prop_land", "prop_land_split")
-prop_land <- file.path('data', 'derived', 'prop_land')
+#prop_land_prefix <- file.path("data", "derived", "prop_land", "prop_land_split")
 landcov250 <- file.path('data', 'derived', 'prop_land', 'window250')
-prop_water_250 <- file.path(prop_land_prefix, "prop_water_250")
+prop_water_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', "prop_water_250")
 prop_snow_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_snow_250')
 prop_rock_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_rock_250')
 prop_barren_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_barrenland_250')
 prop_bryoids_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_bryoids_250')
 prop_shrub_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_shrub_250')
 prop_wetland_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_wetland_250')
-prop_wettreed_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_wetreed_250')
+prop_wettreed_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_wet_treed_250')
 prop_herbs_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_herbs_250')
 prop_needleleaf_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_needleleaf_250')
 prop_deciduous_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_deciduous_250')
@@ -68,23 +67,23 @@ harv250 <- file.path('data', 'derived', 'harv250')
 for_age_250 <- file.path('data', 'raw', 'age250')
 
 #Anthro-disturbance 250
-dens_lfother_250 <- file.path('data', 'derived', 'dens_disturb_250m', 'otherlf')
-dens_paved_250 <- file.path('data', 'derived', 'dens_disturb_250m', 'paved')
-dens_unpaved_250 <- file.path('data', 'derived', 'dens_disturb_250m', 'unpaved')
-dist_paved_250 <- file.path('data', 'derived', 'dist_disturb_250m', 'paved')
-dist_unpaved_250 <- file.path('data', 'derived', 'dist_disturb_250m', 'unpaved')
-dist_lfother_250 <- file.path('data', 'derived', 'dist_disturb_250m', 'otherlf')
-dist_placer_250 <- file.path('data', 'derived', 'dist_disturb_250m', 'placer')
-dist_quartz_250 <- file.path('data', 'derived', 'dist_disturb_250m', 'quartz')
-dist_othermines_250 <- file.path('data', 'derived', 'dist_disturb_250m', 'othermines')
-dist_otherpoly_250 <- file.path('data', 'derived', 'dist_disturb_250m', 'otherpoly')
-pa_paved_250 <- file.path('data', 'derived', 'pa_disturb_250m', 'paved')
-pa_unpaved_250 <- file.path('data', 'derived', 'pa_disturb_250m', 'unpaved')
-pa_lfother_250 <- file.path('data', 'derived', 'pa_disturb_250m', 'otherlf')
-pa_placer_250 <- file.path('data', 'derived', 'pa_disturb_250m', 'placer')
-pa_quartz_250 <- file.path('data', 'derived', 'pa_disturb_250m', 'quartz')
-pa_othermines_250 <- file.path('data', 'derived', 'pa_disturb_250m', 'othermines')
-pa_otherpoly_250 <- file.path('data', 'derived', 'pa_disturb_250m', 'otherpoly')
+dens_lfother_250 <- file.path('data', 'derived', 'dens_disturb_250m', 'otherlf_dens_250m')
+dens_paved_250 <- file.path('data', 'derived', 'dens_disturb_250m', 'paved_dens_250m')
+dens_unpaved_250 <- file.path('data', 'derived', 'dens_disturb_250m', 'unpaved_dens_250m')
+dist_paved_250 <- file.path('data', 'derived', 'dist_disturb_250m', 'paved_distance_250m')
+dist_unpaved_250 <- file.path('data', 'derived', 'dist_disturb_250m', 'unpaved_distance_250m')
+dist_lfother_250 <- file.path('data', 'derived', 'dist_disturb_250m', 'otherlf_distance_250m')
+dist_placer_250 <- file.path('data', 'derived', 'dist_disturb_250m', 'placer_distance_250m')
+dist_quartz_250 <- file.path('data', 'derived', 'dist_disturb_250m', 'quartz_distance_250m')
+dist_othermines_250 <- file.path('data', 'derived', 'dist_disturb_250m', 'othermines_distance_250m')
+dist_otherpoly_250 <- file.path('data', 'derived', 'dist_disturb_250m', 'otherpoly_distance_250m')
+pa_paved_250 <- file.path('data', 'derived', 'pa_disturb_250m', 'paved_pa_250m')
+pa_unpaved_250 <- file.path('data', 'derived', 'pa_disturb_250m', 'unpaved_pa_250m')
+pa_lfother_250 <- file.path('data', 'derived', 'pa_disturb_250m', 'otherlf_pa_250m')
+pa_placer_250 <- file.path('data', 'derived', 'pa_disturb_250m', 'placer_pa_250m')
+pa_quartz_250 <- file.path('data', 'derived', 'pa_disturb_250m', 'quartz_pa_250m')
+pa_othermines_250 <- file.path('data', 'derived', 'pa_disturb_250m', 'othermines_pa_250m')
+pa_otherpoly_250 <- file.path('data', 'derived', 'pa_disturb_250m', 'otherpoly_pa_250m')
 
 
 #Landcover for 1000m resolution
@@ -97,7 +96,7 @@ prop_barren_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split',
 prop_bryoids_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_bryoids_1000')
 prop_shrub_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_shrub_1000')
 prop_wetland_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_wetland_1000')
-prop_wettreed_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_wetreed_1000')
+prop_wettreed_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_wet_treed_1000')
 prop_herbs_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_herbs_1000')
 prop_needleleaf_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_needleleaf_1000')
 prop_deciduous_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_deciduous_1000')
@@ -147,7 +146,7 @@ n_rand <- 30 # number of random steps to generate
 
 # minimum year we want to pull data for
 minyr <- 2012
-maxyr <- 2024
+maxyr <- 2025
 
 
 # Split by: within which column or set of columns (eg. c(id, yr))

@@ -771,35 +771,28 @@ for (type in types) {
 }
 
 # ---- DISTANCE-TO ------
-
 for (cat in c(line_categories, poly_categories)) {
   message("======= Processing feature type: ", cat, " =======")
   
   for (year in years) {
     message("→ Year ", year)
     
-    # Output file paths
+ 
     out_file_250m   <- file.path("data", "derived", "dist_disturb_250m",  paste0(cat, "_distance_250m_", year, ".tif"))
     out_file_1000m  <- file.path("data", "derived", "dist_disturb_1000m", paste0(cat, "_distance_1000m_", year, ".tif"))
     out_file_5000m  <- file.path("data", "derived", "dist_disturb_5000m", paste0(cat, "_distance_5000m_", year, ".tif"))
     
-    # Skip if already exists
     if (file.exists(out_file_250m) && file.exists(out_file_1000m) && file.exists(out_file_5000m)) {
       message("  Skipping (already done)")
       next
     }
     
-    # Select source
     if (cat %in% line_categories) {
       feat <- line_sf[line_sf$feature_t0 == cat & line_sf$year <= year, ]
     } else {
       feat <- poly_sf[poly_sf$feature_t0 == cat & poly_sf$year <= year, ]
     }
     
-    if (nrow(feat) == 0) {
-      message("  No features found, skipping")
-      next
-    }
     
     temp_vec_file <- paste0("temp_", cat, "_", year, ".gpkg")
     writeVector(feat, temp_vec_file, overwrite = TRUE)
@@ -815,24 +808,33 @@ for (cat in c(line_categories, poly_categories)) {
     gc()
     
     if (!file.exists(out_file_250m)) {
+      message("  Writing 250m raster...")
       dist_ras_250m <- terra::resample(dist_ras_30m, rasterToMatch_extendedLandscape250m, method = "average")
       writeRaster(dist_ras_250m, out_file_250m, filetype = "GTiff", overwrite = TRUE)
       rm(dist_ras_250m)
       gc()
+    } else {
+      message("  Skipping 250m raster — already exists.")
     }
     
     if (!file.exists(out_file_1000m)) {
+      message("  Writing 1000m raster...")
       dist_ras_1000m <- terra::resample(dist_ras_30m, rasterToMatch_extendedLandscape1000m, method = "average")
       writeRaster(dist_ras_1000m, out_file_1000m, filetype = "GTiff", overwrite = TRUE)
       rm(dist_ras_1000m)
       gc()
+    } else {
+      message("  Skipping 1000m raster — already exists.")
     }
     
     if (!file.exists(out_file_5000m)) {
+      message("  Writing 5000m raster...")
       dist_ras_5000m <- terra::resample(dist_ras_30m, rasterToMatch_extendedLandscape5000m, method = "average")
       writeRaster(dist_ras_5000m, out_file_5000m, filetype = "GTiff", overwrite = TRUE)
       rm(dist_ras_5000m)
       gc()
+    } else {
+      message("  Skipping 5000m raster — already exists.")
     }
     
     rm(dist_ras_30m)
