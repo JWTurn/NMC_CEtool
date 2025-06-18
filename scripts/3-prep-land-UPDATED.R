@@ -770,6 +770,8 @@ for (type in types) {
   }
 }
 
+gc()
+
 # ---- DISTANCE-TO ------
 for (cat in c(line_categories, poly_categories)) {
   message("======= Processing feature type: ", cat, " =======")
@@ -868,11 +870,6 @@ for (cat in c(line_categories, poly_categories)) {
       feat <- poly_sf[poly_sf$feature_t0 == cat & poly_sf$year <= year, ]
     }
     
-    if (nrow(feat) == 0) {
-      message("  No features found, skipping")
-      next
-    }
-    
     temp_vec_file <- paste0("temp_", cat, "_", year, ".gpkg")
     writeVector(feat, temp_vec_file, overwrite = TRUE)
     feat <- vect(temp_vec_file)
@@ -890,6 +887,8 @@ for (cat in c(line_categories, poly_categories)) {
       writeRaster(bin_250, out_file_250m, filetype = "GTiff", overwrite = TRUE)
       rm(bin_250)
       gc()
+    } else {
+      message("  Skipping 250m raster — already exists.")
     }
     
     if (!file.exists(out_file_1000m)) {
@@ -899,6 +898,8 @@ for (cat in c(line_categories, poly_categories)) {
       writeRaster(bin_1000, out_file_1000m, filetype = "GTiff", overwrite = TRUE)
       rm(bin_1000)
       gc()
+    } else {
+      message("  Skipping 1000m raster — already exists.")
     }
 
     if (!file.exists(out_file_5000m)) {
@@ -908,6 +909,8 @@ for (cat in c(line_categories, poly_categories)) {
       writeRaster(bin_5000, out_file_5000m, filetype = "GTiff", overwrite = TRUE)
       rm(bin_5000)
       gc()
+    } else {
+      message("  Skipping 5000m raster — already exists.")
     }
     
     rm(bin_ras_30m)
@@ -921,7 +924,7 @@ for (cat in c(line_categories, poly_categories)) {
 # ---- DENSITY (FOR LF ONLY) ------ (basically avg of p/a rasters instead of max)
 
 for (cat in c(line_categories)) {
-  message("======= Processing presence/absence for: ", cat, " =======")
+  message("======= Processing density for: ", cat, " =======")
   
   for (year in years) {
     message("→ Year ", year)
@@ -941,10 +944,6 @@ for (cat in c(line_categories)) {
       feat <- poly_sf[poly_sf$feature_t0 == cat & poly_sf$year <= year, ]
     }
     
-    if (nrow(feat) == 0) {
-      message("  No features found, skipping")
-      next
-    }
     
     temp_vec_file <- paste0("temp_", cat, "_", year, ".gpkg")
     writeVector(feat, temp_vec_file, overwrite = TRUE)
@@ -962,6 +961,8 @@ for (cat in c(line_categories)) {
       writeRaster(bin_250, out_file_250m, filetype = "GTiff", overwrite = TRUE)
       rm(bin_250)
       gc()
+    } else {
+      message("  Skipping 250m raster — already exists.")
     }
     
     if (!file.exists(out_file_1000m)) {
@@ -970,6 +971,8 @@ for (cat in c(line_categories)) {
       writeRaster(bin_1000, out_file_1000m, filetype = "GTiff", overwrite = TRUE)
       rm(bin_1000)
       gc()
+    } else {
+      message("  Skipping 1000m raster — already exists.")
     }
     
     if (!file.exists(out_file_5000m)) {
@@ -978,6 +981,8 @@ for (cat in c(line_categories)) {
       writeRaster(bin_5000, out_file_5000m, filetype = "GTiff", overwrite = TRUE)
       rm(bin_5000)
       gc()
+    } else {
+      message("  Skipping 5000m raster — already exists.")
     }
     
     rm(bin_ras_30m)

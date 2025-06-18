@@ -56,15 +56,15 @@ prop_mixed_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', '
 
 
 #Fires 250
-fires_250 <- file.path('data', 'derived', 'fireRasters250m')
+fires_250 <- file.path('data', 'derived', 'fireRasters250m', 'fires')
 
 #Harvest 250
-harv_dist_250 <- file.path('data', 'derived', 'harv_dist_250m')
-harv_pa_250 <- file.path('data', 'derived', 'harv_pa_250m')
-harv250 <- file.path('data', 'derived', 'harv250')
+harv250 <- file.path('harv250', 'harv')
+harv_dist_250 <- file.path('data', 'derived', 'harv_dist_250m', 'harvdist_250m')
+harv_pa_250 <- file.path('data', 'derived', 'harv_pa_250m', 'harvpres_250m')
 
 #Forest age 250
-for_age_250 <- file.path('data', 'raw', 'age250')
+for_age_250 <- file.path('data', 'raw', 'age250', 'forest_age')
 
 #Anthro-disturbance 250
 dens_lfother_250 <- file.path('data', 'derived', 'dens_disturb_250m', 'otherlf_dens_250m')
@@ -87,8 +87,6 @@ pa_otherpoly_250 <- file.path('data', 'derived', 'pa_disturb_250m', 'otherpoly_p
 
 
 #Landcover for 1000m resolution
-prop_land <- file.path('data', 'derived', 'prop_land')
-landcov1000 <- file.path('data', 'derived', 'prop_land', 'agg1000')
 prop_water_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_water_1000')
 prop_snow_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_snow_1000')
 prop_rock_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_rock_1000')
@@ -104,34 +102,34 @@ prop_mixed_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 
 
 
 #Fires 1000
-fires_1000 <- file.path('data', 'derived', 'fireRasters1000m')
+fires_1000 <- file.path('data', 'derived', 'fireRasters1000m', 'fires')
 
 #Harvest 1000
-harv_dist_1000 <- file.path('data', 'derived', 'harv_dist_1000m')
-harv_pa_1000 <- file.path('data', 'derived', 'harv_pa_1000m')
-harv1000 <- file.path('data', 'derived', 'harv1000')
+harv1000 <- file.path('harv1000', 'harv')
+harv_dist_1000 <- file.path('data', 'derived', 'harv_dist_1000m', 'harvdist_1000m')
+harv_pa_1000 <- file.path('data', 'derived', 'harv_pa_1000m', 'harvpres_1000m')
 
 #Forest age 1000
-for_age_1000 <- file.path('data', 'raw', 'age1000')
+for_age_1000 <- file.path('data', 'raw', 'age1000', 'forest_age')
 
 #Anthro-disturbance 1000
-dens_lfother_1000 <- file.path('data', 'derived', 'dens_disturb_1000m', 'otherlf')
-dens_paved_1000 <- file.path('data', 'derived', 'dens_disturb_1000m', 'paved')
-dens_unpaved_1000 <- file.path('data', 'derived', 'dens_disturb_1000m', 'unpaved')
-dist_paved_1000 <- file.path('data', 'derived', 'dist_disturb_1000m', 'paved')
-dist_unpaved_1000 <- file.path('data', 'derived', 'dist_disturb_1000m', 'unpaved')
-dist_lfother_1000 <- file.path('data', 'derived', 'dist_disturb_1000m', 'otherlf')
-dist_placer_1000 <- file.path('data', 'derived', 'dist_disturb_1000m', 'placer')
-dist_quartz_1000 <- file.path('data', 'derived', 'dist_disturb_1000m', 'quartz')
-dist_othermines_1000 <- file.path('data', 'derived', 'dist_disturb_1000m', 'othermines')
-dist_otherpoly_1000 <- file.path('data', 'derived', 'dist_disturb_1000m', 'otherpoly')
-pa_paved_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'paved')
-pa_unpaved_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'unpaved')
-pa_lfother_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'otherlf')
-pa_placer_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'placer')
-pa_quartz_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'quartz')
-pa_othermines_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'othermines')
-pa_otherpoly_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'otherpoly')
+dens_lfother_1000 <- file.path('data', 'derived', 'dens_disturb_1000m', 'otherlf_dens_1000m')
+dens_paved_1000 <- file.path('data', 'derived', 'dens_disturb_1000m', 'paved_dens_1000m')
+dens_unpaved_1000 <- file.path('data', 'derived', 'dens_disturb_1000m', 'unpaved_dens_1000m')
+dist_paved_1000 <- file.path('data', 'derived', 'dist_disturb_1000m', 'paved_distance_1000m')
+dist_unpaved_1000 <- file.path('data', 'derived', 'dist_disturb_1000m', 'unpaved_distance_1000m')
+dist_lfother_1000 <- file.path('data', 'derived', 'dist_disturb_1000m', 'otherlf_distance_1000m')
+dist_placer_1000 <- file.path('data', 'derived', 'dist_disturb_1000m', 'placer_distance_1000m')
+dist_quartz_1000 <- file.path('data', 'derived', 'dist_disturb_1000m', 'quartz_distance_1000m')
+dist_othermines_1000 <- file.path('data', 'derived', 'dist_disturb_1000m', 'othermines_distance_1000m')
+dist_otherpoly_1000 <- file.path('data', 'derived', 'dist_disturb_1000m', 'otherpoly_distance_1000m')
+pa_paved_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'paved_pa_1000m')
+pa_unpaved_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'unpaved_pa_1000m')
+pa_lfother_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'otherlf_pa_1000m')
+pa_placer_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'placer_pa_1000m')
+pa_quartz_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'quartz_pa_1000m')
+pa_othermines_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'othermines_pa_1000m')
+pa_otherpoly_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'otherpoly_pa_1000m')
 
 
 
@@ -158,7 +156,7 @@ sl.interval <- 50 # to round by 50m intervals
 
 
 # Resampling rate - explore fix rate median after new data
-rate <- hours(13)
+rate <- hours(8)
 
 # Tolerance
 tolerance <- minutes(90)
@@ -749,7 +747,7 @@ targets_timesince <- c(
   # Extract fires
   tar_target(
     extr_fires,
-    extract_by_year(ts_harv, var = fires_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+    extract_by_year(ts_harv, var = fires_250, startyr = minyr, endyr = 2023, maxyr, where = 'both')
   ),
   
   # calculate time since fire
@@ -779,7 +777,7 @@ targets_timesince <- c(
   # Extract fires
   tar_target(
     extr_fires1000,
-    extract_by_year(ts_harv1000, var = fires_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+    extract_by_year(ts_harv1000, var = fires_1000, startyr = minyr, endyr = 2023, maxyr, where = 'both')
   ),
   
   # calculate time since fire
