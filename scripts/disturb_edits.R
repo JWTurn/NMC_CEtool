@@ -150,36 +150,3 @@ yt.lf <- yt.lf %>%
 ### Save updated files
 st_write(yt.poly, file.path(raw, 'NMC_ArealFeatures_Reclassified_final_20240517', 'NMC_ArealFeatures_Reclassified_final.shp'), append = FALSE)
 st_write(yt.lf, file.path(raw, 'NMC_LinearFeatures_Reclassified_final_20240517', 'NMC_LinearFeatures_Reclassified_final.shp'), append = FALSE)
-
-
-
-# Set parent directory
-parent_dir <- "data/derived/prop_land/prop_land_split"
-
-# List all subfolders
-subdirs <- list.dirs(parent_dir, full.names = TRUE, recursive = FALSE)
-
-# Loop through each subfolder
-for (subdir in subdirs) {
-  # Get all .tif files in subfolder
-  tif_files <- list.files(subdir, pattern = "\\.tif$", full.names = TRUE)
-  
-  # Extract folder name (e.g., "prop_water_250")
-  folder_name <- basename(subdir)
-  
-  # Loop through each tif file
-  for (tif_path in tif_files) {
-    # Get the year from the filename (assumes format like *_2012.tif)
-    year <- sub(".*_(\\d{4})\\.tif$", "\\1", tif_path)
-    
-    # Create new filename
-    new_name <- paste0(folder_name, "_", year, ".tif")
-    
-    # Define destination path
-    dest_path <- file.path(parent_dir, new_name)
-    
-    # Move (rename) the file
-    file.rename(tif_path, dest_path)
-  }
-}
-

@@ -262,7 +262,7 @@ for (year in 2012:2020) {
 historicLandYears <- 2012:2022
 
 # Buffer value for spatial operations
-buffer <- 750
+buffer <- 500
 
 # List of rasters to match, with window sizes of 250m, 1000m, and 5000m
 rtms <- list(
@@ -275,6 +275,7 @@ names(rtms) <- c("window250", "agg1000", "agg5000")
 
 
 # Define corresponding functions for each raster window size with dummy code to make each unique for Cache()
+#250 is the moving window to account for the squares around them
 rtmsFuns <- list(
   window250 = paste0(
     'make_landforest_prop(targetFile = targetFile, trast = rtm, buff = ', buffer,
@@ -341,10 +342,8 @@ for (res in names(res_map)) {
       layer <- rstack[[i]]
       layer_name <- layer_names[i]
       
-      subfolder <- file.path(output_dir, paste0(layer_name, "_", res_suffix))
-      dir.create(subfolder, recursive = TRUE, showWarnings = FALSE)
       
-      output_file <- file.path(subfolder, paste0(layer_name, "_", yr, ".tif"))
+      output_file <- file.path(output_dir, paste0(layer_name, "_", res_suffix, "_", yr, ".tif"))
       
       writeRaster(layer, filename = output_file, overwrite = TRUE)
       message("[✔] Saved: ", output_file)

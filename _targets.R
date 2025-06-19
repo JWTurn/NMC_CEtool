@@ -159,7 +159,7 @@ sl.interval <- 50 # to round by 50m intervals
 rate <- hours(8)
 
 # Tolerance
-tolerance <- minutes(90)
+tolerance <- minutes(60)
 
 
 # Targets: prep ----------------------------------------------------------------- (skip loading rasters for disturbance - all have years)
