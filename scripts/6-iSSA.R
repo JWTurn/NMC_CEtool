@@ -51,33 +51,36 @@ dat[,.(water = mean(prop_water_250_end, na.rm = T), snow = mean(prop_snow_250_en
        decid = mean(prop_deciduous_250_end, na.rm = T),mixed = mean(prop_mixed_250_end, na.rm = T),
        for.age = mean(for_age_250_end, na.rm = T))]
 
-#Start here June 20
-quantile(dat$ts_fires_end, probs = c(0.01, 0.05, 0.1, 0.15, 0.25, 0.5, 0.75, 1))
-
-quantile(dat$ts_harv_end, probs = c(0.01, 0.05, 0.1, 0.15, 0.25, 0.5, 0.75, 1))
+quantile(dat$ts_fires_250_end, probs = c(0.01, 0.05, 0.1, 0.15, 0.25, 0.5, 0.75, 1))
 
 #combining landcover types
-dat$prop_veg_end = dat$prop_bryoids_end + dat$prop_herbs_end + dat$prop_shrub_end #+ dat$prop_wetland_end
-mean(dat$prop_veg_end, na.rm = T)
-dat$prop_veg_start = dat$prop_bryoids_start + dat$prop_herbs_start + dat$prop_shrub_start + dat$prop_wetland_start
-mean(dat$prop_veg_start, na.rm = T)
+dat$prop_veg_250_end = dat$prop_bryoids_250_end + dat$prop_herbs_250_end + dat$prop_shrub_250_end #+ dat$prop_wetland_end
+mean(dat$prop_veg_250_end, na.rm = T)
+dat$prop_veg_250_start = dat$prop_bryoids_250_start + dat$prop_herbs_250_start + dat$prop_shrub_250_start + dat$prop_wetland_250_start
+mean(dat$prop_veg_250_start, na.rm = T)
 
-dat$prop_forest_end = dat$prop_wettreed_end + dat$prop_needleleaf_end + dat$prop_deciduous_end + dat$prop_mixed_end
-mean(dat$prop_forest_end, na.rm = T)
-dat$prop_forest_start = dat$prop_wettreed_start + dat$prop_needleleaf_start + dat$prop_deciduous_start + dat$prop_mixed_start
-mean(dat$prop_forest_start, na.rm = T)
+dat$prop_forest_250_end = dat$prop_wettreed_250_end + dat$prop_needleleaf_250_end + dat$prop_deciduous_250_end + dat$prop_mixed_250_end
+mean(dat$prop_forest_250_end, na.rm = T)
+dat$prop_forest_250_start = dat$prop_wettreed_250_start + dat$prop_needleleaf_250_start + dat$prop_deciduous_250_start + dat$prop_mixed_250_start
+mean(dat$prop_forest_250_start, na.rm = T)
+
+#What goes into dist_anthro?
+dat$dist_anthro_250_start = pmin(dist_paved_250_end, dist_unpaved_250_end, na.rm = T)
+dat$dist_anthro_250_end = pmin(dist_paved_250_end, dist_unpaved_250_end, na.rm = T)
+dat$dist_mines_250_start = pmin(dat$dist_placer_250_start, dat$dist_quartz_250_start, dat$dist_othermines_250_start, na.rm = T)
+dat$dist_mines_250_end = pmin(dat$dist_placer_250_end, dat$dist_quartz_250_end, dat$dist_othermines_250_end, na.rm = T)
 
 #Need to include 1000m res stuff
 dat.issa <- dat[,.(id, area, prov, x1_, y1_, x2_, y2_, sl_, ta_, burst_, t1_, t2_, dt_,
                    case_, step_id_, indiv_step_id, year, 
-                   prop_veg_start, prop_veg_end,
-                   prop_forest_start, prop_forest_end,
-                   prop_needleleaf_start, prop_needleleaf_end,
-                   for.age_start, for.age_end,
-                   dist_paved_start, dist_paved_end, dist_unpaved_start, dist_unpaved_end, 
-                   dist_road_end = pmin(dist_paved_end, dist_unpaved_end, na.rm = T),
-                   dist_lf_other_start, dist_lf_other_end,
-                   dist_lf_end = pmin(dist_paved_end, dist_unpaved_end, dist_lf_other_end, na.rm = T),
+                   prop_veg_250_start, prop_veg_250_end,
+                   prop_forest_250_start, prop_forest_250_end,
+                   prop_needleleaf_250_start, prop_needleleaf_250_end,
+                   for_age_250_start, for_age_250_end,
+                   dist_paved_250_start, dist_paved_250_end, dist_unpaved_250_start, dist_unpaved_250_end, 
+                   dist_road_250_end = pmin(dist_paved_250_end, dist_unpaved_250_end, na.rm = T),
+                   dist_lfother_250_start, dist_lfother_250_end,
+                   dist_lf_250_end = pmin(dist_paved_250_end, dist_unpaved_250_end, dist_lfother_250_end, na.rm = T),
                    dist_anthro_start, dist_anthro_end, dist_mining_start, dist_mining_end,
                    dist_placer_start, dist_placer_end, dist_quartz_start, dist_quartz_end,
                    dist_harv_start, dist_harv_end, 
