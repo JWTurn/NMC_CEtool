@@ -25,7 +25,7 @@ dat[, dt_num := as.numeric(dt_)]
 dat[case_==TRUE,.(median(sl_/dt_num)), by = .(prov)]
 
 summary(dat$ts_fires_250_end) #Mostly 200 year old fires, looks good
-hist(dat$ts_fires_250_end) dat$
+hist(dat$ts_fires_250_end)
 
 #dat[ts_fires_end > 10000, ts_fires_end:= 25] # setting this to 20 for now because most were in 1990-2000, but I'll need to figure out something later
 head(dat)
@@ -64,13 +64,24 @@ mean(dat$prop_forest_250_end, na.rm = T)
 dat$prop_forest_250_start = dat$prop_wettreed_250_start + dat$prop_needleleaf_250_start + dat$prop_deciduous_250_start + dat$prop_mixed_250_start
 mean(dat$prop_forest_250_start, na.rm = T)
 
-#What goes into dist_anthro?
-dat$dist_anthro_250_start = pmin(dist_paved_250_end, dist_unpaved_250_end, na.rm = T)
-dat$dist_anthro_250_end = pmin(dist_paved_250_end, dist_unpaved_250_end, na.rm = T)
 dat$dist_mines_250_start = pmin(dat$dist_placer_250_start, dat$dist_quartz_250_start, dat$dist_othermines_250_start, na.rm = T)
 dat$dist_mines_250_end = pmin(dat$dist_placer_250_end, dat$dist_quartz_250_end, dat$dist_othermines_250_end, na.rm = T)
 
-#Need to include 1000m res stuff
+#1000
+dat$prop_veg_1000_end = dat$prop_bryoids_1000_end + dat$prop_herbs_1000_end + dat$prop_shrub_1000_end #+ dat$prop_wetland_end
+mean(dat$prop_veg_1000_end, na.rm = T)
+dat$prop_veg_1000_start = dat$prop_bryoids_1000_start + dat$prop_herbs_1000_start + dat$prop_shrub_1000_start + dat$prop_wetland_1000_start
+mean(dat$prop_veg_1000_start, na.rm = T)
+
+dat$prop_forest_1000_end = dat$prop_wettreed_1000_end + dat$prop_needleleaf_1000_end + dat$prop_deciduous_1000_end + dat$prop_mixed_1000_end
+mean(dat$prop_forest_1000_end, na.rm = T)
+dat$prop_forest_1000_start = dat$prop_wettreed_1000_start + dat$prop_needleleaf_1000_start + dat$prop_deciduous_1000_start + dat$prop_mixed_1000_start
+mean(dat$prop_forest_1000_start, na.rm = T)
+
+dat$dist_mines_1000_start = pmin(dat$dist_placer_1000_start, dat$dist_quartz_1000_start, dat$dist_othermines_1000_start, na.rm = T)
+dat$dist_mines_1000_end = pmin(dat$dist_placer_1000_end, dat$dist_quartz_1000_end, dat$dist_othermines_1000_end, na.rm = T)
+
+
 dat.issa <- dat[,.(id, area, prov, x1_, y1_, x2_, y2_, sl_, ta_, burst_, t1_, t2_, dt_,
                    case_, step_id_, indiv_step_id, year, 
                    prop_veg_250_start, prop_veg_250_end,
@@ -81,39 +92,69 @@ dat.issa <- dat[,.(id, area, prov, x1_, y1_, x2_, y2_, sl_, ta_, burst_, t1_, t2
                    dist_road_250_end = pmin(dist_paved_250_end, dist_unpaved_250_end, na.rm = T),
                    dist_lfother_250_start, dist_lfother_250_end,
                    dist_lf_250_end = pmin(dist_paved_250_end, dist_unpaved_250_end, dist_lfother_250_end, na.rm = T),
-                   dist_anthro_start, dist_anthro_end, dist_mining_start, dist_mining_end,
-                   dist_placer_start, dist_placer_end, dist_quartz_start, dist_quartz_end,
-                   dist_harv_start, dist_harv_end, 
-                   dist_otherdisturbance_start = pmin(dist_paved_start, dist_unpaved_start, dist_lf_other_start, dist_anthro_start,
-                                                       dist_harv_start, na.rm = T), 
-                   dist_otherdisturbance_end = pmin(dist_paved_end, dist_unpaved_end, dist_lf_other_end, dist_anthro_end,
-                                                     dist_harv_end, na.rm = T), 
-                   dist_anthrodisturbance_start = pmin(dist_paved_start, dist_unpaved_start, dist_lf_other_start, dist_anthro_start,
-                                                     dist_harv_start, dist_placer_start, dist_quartz_start, na.rm = T), 
-                   dist_anthrodisturbance_end = pmin(dist_paved_end, dist_unpaved_end, dist_lf_other_end, dist_anthro_end,
-                                                     dist_harv_end, dist_placer_end, dist_quartz_end, na.rm = T), 
-                   #prop_disturbance_start, prop_disturbance_end,
-                   for.age_start, for.age_end,
-                   ts_harv_start, ts_harv_end, ts_fires_start, ts_fires_end)]
+                   dist_otherpoly_250_start, dist_otherpoly_250_end, dist_mines_250_start, dist_mines_250_end,
+                   dist_placer_250_start, dist_placer_250_end, dist_quartz_250_start, dist_quartz_250_end,
+                   harv_dist_250_start, harv_dist_250_end, 
+                   dist_otherdisturbance_250_start = pmin(dist_paved_250_start, dist_unpaved_250_start, dist_lfother_250_start, dist_otherpoly_250_start,
+                                                          harv_dist_250_start, na.rm = T), 
+                   dist_otherdisturbance_250_end = pmin(dist_paved_250_end, dist_unpaved_250_end, dist_lfother_250_end, dist_otherpoly_250_end,
+                                                        harv_dist_250_end, na.rm = T), 
+                   dist_anthrodisturbance_250_start = pmin(dist_paved_250_start, dist_unpaved_250_start, dist_lfother_250_start, dist_otherpoly_250_start,
+                                                           harv_dist_250_start, dist_placer_250_start, dist_quartz_250_start, na.rm = T), 
+                   dist_anthrodisturbance_250_end = pmin(dist_paved_250_end, dist_unpaved_250_end, dist_lfother_250_end, dist_otherpoly_250_end,
+                                                         harv_dist_250_end, dist_placer_250_end, dist_quartz_250_end, na.rm = T),
+                   for_age_250_start, for_age_250_end,
+                   ts_harv250_start, ts_harv250_end, ts_fires_250_start, ts_fires_250_end,
+                #1000
+                   prop_veg_1000_start, prop_veg_1000_end,
+                   prop_forest_1000_start, prop_forest_1000_end,
+                   prop_needleleaf_1000_start, prop_needleleaf_1000_end,
+                   for_age_1000_start, for_age_1000_end,
+                   dist_paved_1000_start, dist_paved_1000_end, dist_unpaved_1000_start, dist_unpaved_1000_end, 
+                   dist_road_1000_end = pmin(dist_paved_1000_end, dist_unpaved_1000_end, na.rm = T),
+                   dist_lfother_1000_start, dist_lfother_1000_end,
+                   dist_lf_1000_end = pmin(dist_paved_1000_end, dist_unpaved_1000_end, dist_lfother_1000_end, na.rm = T),
+                   dist_otherpoly_1000_start, dist_otherpoly_1000_end, dist_mines_1000_start, dist_mines_1000_end,
+                   dist_placer_1000_start, dist_placer_1000_end, dist_quartz_1000_start, dist_quartz_1000_end,
+                   harv_dist_1000_start, harv_dist_1000_end, 
+                   dist_otherdisturbance_1000_start = pmin(dist_paved_1000_start, dist_unpaved_1000_start, dist_lfother_1000_start, dist_otherpoly_1000_start,
+                                                           harv_dist_1000_start, na.rm = T), 
+                   dist_otherdisturbance_1000_end = pmin(dist_paved_1000_end, dist_unpaved_1000_end, dist_lfother_1000_end, dist_otherpoly_1000_end,
+                                                         harv_dist_1000_end, na.rm = T), 
+                   dist_anthrodisturbance_1000_start = pmin(dist_paved_1000_start, dist_unpaved_1000_start, dist_lfother_1000_start, dist_otherpoly_1000_start,
+                                                            harv_dist_1000_start, dist_placer_1000_start, dist_quartz_1000_start, na.rm = T), 
+                   dist_anthrodisturbance_1000_end = pmin(dist_paved_1000_end, dist_unpaved_1000_end, dist_lfother_1000_end, dist_otherpoly_1000_end,
+                                                          harv_dist_1000_end, dist_placer_1000_end, dist_quartz_1000_end, na.rm = T),
+                   for_age_1000_start, for_age_1000_end,
+                   ts_harv1000_start, ts_harv1000_end, ts_fires_1000_start, ts_fires_1000_end)]
 
-sumdat <- dat.issa[,.(prov, year, prop_veg_start, prop_veg_end,
-            for.age_start, for.age_end, prop_forest_start, prop_forest_end,
-            dist_paved_start, dist_paved_end, dist_unpaved_start, dist_unpaved_end, 
-            dist_road_end, dist_lf_other_start, dist_lf_other_end, dist_lf_end,
-            dist_anthro_start, dist_anthro_end, dist_mining_start, dist_mining_end,
-            dist_placer_start, dist_placer_end, dist_quartz_start, dist_quartz_end,
-            dist_harv_start, dist_harv_end,
-            dist_otherdisturbance_start, dist_otherdisturbance_end,
-            dist_anthrodisturbance_start, dist_anthrodisturbance_end,
-            #prop_disturbance_start, prop_disturbance_end,
-            ts_harv_start, ts_harv_end, ts_fires_start, ts_fires_end)] %>%
+sumdat <- dat.issa[,.(prov, year, prop_veg_250_start, prop_veg_250_end,
+            for_age_250_start, for_age_250_end, prop_forest_250_start, prop_forest_250_end,
+            dist_paved_250_start, dist_paved_250_end, dist_unpaved_250_start, dist_unpaved_250_end, 
+            dist_road_250_end, dist_lfother_250_start, dist_lfother_250_end, dist_lf_250_end,
+            dist_otherpoly_250_start, dist_otherpoly_250_end, dist_mines_250_start, dist_mines_250_end,
+            dist_placer_250_start, dist_placer_250_end, dist_quartz_250_start, dist_quartz_250_end,
+            harv_dist_250_start, harv_dist_250_end,
+            dist_otherdisturbance_250_start, dist_otherdisturbance_250_end,
+            dist_anthrodisturbance_250_start, dist_anthrodisturbance_250_end,
+            ts_harv250_start, ts_harv250_end, ts_fires_250_start, ts_fires_250_end,
+            
+            for_age_1000_start, for_age_1000_end, prop_forest_1000_start, prop_forest_1000_end,
+            dist_paved_1000_start, dist_paved_1000_end, dist_unpaved_1000_start, dist_unpaved_1000_end, 
+            dist_road_1000_end, dist_lfother_1000_start, dist_lfother_1000_end, dist_lf_1000_end,
+            dist_otherpoly_1000_start, dist_otherpoly_1000_end, dist_mines_1000_start, dist_mines_1000_end,
+            dist_placer_1000_start, dist_placer_1000_end, dist_quartz_1000_start, dist_quartz_1000_end,
+            harv_dist_1000_start, harv_dist_1000_end,
+            dist_otherdisturbance_1000_start, dist_otherdisturbance_1000_end,
+            dist_anthrodisturbance_1000_start, dist_anthrodisturbance_1000_end,
+            ts_harv1000_start, ts_harv1000_end, ts_fires_1000_start, ts_fires_1000_end)] %>%
   group_by(prov) %>%
   summarise_all(mean, na.rm = T)
 
-dat.issa[case_ ==TRUE,mean(prop_veg_end, na.rm = T), by = .(prov, year)]
-dat.issa[case_ ==TRUE,mean(prop_forest_end, na.rm = T), by = .(prov, year)]
-dat.issa[case_ ==TRUE,mean(prop_needleleaf_end, na.rm = T), by = .(prov, year)]
-dat.issa[case_ ==TRUE,mean(for.age_end, na.rm = T), by = .(prov, year)]
+dat.issa[case_ ==TRUE,mean(prop_veg_250_end, na.rm = T), by = .(prov, year)]
+dat.issa[case_ ==TRUE,mean(prop_forest_250_end, na.rm = T), by = .(prov, year)]
+dat.issa[case_ ==TRUE,mean(prop_needleleaf_250_end, na.rm = T), by = .(prov, year)]
+dat.issa[case_ ==TRUE,mean(for_age_250_end, na.rm = T), by = .(prov, year)]
 
 # calc relative availability and and adjust distances so indicate that if so far from feature, it's not estimated as selection
 # dat.issa[,for.age_avail:= mean(for.age_end, na.rm = T), by = indiv_step_id]
@@ -125,52 +166,52 @@ dat.issa[case_ ==TRUE,mean(for.age_end, na.rm = T), by = .(prov, year)]
 # dat.issa[,ts_fires_avail:= mean(ts_fires_end, na.rm = T), by = indiv_step_id]
 
 
-dat.issa[,dist_paved_start_adj:= ifelse(.SD[,.(min(dist_paved_start, na.rm = T))]>20000, 20001, dist_paved_start), by = indiv_step_id]
-dat.issa[,dist_paved_end_adj:= ifelse(.SD[,.(min(dist_paved_end, na.rm = T))]>20000, 20001, dist_paved_end), by = indiv_step_id]
+dat.issa[,dist_paved_250_start_adj:= ifelse(.SD[,.(min(dist_paved_250_start, na.rm = T))]>20000, 20001, dist_paved_250_start), by = indiv_step_id]
+dat.issa[,dist_paved_250_end_adj:= ifelse(.SD[,.(min(dist_paved_250_end, na.rm = T))]>20000, 20001, dist_paved_250_end), by = indiv_step_id]
 #dat.issa[,dist_paved_avail:= mean(dist_paved_end, na.rm = T), by = indiv_step_id]
 
-dat.issa[,dist_unpaved_start_adj:= ifelse(.SD[,.(min(dist_unpaved_start, na.rm = T))]>20000, 20001, dist_unpaved_start), by = indiv_step_id]
-dat.issa[,dist_unpaved_end_adj:= ifelse(.SD[,.(min(dist_unpaved_end, na.rm = T))]>20000, 20001, dist_unpaved_end), by = indiv_step_id]
+dat.issa[,dist_unpaved_start_250_adj:= ifelse(.SD[,.(min(dist_unpaved_250_start, na.rm = T))]>20000, 20001, dist_unpaved_250_start), by = indiv_step_id]
+dat.issa[,dist_unpaved_end_250_adj:= ifelse(.SD[,.(min(dist_unpaved_250_end, na.rm = T))]>20000, 20001, dist_unpaved_250_end), by = indiv_step_id]
 #dat.issa[,dist_unpaved_avail:= mean(dist_unpaved_end, na.rm = T), by = indiv_step_id]
 
-dat.issa[,dist_road_end_adj:= ifelse(.SD[,.(min(dist_road_end, na.rm = T))]>20000, 20001, dist_road_end), by = indiv_step_id]
+dat.issa[,dist_road_end_250_adj:= ifelse(.SD[,.(min(dist_road_250_end, na.rm = T))]>20000, 20001, dist_road_250_end), by = indiv_step_id]
 #dat.issa[,dist_road_avail:= mean(dist_road_end, na.rm = T), by = indiv_step_id]
 
-dat.issa[,dist_lf_other_start_adj:= ifelse(.SD[,.(min(dist_lf_other_start, na.rm = T))]>20000, 20001, dist_lf_other_start), by = indiv_step_id]
-dat.issa[,dist_lf_other_end_adj:= ifelse(.SD[,.(min(dist_lf_other_end, na.rm = T))]>20000, 20001, dist_lf_other_end), by = indiv_step_id]
+dat.issa[,dist_lfother_250_start_adj:= ifelse(.SD[,.(min(dist_lfother_250_start, na.rm = T))]>20000, 20001, dist_lfother_250_start), by = indiv_step_id]
+dat.issa[,dist_lfother_250_end_adj:= ifelse(.SD[,.(min(dist_lfother_250_end, na.rm = T))]>20000, 20001, dist_lfother_250_end), by = indiv_step_id]
 #dat.issa[,dist_lf_other_avail:= mean(dist_lf_other_end, na.rm = T), by = indiv_step_id]
 
-dat.issa[,dist_lf_end_adj:= ifelse(.SD[,.(min(dist_lf_end, na.rm = T))]>20000, 20001, dist_lf_end), by = indiv_step_id]
+dat.issa[,dist_lf_250_end_adj:= ifelse(.SD[,.(min(dist_lf_250_end, na.rm = T))]>20000, 20001, dist_lf_250_end), by = indiv_step_id]
 #dat.issa[,dist_lf_avail:= mean(dist_lf_end, na.rm = T), by = indiv_step_id]
 
 gc()
-dat.issa[,dist_anthro_start_adj:= ifelse(.SD[,.(min(dist_anthro_start, na.rm = T))]>20000, 20001, dist_anthro_start), by = indiv_step_id]
-dat.issa[,dist_anthro_end_adj:= ifelse(.SD[,.(min(dist_anthro_end, na.rm = T))]>20000, 20001, dist_anthro_end), by = indiv_step_id]
+dat.issa[,dist_otherpoly_250_start_adj:= ifelse(.SD[,.(min(dist_otherpoly_250_start, na.rm = T))]>20000, 20001, dist_otherpoly_250_start), by = indiv_step_id]
+dat.issa[,dist_otherpoly_250_end_adj:= ifelse(.SD[,.(min(dist_otherpoly_250_end, na.rm = T))]>20000, 20001, dist_otherpoly_250_end), by = indiv_step_id]
 #dat.issa[,dist_anthro_avail:= mean(dist_anthro_end, na.rm = T), by = indiv_step_id]
 
-dat.issa[,dist_mining_start_adj:= ifelse(.SD[,.(min(dist_mining_start, na.rm = T))]>20000, 20001, dist_mining_start), by = indiv_step_id]
-dat.issa[,dist_mining_end_adj:= ifelse(.SD[,.(min(dist_mining_end, na.rm = T))]>20000, 20001, dist_mining_end), by = indiv_step_id]
-dat.issa[,dist_mining_avail:= mean(dist_mining_end, na.rm = T), by = indiv_step_id]
+dat.issa[,dist_mines_250_start_adj:= ifelse(.SD[,.(min(dist_mines_250_start, na.rm = T))]>20000, 20001, dist_mines_250_start), by = indiv_step_id]
+dat.issa[,dist_mines_250_end_adj:= ifelse(.SD[,.(min(dist_mines_250_end, na.rm = T))]>20000, 20001, dist_mines_250_end), by = indiv_step_id]
+#dat.issa[,dist_mines_250_avail:= mean(dist_mining_end, na.rm = T), by = indiv_step_id]
 
-dat.issa[,dist_placer_start_adj:= ifelse(.SD[,.(min(dist_placer_start, na.rm = T))]>20000, 20001, dist_placer_start), by = indiv_step_id]
-dat.issa[,dist_placer_end_adj:= ifelse(.SD[,.(min(dist_placer_end, na.rm = T))]>20000, 20001, dist_placer_end), by = indiv_step_id]
-dat.issa[,dist_placer_avail:= mean(dist_placer_end, na.rm = T), by = indiv_step_id]
+dat.issa[,dist_placer_250_start_adj:= ifelse(.SD[,.(min(dist_placer_250_start, na.rm = T))]>20000, 20001, dist_placer_250_start), by = indiv_step_id]
+dat.issa[,dist_placer_250_end_adj:= ifelse(.SD[,.(min(dist_placer_250_end, na.rm = T))]>20000, 20001, dist_placer_250_end), by = indiv_step_id]
+#dat.issa[,dist_placer_avail:= mean(dist_placer_end, na.rm = T), by = indiv_step_id]
 
-dat.issa[,dist_quartz_start_adj:= ifelse(.SD[,.(min(dist_quartz_start, na.rm = T))]>20000, 20001, dist_quartz_start), by = indiv_step_id]
-dat.issa[,dist_quartz_end_adj:= ifelse(.SD[,.(min(dist_quartz_end, na.rm = T))]>20000, 20001, dist_quartz_end), by = indiv_step_id]
-dat.issa[,dist_quartz_avail:= mean(dist_quartz_end, na.rm = T), by = indiv_step_id]
+dat.issa[,dist_quartz_250_start_adj:= ifelse(.SD[,.(min(dist_quartz_250_start, na.rm = T))]>20000, 20001, dist_quartz_250_start), by = indiv_step_id]
+dat.issa[,dist_quartz_250_end_adj:= ifelse(.SD[,.(min(dist_quartz_250_end, na.rm = T))]>20000, 20001, dist_quartz_250_end), by = indiv_step_id]
+#dat.issa[,dist_quartz_avail:= mean(dist_quartz_end, na.rm = T), by = indiv_step_id]
 
-dat.issa[,dist_otherdisturbance_start_adj:= ifelse(.SD[,.(min(dist_otherdisturbance_start, na.rm = T))]>20000, 20001, dist_otherdisturbance_start), by = indiv_step_id]
-dat.issa[,dist_otherdisturbance_end_adj:= ifelse(.SD[,.(min(dist_otherdisturbance_end, na.rm = T))]>20000, 20001, dist_otherdisturbance_end), by = indiv_step_id]
-dat.issa[,dist_otherdisturbance_avail:= mean(dist_otherdisturbance_end, na.rm = T), by = indiv_step_id]
+dat.issa[,dist_otherdisturbance_250_start_adj:= ifelse(.SD[,.(min(dist_otherdisturbance_250_start, na.rm = T))]>20000, 20001, dist_otherdisturbance_250_start), by = indiv_step_id]
+dat.issa[,dist_otherdisturbance_250_end_adj:= ifelse(.SD[,.(min(dist_otherdisturbance_250_end, na.rm = T))]>20000, 20001, dist_otherdisturbance_250_end), by = indiv_step_id]
+#dat.issa[,dist_otherdisturbance_avail:= mean(dist_otherdisturbance_end, na.rm = T), by = indiv_step_id]
 
-dat.issa[,dist_anthrodisturbance_start_adj:= ifelse(.SD[,.(min(dist_anthrodisturbance_start, na.rm = T))]>20000, 20001, dist_anthrodisturbance_start), by = indiv_step_id]
-dat.issa[,dist_anthrodisturbance_end_adj:= ifelse(.SD[,.(min(dist_anthrodisturbance_end, na.rm = T))]>20000, 20001, dist_anthrodisturbance_end), by = indiv_step_id]
-dat.issa[,dist_anthrodisturbance_avail:= mean(dist_anthrodisturbance_end, na.rm = T), by = indiv_step_id]
-#saveRDS(dat.issa, file.path(derived, 'dat_iSSA_20lf20poly_adj.RDS'))
+dat.issa[,dist_anthrodisturbance_250_start_adj:= ifelse(.SD[,.(min(dist_anthrodisturbance_250_start, na.rm = T))]>20000, 20001, dist_anthrodisturbance_250_start), by = indiv_step_id]
+dat.issa[,dist_anthrodisturbance_250_end_adj:= ifelse(.SD[,.(min(dist_anthrodisturbance_250_end, na.rm = T))]>20000, 20001, dist_anthrodisturbance_250_end), by = indiv_step_id]
+#dat.issa[,dist_anthrodisturbance_avail:= mean(dist_anthrodisturbance_end, na.rm = T), by = indiv_step_id]
+#saveRDS(dat.issa, file.path(derived, 'dat_iSSA_20lf20poly_adj_updated.RDS'))
 
 #### PETE START ---- 
-dat.issa <- readRDS(file.path(derived, 'dat_iSSA_20lf20poly_adj.RDS'))
+dat.issa <- readRDS(file.path(derived, 'dat_iSSA_20lf20poly_adj_updated.RDS'))
 dat.issa.20 <- dat.issa[,.SD[1:21], by = .(indiv_step_id)]
 dat.issa.15 <- dat.issa[,.SD[1:16], by = .(indiv_step_id)]
 dat.issa.10 <- dat.issa[,.SD[1:11], by = .(indiv_step_id)]
