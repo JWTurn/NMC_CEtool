@@ -351,7 +351,23 @@ vars_1000 <- c(
 )
 
 # Calculate average availability per id
-avg_data <- dt[, lapply(.SD, mean, na.rm = TRUE), by = id, .SDcols = vars_1000]
+avg_data <- dt[, .SD, .SDcols = c("id", vars_1000)]
+
+# Apply transformations to match model
+avg_data[, `:=`(
+  ts_fires_1000_end = log(ts_fires_1000_end + 1),
+  ts_harv1000_end = log(ts_harv1000_end + 1),
+  dist_paved_1000_end = log((dist_paved_1000_end + 1) / 1000),
+  dist_unpaved_1000_end = log((dist_unpaved_1000_end + 1) / 1000),
+  dist_lfother_1000_end = log((dist_lfother_1000_end + 1) / 1000),
+  dist_otherpoly_1000_end = log((dist_otherpoly_1000_end + 1) / 1000),
+  dist_placer_1000_end = log((dist_placer_1000_end + 1) / 1000),
+  dist_quartz_1000_end = log((dist_quartz_1000_end + 1) / 1000),
+  dist_othermines_1000_end = log((dist_othermines_1000_end + 1) / 1000)
+)]
+
+# Now aggregate (after transformation)
+avg_data <- avg_data[, lapply(.SD, mean, na.rm = TRUE), by = id]
 
 re_list <- ranef(m.closedisturbancefull)$cond
 
@@ -430,35 +446,29 @@ print(combined_plot)
 
 ##Next plot fixed effect interaction vs average availability
 
-# Coefficient data frame
-coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
-coef_df$term <- rownames(coef_df)
-
-
-line_color <- "steelblue"
-
 ##############################
 # 1. ts_fires_250_end
 ##############################
-raw_to_transformed <- list(
-  "ts_fires_250_end" = "I(log(ts_fires_250_end + 1))",
-  "ts_fires_1000_end" = "I(log(ts_fires_1000_end + 1))"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["ts_fires_250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["ts_fires_250_end"]], ":", raw_to_transformed[["ts_fires_1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for ts_fires_250_end or interaction.")
+re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
+re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
+re_slope <- re_id[, c("id", "I(log(ts_fires_250_end + 1))")]
+colnames(re_slope) <- c("id", "rand_beta1")
 
 dt_full <- merge(
-  dt[, .(id, raw_x1 = get("ts_fires_250_end"))],
+  dt[, .(id, raw_x1 = ts_fires_250_end)],
   avg_data[, .(id, raw_Ma_x1 = get("ts_fires_1000_end"))],
   by = "id"
 )
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
 
 dt_full[, x1 := log(raw_x1 + 1)]
 dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
 
+dt_full[, beta1 := rand_beta1]
+
+coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log(ts_fires_250_end + 1)):I(log(ts_fires_1000_end + 1))"]
 dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
 
 plot_data <- dt_full[, .(
@@ -466,36 +476,59 @@ plot_data <- dt_full[, .(
   sd_w = sd(w_x, na.rm = TRUE)
 ), by = Ma_x1]
 
-p1 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "Transformed ts_fires_1000_end", y = "w(x)") +
-  theme_minimal(base_size = 12)
+line_color <- "steelblue"
 
-print(p1)
+
+set.seed(42)
+sample_dt <- dt_full[sample(.N, 200000)]
+
+ggplot() +
+  geom_point(data = sample_dt, aes(x = Ma_x1, y = w_x),
+             alpha = 0.1, color = line_color, size = 0.8) +
+  
+  geom_smooth(data = plot_data, aes(x = Ma_x1, y = mean_w),
+              method = "loess", se = FALSE, color = line_color, size = 1) +
+  
+  labs(
+    x = "ts_fires_1000_end avail",
+    y = "w(x)"
+  ) +
+  theme_minimal(base_size = 14)
+
+
+
+
+
+
+
+
+
+
 
 
 ##############################
 # 2. ts_harv250_end
 ##############################
-raw_to_transformed <- list(
-  "ts_harv250_end" = "I(log(ts_harv250_end + 1))",
-  "ts_harv1000_end" = "I(log(ts_harv1000_end + 1))"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["ts_harv250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["ts_harv250_end"]], ":", raw_to_transformed[["ts_harv1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for ts_harv250_end or interaction.")
+re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
+re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
+re_slope <- re_id[, c("id", "I(log(ts_harv250_end + 1))")]
+colnames(re_slope) <- c("id", "rand_beta1")
 
 dt_full <- merge(
   dt[, .(id, raw_x1 = get("ts_harv250_end"))],
   avg_data[, .(id, raw_Ma_x1 = get("ts_harv1000_end"))],
   by = "id"
 )
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
 
 dt_full[, x1 := log(raw_x1 + 1)]
 dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
 
+dt_full[, beta1 := rand_beta1]
+
+coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log(ts_harv250_end + 1)):I(log(ts_harv1000_end + 1))"]
 dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
 
 plot_data <- dt_full[, .(
@@ -503,9 +536,14 @@ plot_data <- dt_full[, .(
   sd_w = sd(w_x, na.rm = TRUE)
 ), by = Ma_x1]
 
+line_color <- "steelblue"
+
 p2 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "Transformed ts_harv1000_end", y = "w(x)") +
+  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
+  labs(
+    x = "ts_harv250_end avail",
+    y = "w(x)",
+  ) +
   theme_minimal(base_size = 12)
 
 print(p2)
@@ -514,25 +552,26 @@ print(p2)
 ##############################
 # 3. dist_paved_250_end
 ##############################
-raw_to_transformed <- list(
-  "dist_paved_250_end" = "I(log((dist_paved_250_end + 1)/1000))",
-  "dist_paved_1000_end" = "I(log((dist_paved_1000_end + 1)/1000))"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["dist_paved_250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["dist_paved_250_end"]], ":", raw_to_transformed[["dist_paved_1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for dist_paved_250_end or interaction.")
+re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
+re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
+re_slope <- re_id[, c("id", "I(log((dist_paved_250_end + 1)/1000))")]
+colnames(re_slope) <- c("id", "rand_beta1")
 
 dt_full <- merge(
   dt[, .(id, raw_x1 = get("dist_paved_250_end"))],
   avg_data[, .(id, raw_Ma_x1 = get("dist_paved_1000_end"))],
   by = "id"
 )
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
 
-dt_full[, x1 := log((raw_x1 + 1) / 1000)]
-dt_full[, Ma_x1 := log((raw_Ma_x1 + 1) / 1000)]
+dt_full[, x1 := log(raw_x1 + 1)]
+dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
 
+dt_full[, beta1 := rand_beta1]
+
+coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_paved_250_end + 1)/1000)):I(log((dist_paved_1000_end + 1)/1000))"]
 dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
 
 plot_data <- dt_full[, .(
@@ -540,37 +579,44 @@ plot_data <- dt_full[, .(
   sd_w = sd(w_x, na.rm = TRUE)
 ), by = Ma_x1]
 
+line_color <- "steelblue"
+
 p3 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "Transformed dist_paved_1000_end", y = "w(x)") +
+  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
+  labs(
+    x = "dist_paved_250_end avail",
+    y = "w(x)",
+  ) +
   theme_minimal(base_size = 12)
 
-
 print(p3)
+
+
 
 
 ##############################
 # 4. dist_unpaved_250_end
 ##############################
-raw_to_transformed <- list(
-  "dist_unpaved_250_end" = "I(log((dist_unpaved_250_end + 1)/1000))",
-  "dist_unpaved_1000_end" = "I(log((dist_unpaved_1000_end + 1)/1000))"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["dist_unpaved_250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["dist_unpaved_250_end"]], ":", raw_to_transformed[["dist_unpaved_1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for dist_unpaved_250_end or interaction.")
+re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
+re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
+re_slope <- re_id[, c("id", "I(log((dist_unpaved_250_end + 1)/1000))")]
+colnames(re_slope) <- c("id", "rand_beta1")
 
 dt_full <- merge(
   dt[, .(id, raw_x1 = get("dist_unpaved_250_end"))],
   avg_data[, .(id, raw_Ma_x1 = get("dist_unpaved_1000_end"))],
   by = "id"
 )
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
 
-dt_full[, x1 := log((raw_x1 + 1) / 1000)]
-dt_full[, Ma_x1 := log((raw_Ma_x1 + 1) / 1000)]
+dt_full[, x1 := log(raw_x1 + 1)]
+dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
 
+dt_full[, beta1 := rand_beta1]
+
+coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_unpaved_250_end + 1)/1000)):I(log((dist_unpaved_1000_end + 1)/1000))"]
 dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
 
 plot_data <- dt_full[, .(
@@ -578,9 +624,14 @@ plot_data <- dt_full[, .(
   sd_w = sd(w_x, na.rm = TRUE)
 ), by = Ma_x1]
 
+line_color <- "steelblue"
+
 p4 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "Transformed dist_unpaved_1000_end", y = "w(x)") +
+  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
+  labs(
+    x = "dist_unpaved_250_end avail",
+    y = "w(x)",
+  ) +
   theme_minimal(base_size = 12)
 
 print(p4)
@@ -589,25 +640,26 @@ print(p4)
 ##############################
 # 5. dist_lfother_250_end
 ##############################
-raw_to_transformed <- list(
-  "dist_lfother_250_end" = "I(log((dist_lfother_250_end + 1)/1000))",
-  "dist_lfother_1000_end" = "I(log((dist_lfother_1000_end + 1)/1000))"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["dist_lfother_250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["dist_lfother_250_end"]], ":", raw_to_transformed[["dist_lfother_1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for dist_lfother_250_end or interaction.")
+re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
+re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
+re_slope <- re_id[, c("id", "I(log((dist_lfother_250_end + 1)/1000))")]
+colnames(re_slope) <- c("id", "rand_beta1")
 
 dt_full <- merge(
   dt[, .(id, raw_x1 = get("dist_lfother_250_end"))],
   avg_data[, .(id, raw_Ma_x1 = get("dist_lfother_1000_end"))],
   by = "id"
 )
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
 
-dt_full[, x1 := log((raw_x1 + 1) / 1000)]
-dt_full[, Ma_x1 := log((raw_Ma_x1 + 1) / 1000)]
+dt_full[, x1 := log(raw_x1 + 1)]
+dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
 
+dt_full[, beta1 := rand_beta1]
+
+coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_lfother_250_end + 1)/1000)):I(log((dist_lfother_1000_end + 1)/1000))"]
 dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
 
 plot_data <- dt_full[, .(
@@ -615,9 +667,14 @@ plot_data <- dt_full[, .(
   sd_w = sd(w_x, na.rm = TRUE)
 ), by = Ma_x1]
 
+line_color <- "steelblue"
+
 p5 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "Transformed dist_lfother_1000_end", y = "w(x)") +
+  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
+  labs(
+    x = "dist_lfother_250_end avail",
+    y = "w(x)",
+  ) +
   theme_minimal(base_size = 12)
 
 print(p5)
@@ -626,25 +683,26 @@ print(p5)
 ##############################
 # 6. dist_otherpoly_250_end
 ##############################
-raw_to_transformed <- list(
-  "dist_otherpoly_250_end" = "I(log((dist_otherpoly_250_end + 1)/1000))",
-  "dist_otherpoly_1000_end" = "I(log((dist_otherpoly_1000_end + 1)/1000))"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["dist_otherpoly_250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["dist_otherpoly_250_end"]], ":", raw_to_transformed[["dist_otherpoly_1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for dist_otherpoly_250_end or interaction.")
+re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
+re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
+re_slope <- re_id[, c("id", "I(log((dist_otherpoly_250_end + 1)/1000))")]
+colnames(re_slope) <- c("id", "rand_beta1")
 
 dt_full <- merge(
   dt[, .(id, raw_x1 = get("dist_otherpoly_250_end"))],
   avg_data[, .(id, raw_Ma_x1 = get("dist_otherpoly_1000_end"))],
   by = "id"
 )
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
 
-dt_full[, x1 := log((raw_x1 + 1) / 1000)]
-dt_full[, Ma_x1 := log((raw_Ma_x1 + 1) / 1000)]
+dt_full[, x1 := log(raw_x1 + 1)]
+dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
 
+dt_full[, beta1 := rand_beta1]
+
+coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_otherpoly_250_end + 1)/1000)):I(log((dist_otherpoly_1000_end + 1)/1000))"]
 dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
 
 plot_data <- dt_full[, .(
@@ -652,9 +710,14 @@ plot_data <- dt_full[, .(
   sd_w = sd(w_x, na.rm = TRUE)
 ), by = Ma_x1]
 
+line_color <- "steelblue"
+
 p6 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "Transformed dist_otherpoly_1000_end", y = "w(x)") +
+  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
+  labs(
+    x = "dist_otherpoly_250_end avail",
+    y = "w(x)",
+  ) +
   theme_minimal(base_size = 12)
 
 print(p6)
@@ -663,25 +726,26 @@ print(p6)
 ##############################
 # 7. dist_placer_250_end
 ##############################
-raw_to_transformed <- list(
-  "dist_placer_250_end" = "I(log((dist_placer_250_end + 1)/1000))",
-  "dist_placer_1000_end" = "I(log((dist_placer_1000_end + 1)/1000))"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["dist_placer_250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["dist_placer_250_end"]], ":", raw_to_transformed[["dist_placer_1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for dist_placer_250_end or interaction.")
+re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
+re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
+re_slope <- re_id[, c("id", "I(log((dist_placer_250_end + 1)/1000))")]
+colnames(re_slope) <- c("id", "rand_beta1")
 
 dt_full <- merge(
   dt[, .(id, raw_x1 = get("dist_placer_250_end"))],
   avg_data[, .(id, raw_Ma_x1 = get("dist_placer_1000_end"))],
   by = "id"
 )
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
 
-dt_full[, x1 := log((raw_x1 + 1) / 1000)]
-dt_full[, Ma_x1 := log((raw_Ma_x1 + 1) / 1000)]
+dt_full[, x1 := log(raw_x1 + 1)]
+dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
 
+dt_full[, beta1 := rand_beta1]
+
+coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_placer_250_end + 1)/1000)):I(log((dist_placer_1000_end + 1)/1000))"]
 dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
 
 plot_data <- dt_full[, .(
@@ -689,36 +753,43 @@ plot_data <- dt_full[, .(
   sd_w = sd(w_x, na.rm = TRUE)
 ), by = Ma_x1]
 
+line_color <- "steelblue"
+
 p7 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "Transformed dist_placer_1000_end", y = "w(x)") +
+  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
+  labs(
+    x = "dist_placer_250_end avail",
+    y = "w(x)",
+  ) +
   theme_minimal(base_size = 12)
 
 print(p7)
 
 
+
 ##############################
 # 8. dist_quartz_250_end
 ##############################
-raw_to_transformed <- list(
-  "dist_quartz_250_end" = "I(log((dist_quartz_250_end + 1)/1000))",
-  "dist_quartz_1000_end" = "I(log((dist_quartz_1000_end + 1)/1000))"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["dist_quartz_250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["dist_quartz_250_end"]], ":", raw_to_transformed[["dist_quartz_1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for dist_quartz_250_end or interaction.")
+re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
+re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
+re_slope <- re_id[, c("id", "I(log((dist_quartz_250_end + 1)/1000))")]
+colnames(re_slope) <- c("id", "rand_beta1")
 
 dt_full <- merge(
   dt[, .(id, raw_x1 = get("dist_quartz_250_end"))],
   avg_data[, .(id, raw_Ma_x1 = get("dist_quartz_1000_end"))],
   by = "id"
 )
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
 
-dt_full[, x1 := log((raw_x1 + 1) / 1000)]
-dt_full[, Ma_x1 := log((raw_Ma_x1 + 1) / 1000)]
+dt_full[, x1 := log(raw_x1 + 1)]
+dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
 
+dt_full[, beta1 := rand_beta1]
+
+coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_quartz_250_end + 1)/1000)):I(log((dist_quartz_1000_end + 1)/1000))"]
 dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
 
 plot_data <- dt_full[, .(
@@ -726,9 +797,14 @@ plot_data <- dt_full[, .(
   sd_w = sd(w_x, na.rm = TRUE)
 ), by = Ma_x1]
 
+line_color <- "steelblue"
+
 p8 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "Transformed dist_quartz_1000_end", y = "w(x)") +
+  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
+  labs(
+    x = "dist_quartz_250_end avail",
+    y = "w(x)",
+  ) +
   theme_minimal(base_size = 12)
 
 print(p8)
@@ -737,25 +813,26 @@ print(p8)
 ##############################
 # 9. dist_othermines_250_end
 ##############################
-raw_to_transformed <- list(
-  "dist_othermines_250_end" = "I(log((dist_othermines_250_end + 1)/1000))",
-  "dist_othermines_1000_end" = "I(log((dist_othermines_1000_end + 1)/1000))"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["dist_othermines_250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["dist_othermines_250_end"]], ":", raw_to_transformed[["dist_othermines_1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for dist_othermines_250_end or interaction.")
+re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
+re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
+re_slope <- re_id[, c("id", "I(log((dist_othermines_250_end + 1)/1000))")]
+colnames(re_slope) <- c("id", "rand_beta1")
 
 dt_full <- merge(
   dt[, .(id, raw_x1 = get("dist_othermines_250_end"))],
   avg_data[, .(id, raw_Ma_x1 = get("dist_othermines_1000_end"))],
   by = "id"
 )
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
 
-dt_full[, x1 := log((raw_x1 + 1) / 1000)]
-dt_full[, Ma_x1 := log((raw_Ma_x1 + 1) / 1000)]
+dt_full[, x1 := log(raw_x1 + 1)]
+dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
 
+dt_full[, beta1 := rand_beta1]
+
+coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_othermines_250_end + 1)/1000)):I(log((dist_othermines_1000_end + 1)/1000))"]
 dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
 
 plot_data <- dt_full[, .(
@@ -763,73 +840,43 @@ plot_data <- dt_full[, .(
   sd_w = sd(w_x, na.rm = TRUE)
 ), by = Ma_x1]
 
+line_color <- "steelblue"
+
 p9 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "Transformed dist_othermines_1000_end", y = "w(x)") +
+  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
+  labs(
+    x = "dist_othermines_250_end avail",
+    y = "w(x)",
+  ) +
   theme_minimal(base_size = 12)
 
-
 print(p9)
+
 
                                 
 ##############################
 # 10. prop_forest_250_end
 ##############################
-raw_to_transformed <- list(
-  "prop_forest_250_end" = "prop_forest_250_end",
-  "prop_forest_1000_end" = "prop_forest_1000_end"
-)                                              
-beta1 <- coef_df$Estimate[coef_df$term == "prop_forest_250_end"]
-theta <- coef_df$Estimate[coef_df$term == "prop_forest_250_end:prop_forest_1000_end"]
-
-if(length(beta1) == 0 || length(theta) == 0) stop("Missing coefficients for prop_forest_250_end.")
+re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
+re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
+re_slope <- re_id[, c("id", "prop_forest_250_end")]
+colnames(re_slope) <- c("id", "rand_beta1")
 
 dt_full <- merge(
   dt[, .(id, raw_x1 = get("prop_forest_250_end"))],
   avg_data[, .(id, raw_Ma_x1 = get("prop_forest_1000_end"))],
   by = "id"
 )
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
 
-dt_full[, x1 := raw_x1]  # No transformation
-dt_full[, Ma_x1 := raw_Ma_x1]  # No transformation
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
+dt_full[, x1 := log(raw_x1 + 1)]
+dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
 
-plot_data_10 <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
+dt_full[, beta1 := rand_beta1]
 
-p10 <- ggplot(plot_data_10, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "prop_forest_1000_end", y = "w(x)") +
-  theme_minimal(base_size = 12)
-print(p10)
-
-
-
-
-##############################
-# 11. prop_veg_250_end
-##############################
-raw_to_transformed <- list(
-  "prop_veg_250_end" = "prop_veg_250_end",
-  "prop_veg_1000_end" = "prop_veg_1000_end"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["prop_veg_250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["prop_veg_250_end"]], ":", raw_to_transformed[["prop_veg_1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for prop_veg_250_end or interaction.")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("prop_veg_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("prop_veg_1000_end"))],
-  by = "id"
-)
-
-dt_full[, x1 := raw_x1]
-dt_full[, Ma_x1 := raw_Ma_x1]
-
+coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "prop_forest_250_end:prop_forest_1000_end"]
 dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
 
 plot_data <- dt_full[, .(
@@ -837,10 +884,60 @@ plot_data <- dt_full[, .(
   sd_w = sd(w_x, na.rm = TRUE)
 ), by = Ma_x1]
 
-p11 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "prop_veg_1000_end", y = "w(x)") +
+line_color <- "steelblue"
+
+p10 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
+  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
+  labs(
+    x = "prop_forest_250_end avail",
+    y = "w(x)",
+  ) +
   theme_minimal(base_size = 12)
+
+print(p10)
+
+
+
+##############################
+# 11. prop_veg_250_end
+##############################
+re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
+re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
+re_slope <- re_id[, c("id", "prop_veg_250_end")]
+colnames(re_slope) <- c("id", "rand_beta1")
+
+dt_full <- merge(
+  dt[, .(id, raw_x1 = get("prop_veg_250_end"))],
+  avg_data[, .(id, raw_Ma_x1 = get("prop_veg_1000_end"))],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+dt_full[, x1 := log(raw_x1 + 1)]
+dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
+
+dt_full[, beta1 := rand_beta1]
+
+coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "prop_veg_250_end:prop_veg_1000_end"]
+dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
+
+plot_data <- dt_full[, .(
+  mean_w = mean(w_x, na.rm = TRUE),
+  sd_w = sd(w_x, na.rm = TRUE)
+), by = Ma_x1]
+
+line_color <- "steelblue"
+
+p11 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
+  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
+  labs(
+    x = "prop_veg_250_end avail",
+    y = "w(x)",
+  ) +
+  theme_minimal(base_size = 12)
+
 print(p11)
 
 
@@ -962,7 +1059,23 @@ vars_1000 <- c(
 )
 
 # Calculate average availability per id
-avg_data <- dt[, lapply(.SD, mean, na.rm = TRUE), by = id, .SDcols = vars_1000]
+avg_data <- dt[, .SD, .SDcols = c("id", vars_1000)]
+
+# Apply transformations to match model
+avg_data[, `:=`(
+  ts_fires_1000_end = log(ts_fires_1000_end + 1),
+  ts_harv1000_end = log(ts_harv1000_end + 1),
+  dist_paved_1000_end = log((dist_paved_1000_end + 1) / 1000),
+  dist_unpaved_1000_end = log((dist_unpaved_1000_end + 1) / 1000),
+  dist_lfother_1000_end = log((dist_lfother_1000_end + 1) / 1000),
+  dist_otherpoly_1000_end = log((dist_otherpoly_1000_end + 1) / 1000),
+  dist_placer_1000_end = log((dist_placer_1000_end + 1) / 1000),
+  dist_quartz_1000_end = log((dist_quartz_1000_end + 1) / 1000),
+  dist_othermines_1000_end = log((dist_othermines_1000_end + 1) / 1000)
+)]
+
+# Now aggregate (after transformation)
+avg_data <- avg_data[, lapply(.SD, mean, na.rm = TRUE), by = id]
 
 re_list <- ranef(m.closedisturbancesummer)$cond
 
@@ -1575,7 +1688,23 @@ vars_1000 <- c(
 )
 
 # Calculate average availability per id
-avg_data <- dt[, lapply(.SD, mean, na.rm = TRUE), by = id, .SDcols = vars_1000]
+avg_data <- dt[, .SD, .SDcols = c("id", vars_1000)]
+
+# Apply transformations to match model
+avg_data[, `:=`(
+  ts_fires_1000_end = log(ts_fires_1000_end + 1),
+  ts_harv1000_end = log(ts_harv1000_end + 1),
+  dist_paved_1000_end = log((dist_paved_1000_end + 1) / 1000),
+  dist_unpaved_1000_end = log((dist_unpaved_1000_end + 1) / 1000),
+  dist_lfother_1000_end = log((dist_lfother_1000_end + 1) / 1000),
+  dist_otherpoly_1000_end = log((dist_otherpoly_1000_end + 1) / 1000),
+  dist_placer_1000_end = log((dist_placer_1000_end + 1) / 1000),
+  dist_quartz_1000_end = log((dist_quartz_1000_end + 1) / 1000),
+  dist_othermines_1000_end = log((dist_othermines_1000_end + 1) / 1000)
+)]
+
+# Now aggregate (after transformation)
+avg_data <- avg_data[, lapply(.SD, mean, na.rm = TRUE), by = id]
 
 re_list <- ranef(m.closedisturbancewinter)$cond
 
@@ -1650,6 +1779,7 @@ for (model_var in names(var_map)) {
 # Combine and print all plots
 combined_plot <- wrap_plots(plot_list, ncol = 3)
 print(combined_plot)
+
 
 
 ##Next plot fixed effect interaction vs average availability
@@ -2075,7 +2205,7 @@ patchwork::wrap_plots(plot_list, ncol = 4)
 
 ###FAR FROM DISTURBANCE
 
-#Year-round
+#Year-round, did not run
 gc()
 m.fardisturbancefull <- glmmTMB(case_ ~ -1 +
                                     I(log((sl_+1)/1000)) +
@@ -2085,14 +2215,14 @@ m.fardisturbancefull <- glmmTMB(case_ ~ -1 +
                                     prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
                                     I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
                                     I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
-                                    I(log((dist_paved_250_end_adj+1)/1000)) + I(log((dist_paved_250_end_adj+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
-                                    I(log((dist_unpaved_end_250_adj+1)/1000)) + I(log((dist_unpaved_end_250_adj+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
+                                    I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
+                                    I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
                                     #I(log(((dist_road_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
-                                    I(log((dist_lfother_250_end_adj+1)/1000)) + I(log((dist_lfother_250_end_adj+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
-                                    I(log((dist_otherpoly_250_end_adj+1)/1000)) + I(log((dist_otherpoly_250_end_adj+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
-                                    I(log((dist_placer_250_end_adj+1)/1000)) + I(log((dist_placer_250_end_adj+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
-                                    I(log((dist_quartz_250_end_adj+1)/1000)) + I(log((dist_quartz_250_end_adj+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
-                                    I(log((dist_othermines_250_end_adj+1)/1000)) + I(log((dist_othermines_250_end_adj+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
+                                    I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
+                                    I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
+                                    I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
+                                    I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
+                                    I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
                                     #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
                                     #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
                                     
@@ -2175,14 +2305,14 @@ m.fardisturbancesummer <- glmmTMB(case_ ~ -1 +
                                   prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
                                   I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
                                   I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
-                                  I(log((dist_paved_250_end_adj+1)/1000)) + I(log((dist_paved_250_end_adj+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
-                                  I(log((dist_unpaved_end_250_adj+1)/1000)) + I(log((dist_unpaved_end_250_adj+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
+                                  I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
+                                  I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
                                   #I(log(((dist_road_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
-                                  I(log((dist_lfother_250_end_adj+1)/1000)) + I(log((dist_lfother_250_end_adj+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
-                                  I(log((dist_otherpoly_250_end_adj+1)/1000)) + I(log((dist_otherpoly_250_end_adj+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
-                                  I(log((dist_placer_250_end_adj+1)/1000)) + I(log((dist_placer_250_end_adj+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
-                                  I(log((dist_quartz_250_end_adj+1)/1000)) + I(log((dist_quartz_250_end_adj+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
-                                  I(log((dist_othermines_250_end_adj+1)/1000)) + I(log((dist_othermines_250_end_adj+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
+                                  I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
+                                  I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
+                                  I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
+                                  I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
+                                  I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
                                   #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
                                   #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
                                   
@@ -2258,57 +2388,58 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 #WINTER
 gc()
 m.fardisturbancewinter <- glmmTMB(case_ ~ -1 +
-                                  I(log((sl_+1)/1000)) +
-                                  I(cos(ta_)) +
-                                  I(log((sl_+1)/1000)):I(cos(ta_)) +
-                                  prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
-                                  prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
-                                  I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
-                                  I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
-                                  I(log((dist_paved_250_end_adj+1)/1000)) + I(log((dist_paved_250_end_adj+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
-                                  I(log((dist_unpaved_end_250_adj+1)/1000)) + I(log((dist_unpaved_end_250_adj+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
-                                  #I(log(((dist_road_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
-                                  I(log((dist_lfother_250_end_adj+1)/1000)) + I(log((dist_lfother_250_end_adj+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
-                                  I(log((dist_otherpoly_250_end_adj+1)/1000)) + I(log((dist_otherpoly_250_end_adj+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
-                                  I(log((dist_placer_250_end_adj+1)/1000)) + I(log((dist_placer_250_end_adj+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
-                                  I(log((dist_quartz_250_end_adj+1)/1000)) + I(log((dist_quartz_250_end_adj+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
-                                  I(log((dist_othermines_250_end_adj+1)/1000)) + I(log((dist_othermines_250_end_adj+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
-                                  #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
-                                  #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
-                                  
-                                  (1|indiv_step_id) +
-                                  (0 + I(log((sl_ +1)/1000))|id) +
-                                  (0 + I(cos(ta_))|id) +
-                                  (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
-                                  (0 + prop_forest_250_end|id) +
-                                  (0 + prop_veg_250_end|id) +
-                                  (0 + (I(log(ts_fires_250_end+1)))|id) +
-                                  (0 + (I(log(ts_harv250_end+1)))|id) + 
-                                  #(0 + I(log((dist_paved_250_end+1)/1000))|id) + 
-                                  #(0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
-                                  #(0 + I(log((dist_road_250_end+1)/1000))|id) + 
-                                  #(0 + I(log((dist_lfother_250_end+1)/1000))|id) +
-                                  #(0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
-                                  #(0 + I(log((dist_placer_250_end+1)/1000))|id) + 
-                                  #(0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
-                                  #(0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
-                                  #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
-                                  #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
-                                  
-                                  (1|year),
-                                family = poisson(), data = dat.issa.10.winter[,`:=`(year = as.factor(year), 
-                                                                             indiv_step_id = as.factor(indiv_step_id),
-                                                                             id = as.factor(id))],
-                                map= list(theta = factor(c(NA,1:8))),
-                                start = list(theta =c(log(1000), seq(0,0, length.out = 8))), 
-                                verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+                                    I(log((sl_+1)/1000)) +
+                                    I(cos(ta_)) +
+                                    I(log((sl_+1)/1000)):I(cos(ta_)) +
+                                    prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
+                                    prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
+                                    I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
+                                    I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
+                                    I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
+                                    I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
+                                    #I(log(((dist_road_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
+                                    I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
+                                    I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
+                                    I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
+                                    I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
+                                    I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
+                                    #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
+                                    #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
+                                    
+                                    (1|indiv_step_id) +
+                                    (0 + I(log((sl_ +1)/1000))|id) +
+                                    (0 + I(cos(ta_))|id) +
+                                    (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                                    (0 + prop_forest_250_end|id) +
+                                    (0 + prop_veg_250_end|id) +
+                                    (0 + (I(log(ts_fires_250_end+1)))|id) +
+                                    (0 + (I(log(ts_harv250_end+1)))|id) + 
+                                    #(0 + I(log((dist_paved_250_end+1)/1000))|id) + 
+                                    #(0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
+                                    #(0 + I(log((dist_road_250_end+1)/1000))|id) + 
+                                    #(0 + I(log((dist_lfother_250_end+1)/1000))|id) +
+                                    #(0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
+                                    #(0 + I(log((dist_placer_250_end+1)/1000))|id) + 
+                                    #(0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
+                                    #(0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
+                                    #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
+                                    #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
+                                    
+                                    (1|year),
+                                  family = poisson(), data = dat.issa.10.winter[,`:=`(year = as.factor(year), 
+                                                                                      indiv_step_id = as.factor(indiv_step_id),
+                                                                                      id = as.factor(id))],
+                                  map= list(theta = factor(c(NA,1:8))),
+                                  start = list(theta =c(log(1000), seq(0,0, length.out = 8))), 
+                                  verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
+
 
 
 
 summary(m.fardisturbancewinter)
 # save model output
-saveRDS(m.faristurbancewinter, "m.fardisturbancewinter.mod_lf20poly20.RDS")
+saveRDS(m.fardisturbancewinter, "m.fardisturbancewinter.mod_lf20poly20.RDS")
 
 m.fardisturbancewinter.indiv <- coef(m.fardisturbancewinter)$cond$id %>% rownames_to_column("id") %>%
   pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
@@ -2449,6 +2580,94 @@ corrplot(M, method = 'number')
 
 
 
+#SUMMER
+gc()
+m.fullmodsummer <- glmmTMB(case_ ~ -1 +
+                       I(log((sl_+1)/1000)) +
+                       I(cos(ta_)) +
+                       I(log((sl_+1)/1000)):I(cos(ta_)) +
+                       prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
+                       prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
+                       I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
+                       I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
+                       I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
+                       I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
+                       #I(log(((dist_road_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
+                       I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
+                       I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
+                       I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
+                       I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
+                       I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
+                       #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
+                       #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
+                       
+                       (1|indiv_step_id) +
+                       (0 + I(log((sl_ +1)/1000))|id) +
+                       (0 + I(cos(ta_))|id) +
+                       (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                       (0 + prop_forest_250_end|id) +
+                       (0 + prop_veg_250_end|id) +
+                       (0 + (I(log(ts_fires_250_end+1)))|id) +
+                       (0 + (I(log(ts_harv250_end+1)))|id) + 
+                       (0 + I(log((dist_paved_250_end+1)/1000))|id) + 
+                       (0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
+                       #(0 + I(log((dist_road_250_end+1)/1000))|id) + 
+                       (0 + I(log((dist_lfother_250_end+1)/1000))|id) +
+                       (0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
+                       (0 + I(log((dist_placer_250_end+1)/1000))|id) + 
+                       (0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
+                       (0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
+                       #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
+                       #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
+                       
+                       (1|year),
+                     family = poisson(), data = dat.issa.10.summer[,`:=`(year = as.factor(year), 
+                                                                  indiv_step_id = as.factor(indiv_step_id),
+                                                                  id = as.factor(id))],
+                     map= list(theta = factor(c(NA,1:15))),
+                     start = list(theta =c(log(1000), seq(0,0, length.out = 15))), 
+                     verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+)
+
+
+summary(m.fullmodsummer)
+# save model output
+saveRDS(m.fullmodsummer, "m.fullsummer.mod_lf20poly20.RDS")
+#m.fullmodsummer <- readRDS("m.fullsummer.mod_lf20poly20.RDS")
+
+
+m.fullmodsummer.indiv <- coef(m.fullmodsummer)$cond$id %>% rownames_to_column("id") %>%
+  pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
+  mutate(method = "ME")
+indivs <- setDT(m.fullmodsummer.indiv)[term!='(Intercept)']
+pop <- setDT(tidy(m.fullmodsummer, effects = 'fixed'))
+
+
+require(ggplot2)
+ggplot(data = pop[term %like% 'dist'], aes(x =term, y = estimate)) +
+  geom_point()+
+  geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+ggplot(data = pop[!(term %like% 'dist')], aes(x =term, y = estimate)) +
+  geom_point()+
+  geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+
+ggplot(data = indivs[(term %like% 'dist')], aes(x =term, y = estimate)) + #This one
+  geom_boxplot()+
+  geom_jitter() +
+  #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+
+ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
+  geom_boxplot()+
+  geom_jitter() +
+  #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip()  
 
 
 
@@ -2456,6 +2675,287 @@ corrplot(M, method = 'number')
 
 
 
+#Winter
+gc()
+m.fullmodwinter <- glmmTMB(case_ ~ -1 +
+                             I(log((sl_+1)/1000)) +
+                             I(cos(ta_)) +
+                             I(log((sl_+1)/1000)):I(cos(ta_)) +
+                             prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
+                             prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
+                             I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
+                             I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
+                             I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
+                             I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
+                             #I(log(((dist_road_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
+                             I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
+                             I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
+                             I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
+                             I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
+                             I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
+                             #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
+                             #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
+                             
+                             (1|indiv_step_id) +
+                             (0 + I(log((sl_ +1)/1000))|id) +
+                             (0 + I(cos(ta_))|id) +
+                             (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                             (0 + prop_forest_250_end|id) +
+                             (0 + prop_veg_250_end|id) +
+                             (0 + (I(log(ts_fires_250_end+1)))|id) +
+                             (0 + (I(log(ts_harv250_end+1)))|id) + 
+                             (0 + I(log((dist_paved_250_end+1)/1000))|id) + 
+                             (0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
+                             #(0 + I(log((dist_road_250_end+1)/1000))|id) + 
+                             (0 + I(log((dist_lfother_250_end+1)/1000))|id) +
+                             (0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
+                             (0 + I(log((dist_placer_250_end+1)/1000))|id) + 
+                             (0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
+                             (0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
+                             #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
+                             #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
+                             
+                             (1|year),
+                           family = poisson(), data = dat.issa.10.winter[,`:=`(year = as.factor(year), 
+                                                                               indiv_step_id = as.factor(indiv_step_id),
+                                                                               id = as.factor(id))],
+                           map= list(theta = factor(c(NA,1:15))),
+                           start = list(theta =c(log(1000), seq(0,0, length.out = 15))), 
+                           verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+)
+
+
+summary(m.fullmodwinter)
+# save model output
+saveRDS(m.fullmodwinter, "m.fullsummer.mod_lf20poly20.RDS")
+#m.fullmodsummer <- readRDS("m.fullsummer.mod_lf20poly20.RDS")
+
+
+m.fullmodwinter.indiv <- coef(m.fullmodwinter)$cond$id %>% rownames_to_column("id") %>%
+  pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
+  mutate(method = "ME")
+indivs <- setDT(m.fullmodwinter.indiv)[term!='(Intercept)']
+pop <- setDT(tidy(m.fullmodwinter, effects = 'fixed'))
+
+
+require(ggplot2)
+ggplot(data = pop[term %like% 'dist'], aes(x =term, y = estimate)) +
+  geom_point()+
+  geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+ggplot(data = pop[!(term %like% 'dist')], aes(x =term, y = estimate)) +
+  geom_point()+
+  geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+
+ggplot(data = indivs[(term %like% 'dist')], aes(x =term, y = estimate)) + #This one
+  geom_boxplot()+
+  geom_jitter() +
+  #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+
+ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
+  geom_boxplot()+
+  geom_jitter() +
+  #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip()  
+
+
+
+
+
+
+#Running the three full models (two seasons and one full year) with roads collapsed
+
+#Year-round
+gc()
+m.fullmod <- glmmTMB(case_ ~ -1 +
+                       I(log((sl_+1)/1000)) +
+                       I(cos(ta_)) +
+                       I(log((sl_+1)/1000)):I(cos(ta_)) +
+                       prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
+                       prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
+                       I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
+                       I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
+                       #I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
+                       #I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
+                       I(log(((dist_road_250_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
+                       I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
+                       I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
+                       I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
+                       I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
+                       I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
+                       #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
+                       #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
+                       
+                       (1|indiv_step_id) +
+                       (0 + I(log((sl_ +1)/1000))|id) +
+                       (0 + I(cos(ta_))|id) +
+                       (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                       (0 + prop_forest_250_end|id) +
+                       (0 + prop_veg_250_end|id) +
+                       (0 + (I(log(ts_fires_250_end+1)))|id) +
+                       (0 + (I(log(ts_harv250_end+1)))|id) + 
+                       (0 + I(log((dist_paved_250_end+1)/1000))|id) + 
+                       (0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
+                       #(0 + I(log((dist_road_250_end+1)/1000))|id) + 
+                       (0 + I(log((dist_lfother_250_end+1)/1000))|id) +
+                       (0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
+                       (0 + I(log((dist_placer_250_end+1)/1000))|id) + 
+                       (0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
+                       (0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
+                       #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
+                       #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
+                       
+                       (1|year),
+                     family = poisson(), data = dat.issa.10[,`:=`(year = as.factor(year), 
+                                                                  indiv_step_id = as.factor(indiv_step_id),
+                                                                  id = as.factor(id))],
+                     map= list(theta = factor(c(NA,1:15))),
+                     start = list(theta =c(log(1000), seq(0,0, length.out = 15))), 
+                     verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+)
+
+
+summary(m.fullmod)
+# save model output
+saveRDS(m.fullmod, "m.full.mod_lf20poly20.RDS")
+#m.fullmod <- readRDS("m.full.mod_lf20poly20.RDS")
+
+
+m.fullmod.indiv <- coef(m.fullmod)$cond$id %>% rownames_to_column("id") %>%
+  pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
+  mutate(method = "ME")
+indivs <- setDT(m.fullmod.indiv)[term!='(Intercept)']
+pop <- setDT(tidy(m.fullmod, effects = 'fixed'))
+
+
+require(ggplot2)
+ggplot(data = pop[term %like% 'dist'], aes(x =term, y = estimate)) +
+  geom_point()+
+  geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+ggplot(data = pop[!(term %like% 'dist')], aes(x =term, y = estimate)) +
+  geom_point()+
+  geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+
+ggplot(data = indivs[(term %like% 'dist')], aes(x =term, y = estimate)) + #This one
+  geom_boxplot()+
+  geom_jitter() +
+  #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+
+ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
+  geom_boxplot()+
+  geom_jitter() +
+  #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip()  
+
+
+cor_df <- dat.issa.10 %>% select('dist_paved_250_end', 'dist_unpaved_250_end', 'dist_lfother_250_end', 'dist_placer_250_end', 'dist_quartz_250_end', 'harv_dist_250_end', 'dist_otherpoly_250_end', 'dist_othermines_250_end') #create new df with the variables I want
+library(corrplot)
+M = cor(cor_df, use = "complete.obs") #produce plot of correlations
+corrplot(M, method = 'number')
+
+
+
+#SUMMER
+gc()
+m.fullmodsummer <- glmmTMB(case_ ~ -1 +
+                             I(log((sl_+1)/1000)) +
+                             I(cos(ta_)) +
+                             I(log((sl_+1)/1000)):I(cos(ta_)) +
+                             prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
+                             prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
+                             I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
+                             I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
+                             I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
+                             I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
+                             #I(log(((dist_road_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
+                             I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
+                             I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
+                             I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
+                             I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
+                             I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
+                             #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
+                             #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
+                             
+                             (1|indiv_step_id) +
+                             (0 + I(log((sl_ +1)/1000))|id) +
+                             (0 + I(cos(ta_))|id) +
+                             (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                             (0 + prop_forest_250_end|id) +
+                             (0 + prop_veg_250_end|id) +
+                             (0 + (I(log(ts_fires_250_end+1)))|id) +
+                             (0 + (I(log(ts_harv250_end+1)))|id) + 
+                             (0 + I(log((dist_paved_250_end+1)/1000))|id) + 
+                             (0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
+                             #(0 + I(log((dist_road_250_end+1)/1000))|id) + 
+                             (0 + I(log((dist_lfother_250_end+1)/1000))|id) +
+                             (0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
+                             (0 + I(log((dist_placer_250_end+1)/1000))|id) + 
+                             (0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
+                             (0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
+                             #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
+                             #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
+                             
+                             (1|year),
+                           family = poisson(), data = dat.issa.10.summer[,`:=`(year = as.factor(year), 
+                                                                               indiv_step_id = as.factor(indiv_step_id),
+                                                                               id = as.factor(id))],
+                           map= list(theta = factor(c(NA,1:15))),
+                           start = list(theta =c(log(1000), seq(0,0, length.out = 15))), 
+                           verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+)
+
+
+summary(m.fullmodsummer)
+# save model output
+saveRDS(m.fullmodsummer, "m.fullsummer.mod_lf20poly20.RDS")
+#m.fullmodsummer <- readRDS("m.fullsummer.mod_lf20poly20.RDS")
+
+
+m.fullmodsummer.indiv <- coef(m.fullmodsummer)$cond$id %>% rownames_to_column("id") %>%
+  pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
+  mutate(method = "ME")
+indivs <- setDT(m.fullmodsummer.indiv)[term!='(Intercept)']
+pop <- setDT(tidy(m.fullmodsummer, effects = 'fixed'))
+
+
+require(ggplot2)
+ggplot(data = pop[term %like% 'dist'], aes(x =term, y = estimate)) +
+  geom_point()+
+  geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+ggplot(data = pop[!(term %like% 'dist')], aes(x =term, y = estimate)) +
+  geom_point()+
+  geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+
+ggplot(data = indivs[(term %like% 'dist')], aes(x =term, y = estimate)) + #This one
+  geom_boxplot()+
+  geom_jitter() +
+  #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+
+ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
+  geom_boxplot()+
+  geom_jitter() +
+  #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip()  
 
 
 
@@ -2463,9 +2963,94 @@ corrplot(M, method = 'number')
 
 
 
+#Winter
+gc()
+m.fullmodwinter <- glmmTMB(case_ ~ -1 +
+                             I(log((sl_+1)/1000)) +
+                             I(cos(ta_)) +
+                             I(log((sl_+1)/1000)):I(cos(ta_)) +
+                             prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
+                             prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
+                             I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
+                             I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
+                             #I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
+                             #I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
+                             I(log(((dist_road_250_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
+                             I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
+                             I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
+                             I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
+                             I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
+                             I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
+                             #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
+                             #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
+                             
+                             (1|indiv_step_id) +
+                             (0 + I(log((sl_ +1)/1000))|id) +
+                             (0 + I(cos(ta_))|id) +
+                             (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                             (0 + prop_forest_250_end|id) +
+                             (0 + prop_veg_250_end|id) +
+                             (0 + (I(log(ts_fires_250_end+1)))|id) +
+                             (0 + (I(log(ts_harv250_end+1)))|id) + 
+                             (0 + I(log((dist_paved_250_end+1)/1000))|id) + 
+                             (0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
+                             #(0 + I(log((dist_road_250_end+1)/1000))|id) + 
+                             (0 + I(log((dist_lfother_250_end+1)/1000))|id) +
+                             (0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
+                             (0 + I(log((dist_placer_250_end+1)/1000))|id) + 
+                             (0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
+                             (0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
+                             #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
+                             #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
+                             
+                             (1|year),
+                           family = poisson(), data = dat.issa.10.winter[,`:=`(year = as.factor(year), 
+                                                                               indiv_step_id = as.factor(indiv_step_id),
+                                                                               id = as.factor(id))],
+                           map= list(theta = factor(c(NA,1:15))),
+                           start = list(theta =c(log(1000), seq(0,0, length.out = 15))), 
+                           verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+)
 
 
+summary(m.fullmodwinter)
+# save model output
+saveRDS(m.fullmodwinter, "m.fullsummer.mod_lf20poly20.RDS")
+#m.fullmodsummer <- readRDS("m.fullsummer.mod_lf20poly20.RDS")
 
+
+m.fullmodwinter.indiv <- coef(m.fullmodwinter)$cond$id %>% rownames_to_column("id") %>%
+  pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
+  mutate(method = "ME")
+indivs <- setDT(m.fullmodwinter.indiv)[term!='(Intercept)']
+pop <- setDT(tidy(m.fullmodwinter, effects = 'fixed'))
+
+
+require(ggplot2)
+ggplot(data = pop[term %like% 'dist'], aes(x =term, y = estimate)) +
+  geom_point()+
+  geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+ggplot(data = pop[!(term %like% 'dist')], aes(x =term, y = estimate)) +
+  geom_point()+
+  geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+
+ggplot(data = indivs[(term %like% 'dist')], aes(x =term, y = estimate)) + #This one
+  geom_boxplot()+
+  geom_jitter() +
+  #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip() 
+
+ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
+  geom_boxplot()+
+  geom_jitter() +
+  #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
+  geom_hline(aes(yintercept = 0), lty = 'dashed') +
+  coord_flip()  
 
 
 
