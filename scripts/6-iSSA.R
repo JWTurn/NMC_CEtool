@@ -2773,7 +2773,7 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 
 #Year-round
 gc()
-m.fullmod <- glmmTMB(case_ ~ -1 +
+m.fullmodroadscomb <- glmmTMB(case_ ~ -1 +
                        I(log((sl_+1)/1000)) +
                        I(cos(ta_)) +
                        I(log((sl_+1)/1000)):I(cos(ta_)) +
@@ -2800,9 +2800,9 @@ m.fullmod <- glmmTMB(case_ ~ -1 +
                        (0 + prop_veg_250_end|id) +
                        (0 + (I(log(ts_fires_250_end+1)))|id) +
                        (0 + (I(log(ts_harv250_end+1)))|id) + 
-                       (0 + I(log((dist_paved_250_end+1)/1000))|id) + 
-                       (0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
-                       #(0 + I(log((dist_road_250_end+1)/1000))|id) + 
+                       #(0 + I(log((dist_paved_250_end+1)/1000))|id) + 
+                       #(0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
+                       (0 + I(log((dist_road_250_end+1)/1000))|id) + 
                        (0 + I(log((dist_lfother_250_end+1)/1000))|id) +
                        (0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
                        (0 + I(log((dist_placer_250_end+1)/1000))|id) + 
@@ -2815,23 +2815,23 @@ m.fullmod <- glmmTMB(case_ ~ -1 +
                      family = poisson(), data = dat.issa.10[,`:=`(year = as.factor(year), 
                                                                   indiv_step_id = as.factor(indiv_step_id),
                                                                   id = as.factor(id))],
-                     map= list(theta = factor(c(NA,1:15))),
-                     start = list(theta =c(log(1000), seq(0,0, length.out = 15))), 
+                     map= list(theta = factor(c(NA,1:14))),
+                     start = list(theta =c(log(1000), seq(0,0, length.out = 14))), 
                      verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
 
 
-summary(m.fullmod)
+summary(m.fullmodroadscomb)
 # save model output
-saveRDS(m.fullmod, "m.full.mod_lf20poly20.RDS")
-#m.fullmod <- readRDS("m.full.mod_lf20poly20.RDS")
+saveRDS(m.fullmodroadscomb, "m.fullmodroadscomb.RDS")
+#m.fullmodroadscomb <- readRDS("m.fullmodroadscomb.RDS")
 
 
-m.fullmod.indiv <- coef(m.fullmod)$cond$id %>% rownames_to_column("id") %>%
+m.fullmodroadscomb.indiv <- coef(m.fullmodroadscomb)$cond$id %>% rownames_to_column("id") %>%
   pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
   mutate(method = "ME")
-indivs <- setDT(m.fullmod.indiv)[term!='(Intercept)']
-pop <- setDT(tidy(m.fullmod, effects = 'fixed'))
+indivs <- setDT(m.fullmodroadscomb.indiv)[term!='(Intercept)']
+pop <- setDT(tidy(m.fullmodroadscomb, effects = 'fixed'))
 
 
 require(ggplot2)
@@ -2861,16 +2861,10 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
   coord_flip()  
 
 
-cor_df <- dat.issa.10 %>% select('dist_paved_250_end', 'dist_unpaved_250_end', 'dist_lfother_250_end', 'dist_placer_250_end', 'dist_quartz_250_end', 'harv_dist_250_end', 'dist_otherpoly_250_end', 'dist_othermines_250_end') #create new df with the variables I want
-library(corrplot)
-M = cor(cor_df, use = "complete.obs") #produce plot of correlations
-corrplot(M, method = 'number')
-
-
 
 #SUMMER
 gc()
-m.fullmodsummer <- glmmTMB(case_ ~ -1 +
+m.fullmodsummerroadscomb <- glmmTMB(case_ ~ -1 +
                              I(log((sl_+1)/1000)) +
                              I(cos(ta_)) +
                              I(log((sl_+1)/1000)):I(cos(ta_)) +
@@ -2878,9 +2872,9 @@ m.fullmodsummer <- glmmTMB(case_ ~ -1 +
                              prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
                              I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
                              I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
-                             I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
-                             I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
-                             #I(log(((dist_road_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
+                             #I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
+                             #I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
+                             I(log(((dist_road_250_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
                              I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
                              I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
                              I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
@@ -2897,9 +2891,9 @@ m.fullmodsummer <- glmmTMB(case_ ~ -1 +
                              (0 + prop_veg_250_end|id) +
                              (0 + (I(log(ts_fires_250_end+1)))|id) +
                              (0 + (I(log(ts_harv250_end+1)))|id) + 
-                             (0 + I(log((dist_paved_250_end+1)/1000))|id) + 
-                             (0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
-                             #(0 + I(log((dist_road_250_end+1)/1000))|id) + 
+                             #(0 + I(log((dist_paved_250_end+1)/1000))|id) + 
+                             #(0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
+                             (0 + I(log((dist_road_250_end+1)/1000))|id) + 
                              (0 + I(log((dist_lfother_250_end+1)/1000))|id) +
                              (0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
                              (0 + I(log((dist_placer_250_end+1)/1000))|id) + 
@@ -2912,23 +2906,23 @@ m.fullmodsummer <- glmmTMB(case_ ~ -1 +
                            family = poisson(), data = dat.issa.10.summer[,`:=`(year = as.factor(year), 
                                                                                indiv_step_id = as.factor(indiv_step_id),
                                                                                id = as.factor(id))],
-                           map= list(theta = factor(c(NA,1:15))),
-                           start = list(theta =c(log(1000), seq(0,0, length.out = 15))), 
+                           map= list(theta = factor(c(NA,1:14))),
+                           start = list(theta =c(log(1000), seq(0,0, length.out = 14))), 
                            verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
 
 
-summary(m.fullmodsummer)
+summary(m.fullmodsummerroadscomb)
 # save model output
-saveRDS(m.fullmodsummer, "m.fullsummer.mod_lf20poly20.RDS")
-#m.fullmodsummer <- readRDS("m.fullsummer.mod_lf20poly20.RDS")
+saveRDS(m.fullmodsummerroadscomb, "m.fullmodsummerroadscomb.RDS")
+#m.fullmodsummerroadscomb <- readRDS("m.fullmodsummerroadscomb.RDS")
 
 
-m.fullmodsummer.indiv <- coef(m.fullmodsummer)$cond$id %>% rownames_to_column("id") %>%
+m.fullmodsummerroadscomb.indiv <- coef(m.fullmodsummerroadscomb)$cond$id %>% rownames_to_column("id") %>%
   pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
   mutate(method = "ME")
-indivs <- setDT(m.fullmodsummer.indiv)[term!='(Intercept)']
-pop <- setDT(tidy(m.fullmodsummer, effects = 'fixed'))
+indivs <- setDT(mm.fullmodsummerroadscomb.indiv)[term!='(Intercept)']
+pop <- setDT(tidy(m.fullmodsummerroadscomb, effects = 'fixed'))
 
 
 require(ggplot2)
@@ -2965,7 +2959,7 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 
 #Winter
 gc()
-m.fullmodwinter <- glmmTMB(case_ ~ -1 +
+m.fullmodwinterroadscomb <- glmmTMB(case_ ~ -1 +
                              I(log((sl_+1)/1000)) +
                              I(cos(ta_)) +
                              I(log((sl_+1)/1000)):I(cos(ta_)) +
@@ -3013,17 +3007,17 @@ m.fullmodwinter <- glmmTMB(case_ ~ -1 +
 )
 
 
-summary(m.fullmodwinter)
+summary(m.fullmodwinterroadscomb)
 # save model output
-saveRDS(m.fullmodwinter, "m.fullsummer.mod_lf20poly20.RDS")
-#m.fullmodsummer <- readRDS("m.fullsummer.mod_lf20poly20.RDS")
+saveRDS(m.fullmodwinterroadscomb, "m.fullmodwinterroadscomb.RDS")
+#m.fullmodwinterroadscomb <- readRDS("m.fullmodwinterroadscomb.RDS")
 
 
-m.fullmodwinter.indiv <- coef(m.fullmodwinter)$cond$id %>% rownames_to_column("id") %>%
+m.fullmodwinterroadscomb.indiv <- coef(m.fullmodwinterroadscomb)$cond$id %>% rownames_to_column("id") %>%
   pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
   mutate(method = "ME")
-indivs <- setDT(m.fullmodwinter.indiv)[term!='(Intercept)']
-pop <- setDT(tidy(m.fullmodwinter, effects = 'fixed'))
+indivs <- setDT(m.fullmodwinterroadscomb.indiv)[term!='(Intercept)']
+pop <- setDT(tidy(m.fullmodwinterroadscomb, effects = 'fixed'))
 
 
 require(ggplot2)
