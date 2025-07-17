@@ -234,6 +234,31 @@ dat.issa.10.winter <- dat.issa.10[dat.issa.10$season == 'winter',] #Assign to ne
 dat.issa.10[monthday >= '07/01' & monthday <= '09/30', season:="summer"] #Create summer season from July through September
 dat.issa.10.summer <- dat.issa.10[dat.issa.10$season == 'summer',] #Assign to new summer dataframe
 
+#dat.issa.15
+dat.issa.15$monthday <- format(as.Date(dat.issa.15$t1_, format="%Y/%m/%d"),"%m/%d") #Create new column that isolates the month and day out of t1_
+dat.issa.15$monthday #Confirming that the new column was created correctly
+names(dat.issa.15) #Confirming that the new column exists
+
+dat.issa.15[monthday >= '11/01' | monthday <= '04/15', season:="winter"] #Create new season column, with Nov to mid-April being called Winter
+dat.issa.15.winter <- dat.issa.15[dat.issa.15$season == 'winter',] #Assign to new winter dataframe
+
+dat.issa.15[monthday >= '07/01' & monthday <= '09/30', season:="summer"] #Create summer season from July through September
+dat.issa.15.summer <- dat.issa.15[dat.issa.15$season == 'summer',] #Assign to new summer dataframe
+
+
+#dat.issa.20
+dat.issa.20$monthday <- format(as.Date(dat.issa.20$t1_, format="%Y/%m/%d"),"%m/%d") #Create new column that isolates the month and day out of t1_
+dat.issa.20$monthday #Confirming that the new column was created correctly
+names(dat.issa.20) #Confirming that the new column exists
+
+dat.issa.20[monthday >= '11/01' | monthday <= '04/15', season:="winter"] #Create new season column, with Nov to mid-April being called Winter
+dat.issa.20.winter <- dat.issa.20[dat.issa.20$season == 'winter',] #Assign to new winter dataframe
+
+dat.issa.20[monthday >= '07/01' & monthday <= '09/30', season:="summer"] #Create summer season from July through September
+dat.issa.20.summer <- dat.issa.20[dat.issa.20$season == 'summer',] #Assign to new summer dataframe
+
+
+
 
 ###FINE SCALE MODELS: winter, summer, full, for both close to and far from disturbance (6 models), adjusted distances used for far from disturbance
 
@@ -330,620 +355,6 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
   coord_flip()  
 
 
-###Functional response plots:
-##Start with random slopes vs avg availability
-
-#Get avg availability by id
-dt <- as.data.table(dat.issa.10.close)
-
-vars_1000 <- c(
-  "prop_forest_1000_end",
-  "prop_veg_1000_end",
-  "ts_fires_1000_end",
-  "ts_harv1000_end",
-  "dist_paved_1000_end",
-  "dist_unpaved_1000_end",
-  "dist_lfother_1000_end",
-  "dist_otherpoly_1000_end",
-  "dist_placer_1000_end",
-  "dist_quartz_1000_end",
-  "dist_othermines_1000_end"
-)
-
-# Calculate average availability per id
-avg_data <- dt[, .SD, .SDcols = c("id", vars_1000)]
-
-# Apply transformations to match model
-avg_data[, `:=`(
-  ts_fires_1000_end = log(ts_fires_1000_end + 1),
-  ts_harv1000_end = log(ts_harv1000_end + 1),
-  dist_paved_1000_end = log((dist_paved_1000_end + 1) / 1000),
-  dist_unpaved_1000_end = log((dist_unpaved_1000_end + 1) / 1000),
-  dist_lfother_1000_end = log((dist_lfother_1000_end + 1) / 1000),
-  dist_otherpoly_1000_end = log((dist_otherpoly_1000_end + 1) / 1000),
-  dist_placer_1000_end = log((dist_placer_1000_end + 1) / 1000),
-  dist_quartz_1000_end = log((dist_quartz_1000_end + 1) / 1000),
-  dist_othermines_1000_end = log((dist_othermines_1000_end + 1) / 1000)
-)]
-
-# Now aggregate (after transformation)
-avg_data <- avg_data[, lapply(.SD, mean, na.rm = TRUE), by = id]
-
-re_list <- ranef(m.closedisturbancefull)$cond
-
-var_map <- list(
-  "I(log((dist_paved_250_end + 1)/1000))" = "dist_paved_1000_end",
-  "I(log((dist_unpaved_250_end + 1)/1000))" = "dist_unpaved_1000_end",
-  "I(log((dist_lfother_250_end + 1)/1000))" = "dist_lfother_1000_end",
-  "I(log((dist_otherpoly_250_end + 1)/1000))" = "dist_otherpoly_1000_end",
-  "I(log((dist_placer_250_end + 1)/1000))" = "dist_placer_1000_end",
-  "I(log((dist_quartz_250_end + 1)/1000))" = "dist_quartz_1000_end",
-  "I(log((dist_othermines_250_end + 1)/1000))" = "dist_othermines_1000_end",
-  "prop_forest_250_end" = "prop_forest_1000_end",
-  "prop_veg_250_end" = "prop_veg_1000_end",
-  "I(log(ts_fires_250_end + 1))" = "ts_fires_1000_end",
-  "I(log(ts_harv250_end + 1))" = "ts_harv1000_end"
-)
-
-# Convert random slopes to data.table
-random_slopes <- as.data.table(re_list$id, keep.rownames = "id")
-
-axis_labels <- list(
-  "I(log((dist_paved_250_end + 1)/1000))"      = list(x = "dist_paved avail", y = "dist_paved"),
-  "I(log((dist_unpaved_250_end + 1)/1000))"    = list(x = "dist_unpaved avail", y = "dist_unpaved"),
-  "I(log(ts_fires_250_end + 1))"               = list(x = "ts_fires avail", y = "ts_fires"),
-  "I(log(ts_harv250_end + 1))"                 = list(x = "ts_harv avail", y = "ts_harv"),
-  "prop_forest_250_end"                        = list(x = "prop_forest avail", y = "prop_forest"),
-  "prop_veg_250_end"                           = list(x = "prop_veg avail", y = "prop_veg"),
-  "I(log((dist_lfother_250_end + 1)/1000))"    = list(x = "dist_lfother avail", y = "dist_lfother"),
-  "I(log((dist_otherpoly_250_end + 1)/1000))"  = list(x = "dist_otherpoly avail", y = "dist_otherpoly"),
-  "I(log((dist_placer_250_end + 1)/1000))"     = list(x = "dist_placer avail", y = "dist_placer"),
-  "I(log((dist_quartz_250_end + 1)/1000))"     = list(x = "dist_quartz avail", y = "dist_quartz"),
-  "I(log((dist_othermines_250_end + 1)/1000))" = list(x = "dist_othermines avail", y = "dist_othermines")
-)
-
-plot_list <- list()
-
-# Loop through each variable
-for (model_var in names(var_map)) {
-  
-  avail_var <- var_map[[model_var]]
-  
-  # Merge data for plotting
-  plot_data <- merge(
-    avg_data[, .(id, avail = get(avail_var))],
-    random_slopes[, .(id, slope = get(model_var))],
-    by = "id"
-  )
-  
-  # Use manual axis labels
-  if (!is.null(axis_labels[[model_var]])) {
-    x_lab <- axis_labels[[model_var]]$x
-    y_lab <- axis_labels[[model_var]]$y
-  } else {
-    x_lab <- paste0("Average ", avail_var)
-    y_lab <- paste0("Random slope for ", model_var)
-  }
-  
-  # Create plot
-  p <- ggplot(plot_data, aes(x = avail, y = slope)) +
-    geom_point(alpha = 0.7) +
-    geom_smooth(method = "loess", color = "darkblue", se = TRUE) +
-    labs(
-      x = x_lab,
-      y = "selection coeff",
-    ) +
-    theme_minimal(base_size = 10)
-  
-  # Add plot to list
-  plot_list[[model_var]] <- p
-}
-
-# Combine and print all plots
-combined_plot <- wrap_plots(plot_list, ncol = 3)
-print(combined_plot)
-
-
-##Next plot fixed effect interaction vs average availability
-
-##############################
-# 1. ts_fires_250_end
-##############################
-re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
-re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
-re_slope <- re_id[, c("id", "I(log(ts_fires_250_end + 1))")]
-colnames(re_slope) <- c("id", "rand_beta1")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = ts_fires_250_end)],
-  avg_data[, .(id, raw_Ma_x1 = get("ts_fires_1000_end"))],
-  by = "id"
-)
-dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
-
-dt_full[, x1 := log(raw_x1 + 1)]
-dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
-
-dt_full[, beta1 := rand_beta1]
-
-coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
-coef_df$term <- rownames(coef_df)
-theta <- coef_df$Estimate[coef_df$term == "I(log(ts_fires_250_end + 1)):I(log(ts_fires_1000_end + 1))"]
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-line_color <- "steelblue"
-
-
-set.seed(42)
-sample_dt <- dt_full[sample(.N, 200000)]
-
-ggplot() +
-  geom_point(data = sample_dt, aes(x = Ma_x1, y = w_x),
-             alpha = 0.1, color = line_color, size = 0.8) +
-  
-  geom_smooth(data = plot_data, aes(x = Ma_x1, y = mean_w),
-              method = "loess", se = FALSE, color = line_color, size = 1) +
-  
-  labs(
-    x = "ts_fires_1000_end avail",
-    y = "w(x)"
-  ) +
-  theme_minimal(base_size = 14)
-
-
-
-
-
-
-
-
-
-
-
-
-##############################
-# 2. ts_harv250_end
-##############################
-re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
-re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
-re_slope <- re_id[, c("id", "I(log(ts_harv250_end + 1))")]
-colnames(re_slope) <- c("id", "rand_beta1")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("ts_harv250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("ts_harv1000_end"))],
-  by = "id"
-)
-dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
-
-dt_full[, x1 := log(raw_x1 + 1)]
-dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
-
-dt_full[, beta1 := rand_beta1]
-
-coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
-coef_df$term <- rownames(coef_df)
-theta <- coef_df$Estimate[coef_df$term == "I(log(ts_harv250_end + 1)):I(log(ts_harv1000_end + 1))"]
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-line_color <- "steelblue"
-
-p2 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
-  labs(
-    x = "ts_harv250_end avail",
-    y = "w(x)",
-  ) +
-  theme_minimal(base_size = 12)
-
-print(p2)
-
-
-##############################
-# 3. dist_paved_250_end
-##############################
-re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
-re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
-re_slope <- re_id[, c("id", "I(log((dist_paved_250_end + 1)/1000))")]
-colnames(re_slope) <- c("id", "rand_beta1")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("dist_paved_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("dist_paved_1000_end"))],
-  by = "id"
-)
-dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
-
-dt_full[, x1 := log(raw_x1 + 1)]
-dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
-
-dt_full[, beta1 := rand_beta1]
-
-coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
-coef_df$term <- rownames(coef_df)
-theta <- coef_df$Estimate[coef_df$term == "I(log((dist_paved_250_end + 1)/1000)):I(log((dist_paved_1000_end + 1)/1000))"]
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-line_color <- "steelblue"
-
-p3 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
-  labs(
-    x = "dist_paved_250_end avail",
-    y = "w(x)",
-  ) +
-  theme_minimal(base_size = 12)
-
-print(p3)
-
-
-
-
-##############################
-# 4. dist_unpaved_250_end
-##############################
-re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
-re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
-re_slope <- re_id[, c("id", "I(log((dist_unpaved_250_end + 1)/1000))")]
-colnames(re_slope) <- c("id", "rand_beta1")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("dist_unpaved_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("dist_unpaved_1000_end"))],
-  by = "id"
-)
-dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
-
-dt_full[, x1 := log(raw_x1 + 1)]
-dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
-
-dt_full[, beta1 := rand_beta1]
-
-coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
-coef_df$term <- rownames(coef_df)
-theta <- coef_df$Estimate[coef_df$term == "I(log((dist_unpaved_250_end + 1)/1000)):I(log((dist_unpaved_1000_end + 1)/1000))"]
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-line_color <- "steelblue"
-
-p4 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
-  labs(
-    x = "dist_unpaved_250_end avail",
-    y = "w(x)",
-  ) +
-  theme_minimal(base_size = 12)
-
-print(p4)
-
-
-##############################
-# 5. dist_lfother_250_end
-##############################
-re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
-re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
-re_slope <- re_id[, c("id", "I(log((dist_lfother_250_end + 1)/1000))")]
-colnames(re_slope) <- c("id", "rand_beta1")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("dist_lfother_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("dist_lfother_1000_end"))],
-  by = "id"
-)
-dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
-
-dt_full[, x1 := log(raw_x1 + 1)]
-dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
-
-dt_full[, beta1 := rand_beta1]
-
-coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
-coef_df$term <- rownames(coef_df)
-theta <- coef_df$Estimate[coef_df$term == "I(log((dist_lfother_250_end + 1)/1000)):I(log((dist_lfother_1000_end + 1)/1000))"]
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-line_color <- "steelblue"
-
-p5 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
-  labs(
-    x = "dist_lfother_250_end avail",
-    y = "w(x)",
-  ) +
-  theme_minimal(base_size = 12)
-
-print(p5)
-
-
-##############################
-# 6. dist_otherpoly_250_end
-##############################
-re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
-re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
-re_slope <- re_id[, c("id", "I(log((dist_otherpoly_250_end + 1)/1000))")]
-colnames(re_slope) <- c("id", "rand_beta1")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("dist_otherpoly_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("dist_otherpoly_1000_end"))],
-  by = "id"
-)
-dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
-
-dt_full[, x1 := log(raw_x1 + 1)]
-dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
-
-dt_full[, beta1 := rand_beta1]
-
-coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
-coef_df$term <- rownames(coef_df)
-theta <- coef_df$Estimate[coef_df$term == "I(log((dist_otherpoly_250_end + 1)/1000)):I(log((dist_otherpoly_1000_end + 1)/1000))"]
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-line_color <- "steelblue"
-
-p6 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
-  labs(
-    x = "dist_otherpoly_250_end avail",
-    y = "w(x)",
-  ) +
-  theme_minimal(base_size = 12)
-
-print(p6)
-
-
-##############################
-# 7. dist_placer_250_end
-##############################
-re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
-re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
-re_slope <- re_id[, c("id", "I(log((dist_placer_250_end + 1)/1000))")]
-colnames(re_slope) <- c("id", "rand_beta1")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("dist_placer_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("dist_placer_1000_end"))],
-  by = "id"
-)
-dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
-
-dt_full[, x1 := log(raw_x1 + 1)]
-dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
-
-dt_full[, beta1 := rand_beta1]
-
-coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
-coef_df$term <- rownames(coef_df)
-theta <- coef_df$Estimate[coef_df$term == "I(log((dist_placer_250_end + 1)/1000)):I(log((dist_placer_1000_end + 1)/1000))"]
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-line_color <- "steelblue"
-
-p7 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
-  labs(
-    x = "dist_placer_250_end avail",
-    y = "w(x)",
-  ) +
-  theme_minimal(base_size = 12)
-
-print(p7)
-
-
-
-##############################
-# 8. dist_quartz_250_end
-##############################
-re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
-re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
-re_slope <- re_id[, c("id", "I(log((dist_quartz_250_end + 1)/1000))")]
-colnames(re_slope) <- c("id", "rand_beta1")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("dist_quartz_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("dist_quartz_1000_end"))],
-  by = "id"
-)
-dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
-
-dt_full[, x1 := log(raw_x1 + 1)]
-dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
-
-dt_full[, beta1 := rand_beta1]
-
-coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
-coef_df$term <- rownames(coef_df)
-theta <- coef_df$Estimate[coef_df$term == "I(log((dist_quartz_250_end + 1)/1000)):I(log((dist_quartz_1000_end + 1)/1000))"]
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-line_color <- "steelblue"
-
-p8 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
-  labs(
-    x = "dist_quartz_250_end avail",
-    y = "w(x)",
-  ) +
-  theme_minimal(base_size = 12)
-
-print(p8)
-
-
-##############################
-# 9. dist_othermines_250_end
-##############################
-re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
-re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
-re_slope <- re_id[, c("id", "I(log((dist_othermines_250_end + 1)/1000))")]
-colnames(re_slope) <- c("id", "rand_beta1")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("dist_othermines_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("dist_othermines_1000_end"))],
-  by = "id"
-)
-dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
-
-dt_full[, x1 := log(raw_x1 + 1)]
-dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
-
-dt_full[, beta1 := rand_beta1]
-
-coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
-coef_df$term <- rownames(coef_df)
-theta <- coef_df$Estimate[coef_df$term == "I(log((dist_othermines_250_end + 1)/1000)):I(log((dist_othermines_1000_end + 1)/1000))"]
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-line_color <- "steelblue"
-
-p9 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
-  labs(
-    x = "dist_othermines_250_end avail",
-    y = "w(x)",
-  ) +
-  theme_minimal(base_size = 12)
-
-print(p9)
-
-
-                                
-##############################
-# 10. prop_forest_250_end
-##############################
-re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
-re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
-re_slope <- re_id[, c("id", "prop_forest_250_end")]
-colnames(re_slope) <- c("id", "rand_beta1")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("prop_forest_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("prop_forest_1000_end"))],
-  by = "id"
-)
-dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
-
-dt_full[, x1 := log(raw_x1 + 1)]
-dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
-
-dt_full[, beta1 := rand_beta1]
-
-coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
-coef_df$term <- rownames(coef_df)
-theta <- coef_df$Estimate[coef_df$term == "prop_forest_250_end:prop_forest_1000_end"]
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-line_color <- "steelblue"
-
-p10 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
-  labs(
-    x = "prop_forest_250_end avail",
-    y = "w(x)",
-  ) +
-  theme_minimal(base_size = 12)
-
-print(p10)
-
-
-
-##############################
-# 11. prop_veg_250_end
-##############################
-re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
-re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
-re_slope <- re_id[, c("id", "prop_veg_250_end")]
-colnames(re_slope) <- c("id", "rand_beta1")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("prop_veg_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("prop_veg_1000_end"))],
-  by = "id"
-)
-dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
-
-dt_full[, x1 := log(raw_x1 + 1)]
-dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
-
-dt_full[, beta1 := rand_beta1]
-
-coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
-coef_df$term <- rownames(coef_df)
-theta <- coef_df$Estimate[coef_df$term == "prop_veg_250_end:prop_veg_1000_end"]
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-line_color <- "steelblue"
-
-p11 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
-  labs(
-    x = "prop_veg_250_end avail",
-    y = "w(x)",
-  ) +
-  theme_minimal(base_size = 12)
-
-print(p11)
-
-
-plot_list <- list(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11)
-patchwork::wrap_plots(plot_list, ncol = 4)
-
 
 
 
@@ -1038,542 +449,6 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 
 
 
-###Functional response plots:
-##Start with random slopes vs avg availability
-
-#Get avg availability by id
-dt <- as.data.table(dat.issa.10.summer.close)
-
-vars_1000 <- c(
-  "prop_forest_1000_end",
-  "prop_veg_1000_end",
-  "ts_fires_1000_end",
-  "ts_harv1000_end",
-  "dist_paved_1000_end",
-  "dist_unpaved_1000_end",
-  "dist_lfother_1000_end",
-  "dist_otherpoly_1000_end",
-  "dist_placer_1000_end",
-  "dist_quartz_1000_end",
-  "dist_othermines_1000_end"
-)
-
-# Calculate average availability per id
-avg_data <- dt[, .SD, .SDcols = c("id", vars_1000)]
-
-# Apply transformations to match model
-avg_data[, `:=`(
-  ts_fires_1000_end = log(ts_fires_1000_end + 1),
-  ts_harv1000_end = log(ts_harv1000_end + 1),
-  dist_paved_1000_end = log((dist_paved_1000_end + 1) / 1000),
-  dist_unpaved_1000_end = log((dist_unpaved_1000_end + 1) / 1000),
-  dist_lfother_1000_end = log((dist_lfother_1000_end + 1) / 1000),
-  dist_otherpoly_1000_end = log((dist_otherpoly_1000_end + 1) / 1000),
-  dist_placer_1000_end = log((dist_placer_1000_end + 1) / 1000),
-  dist_quartz_1000_end = log((dist_quartz_1000_end + 1) / 1000),
-  dist_othermines_1000_end = log((dist_othermines_1000_end + 1) / 1000)
-)]
-
-# Now aggregate (after transformation)
-avg_data <- avg_data[, lapply(.SD, mean, na.rm = TRUE), by = id]
-
-re_list <- ranef(m.closedisturbancesummer)$cond
-
-var_map <- list(
-  "I(log((dist_paved_250_end + 1)/1000))" = "dist_paved_1000_end",
-  "I(log((dist_unpaved_250_end + 1)/1000))" = "dist_unpaved_1000_end",
-  "I(log((dist_lfother_250_end + 1)/1000))" = "dist_lfother_1000_end",
-  "I(log((dist_otherpoly_250_end + 1)/1000))" = "dist_otherpoly_1000_end",
-  "I(log((dist_placer_250_end + 1)/1000))" = "dist_placer_1000_end",
-  "I(log((dist_quartz_250_end + 1)/1000))" = "dist_quartz_1000_end",
-  "I(log((dist_othermines_250_end + 1)/1000))" = "dist_othermines_1000_end",
-  "prop_forest_250_end" = "prop_forest_1000_end",
-  "prop_veg_250_end" = "prop_veg_1000_end",
-  "I(log(ts_fires_250_end + 1))" = "ts_fires_1000_end",
-  "I(log(ts_harv250_end + 1))" = "ts_harv1000_end"
-)
-
-# Convert random slopes to data.table
-random_slopes <- as.data.table(re_list$id, keep.rownames = "id")
-
-axis_labels <- list(
-  "I(log((dist_paved_250_end + 1)/1000))"      = list(x = "dist_paved avail", y = "dist_paved"),
-  "I(log((dist_unpaved_250_end + 1)/1000))"    = list(x = "dist_unpaved avail", y = "dist_unpaved"),
-  "I(log(ts_fires_250_end + 1))"               = list(x = "ts_fires avail", y = "ts_fires"),
-  "I(log(ts_harv250_end + 1))"                 = list(x = "ts_harv avail", y = "ts_harv"),
-  "prop_forest_250_end"                        = list(x = "prop_forest avail", y = "prop_forest"),
-  "prop_veg_250_end"                           = list(x = "prop_veg avail", y = "prop_veg"),
-  "I(log((dist_lfother_250_end + 1)/1000))"    = list(x = "dist_lfother avail", y = "dist_lfother"),
-  "I(log((dist_otherpoly_250_end + 1)/1000))"  = list(x = "dist_otherpoly avail", y = "dist_otherpoly"),
-  "I(log((dist_placer_250_end + 1)/1000))"     = list(x = "dist_placer avail", y = "dist_placer"),
-  "I(log((dist_quartz_250_end + 1)/1000))"     = list(x = "dist_quartz avail", y = "dist_quartz"),
-  "I(log((dist_othermines_250_end + 1)/1000))" = list(x = "dist_othermines avail", y = "dist_othermines")
-)
-
-plot_list <- list()
-
-# Loop through each variable
-for (model_var in names(var_map)) {
-  
-  avail_var <- var_map[[model_var]]
-  
-  # Merge data for plotting
-  plot_data <- merge(
-    avg_data[, .(id, avail = get(avail_var))],
-    random_slopes[, .(id, slope = get(model_var))],
-    by = "id"
-  )
-  
-  # Use manual axis labels
-  if (!is.null(axis_labels[[model_var]])) {
-    x_lab <- axis_labels[[model_var]]$x
-    y_lab <- axis_labels[[model_var]]$y
-  } else {
-    x_lab <- paste0("Average ", avail_var)
-    y_lab <- paste0("Random slope for ", model_var)
-  }
-  
-  # Create plot
-  p <- ggplot(plot_data, aes(x = avail, y = slope)) +
-    geom_point(alpha = 0.7) +
-    geom_smooth(method = "loess", color = "darkblue", se = TRUE) +
-    labs(
-      x = x_lab,
-      y = "selection coeff",
-    ) +
-    theme_minimal(base_size = 10)
-  
-  # Add plot to list
-  plot_list[[model_var]] <- p
-}
-
-# Combine and print all plots
-combined_plot <- wrap_plots(plot_list, ncol = 3)
-print(combined_plot)
-
-
-##Next plot fixed effect interaction vs average availability
-
-# Coefficient data frame
-coef_df <- as.data.frame(coef(summary(m.closedisturbancesummer))$cond)
-coef_df$term <- rownames(coef_df)
-
-
-line_color <- "steelblue"
-
-##############################
-# 1. ts_fires_250_end
-##############################
-raw_to_transformed <- list(
-  "ts_fires_250_end" = "I(log(ts_fires_250_end + 1))",
-  "ts_fires_1000_end" = "I(log(ts_fires_1000_end + 1))"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["ts_fires_250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["ts_fires_250_end"]], ":", raw_to_transformed[["ts_fires_1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for ts_fires_250_end or interaction.")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("ts_fires_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("ts_fires_1000_end"))],
-  by = "id"
-)
-
-dt_full[, x1 := log(raw_x1 + 1)]
-dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
-
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-p1 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "Transformed ts_fires_1000_end", y = "w(x)") +
-  theme_minimal(base_size = 12)
-
-print(p1)
-
-
-##############################
-# 2. ts_harv250_end
-##############################
-raw_to_transformed <- list(
-  "ts_harv250_end" = "I(log(ts_harv250_end + 1))",
-  "ts_harv1000_end" = "I(log(ts_harv1000_end + 1))"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["ts_harv250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["ts_harv250_end"]], ":", raw_to_transformed[["ts_harv1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for ts_harv250_end or interaction.")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("ts_harv250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("ts_harv1000_end"))],
-  by = "id"
-)
-
-dt_full[, x1 := log(raw_x1 + 1)]
-dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
-
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-p2 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "Transformed ts_harv1000_end", y = "w(x)") +
-  theme_minimal(base_size = 12)
-
-print(p2)
-
-
-##############################
-# 3. dist_paved_250_end
-##############################
-raw_to_transformed <- list(
-  "dist_paved_250_end" = "I(log((dist_paved_250_end + 1)/1000))",
-  "dist_paved_1000_end" = "I(log((dist_paved_1000_end + 1)/1000))"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["dist_paved_250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["dist_paved_250_end"]], ":", raw_to_transformed[["dist_paved_1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for dist_paved_250_end or interaction.")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("dist_paved_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("dist_paved_1000_end"))],
-  by = "id"
-)
-
-dt_full[, x1 := log((raw_x1 + 1) / 1000)]
-dt_full[, Ma_x1 := log((raw_Ma_x1 + 1) / 1000)]
-
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-p3 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "Transformed dist_paved_1000_end", y = "w(x)") +
-  theme_minimal(base_size = 12)
-
-
-print(p3)
-
-
-##############################
-# 4. dist_unpaved_250_end
-##############################
-raw_to_transformed <- list(
-  "dist_unpaved_250_end" = "I(log((dist_unpaved_250_end + 1)/1000))",
-  "dist_unpaved_1000_end" = "I(log((dist_unpaved_1000_end + 1)/1000))"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["dist_unpaved_250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["dist_unpaved_250_end"]], ":", raw_to_transformed[["dist_unpaved_1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for dist_unpaved_250_end or interaction.")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("dist_unpaved_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("dist_unpaved_1000_end"))],
-  by = "id"
-)
-
-dt_full[, x1 := log((raw_x1 + 1) / 1000)]
-dt_full[, Ma_x1 := log((raw_Ma_x1 + 1) / 1000)]
-
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-p4 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "Transformed dist_unpaved_1000_end", y = "w(x)") +
-  theme_minimal(base_size = 12)
-
-print(p4)
-
-
-##############################
-# 5. dist_lfother_250_end
-##############################
-raw_to_transformed <- list(
-  "dist_lfother_250_end" = "I(log((dist_lfother_250_end + 1)/1000))",
-  "dist_lfother_1000_end" = "I(log((dist_lfother_1000_end + 1)/1000))"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["dist_lfother_250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["dist_lfother_250_end"]], ":", raw_to_transformed[["dist_lfother_1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for dist_lfother_250_end or interaction.")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("dist_lfother_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("dist_lfother_1000_end"))],
-  by = "id"
-)
-
-dt_full[, x1 := log((raw_x1 + 1) / 1000)]
-dt_full[, Ma_x1 := log((raw_Ma_x1 + 1) / 1000)]
-
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-p5 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "Transformed dist_lfother_1000_end", y = "w(x)") +
-  theme_minimal(base_size = 12)
-
-print(p5)
-
-
-##############################
-# 6. dist_otherpoly_250_end
-##############################
-raw_to_transformed <- list(
-  "dist_otherpoly_250_end" = "I(log((dist_otherpoly_250_end + 1)/1000))",
-  "dist_otherpoly_1000_end" = "I(log((dist_otherpoly_1000_end + 1)/1000))"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["dist_otherpoly_250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["dist_otherpoly_250_end"]], ":", raw_to_transformed[["dist_otherpoly_1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for dist_otherpoly_250_end or interaction.")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("dist_otherpoly_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("dist_otherpoly_1000_end"))],
-  by = "id"
-)
-
-dt_full[, x1 := log((raw_x1 + 1) / 1000)]
-dt_full[, Ma_x1 := log((raw_Ma_x1 + 1) / 1000)]
-
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-p6 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "Transformed dist_otherpoly_1000_end", y = "w(x)") +
-  theme_minimal(base_size = 12)
-
-print(p6)
-
-
-##############################
-# 7. dist_placer_250_end
-##############################
-raw_to_transformed <- list(
-  "dist_placer_250_end" = "I(log((dist_placer_250_end + 1)/1000))",
-  "dist_placer_1000_end" = "I(log((dist_placer_1000_end + 1)/1000))"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["dist_placer_250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["dist_placer_250_end"]], ":", raw_to_transformed[["dist_placer_1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for dist_placer_250_end or interaction.")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("dist_placer_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("dist_placer_1000_end"))],
-  by = "id"
-)
-
-dt_full[, x1 := log((raw_x1 + 1) / 1000)]
-dt_full[, Ma_x1 := log((raw_Ma_x1 + 1) / 1000)]
-
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-p7 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "Transformed dist_placer_1000_end", y = "w(x)") +
-  theme_minimal(base_size = 12)
-
-print(p7)
-
-
-##############################
-# 8. dist_quartz_250_end
-##############################
-raw_to_transformed <- list(
-  "dist_quartz_250_end" = "I(log((dist_quartz_250_end + 1)/1000))",
-  "dist_quartz_1000_end" = "I(log((dist_quartz_1000_end + 1)/1000))"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["dist_quartz_250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["dist_quartz_250_end"]], ":", raw_to_transformed[["dist_quartz_1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for dist_quartz_250_end or interaction.")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("dist_quartz_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("dist_quartz_1000_end"))],
-  by = "id"
-)
-
-dt_full[, x1 := log((raw_x1 + 1) / 1000)]
-dt_full[, Ma_x1 := log((raw_Ma_x1 + 1) / 1000)]
-
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-p8 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "Transformed dist_quartz_1000_end", y = "w(x)") +
-  theme_minimal(base_size = 12)
-
-print(p8)
-
-
-##############################
-# 9. dist_othermines_250_end
-##############################
-raw_to_transformed <- list(
-  "dist_othermines_250_end" = "I(log((dist_othermines_250_end + 1)/1000))",
-  "dist_othermines_1000_end" = "I(log((dist_othermines_1000_end + 1)/1000))"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["dist_othermines_250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["dist_othermines_250_end"]], ":", raw_to_transformed[["dist_othermines_1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for dist_othermines_250_end or interaction.")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("dist_othermines_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("dist_othermines_1000_end"))],
-  by = "id"
-)
-
-dt_full[, x1 := log((raw_x1 + 1) / 1000)]
-dt_full[, Ma_x1 := log((raw_Ma_x1 + 1) / 1000)]
-
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-p9 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "Transformed dist_othermines_1000_end", y = "w(x)") +
-  theme_minimal(base_size = 12)
-
-
-print(p9)
-
-
-##############################
-# 10. prop_forest_250_end
-##############################
-raw_to_transformed <- list(
-  "prop_forest_250_end" = "prop_forest_250_end",
-  "prop_forest_1000_end" = "prop_forest_1000_end"
-)                                              
-beta1 <- coef_df$Estimate[coef_df$term == "prop_forest_250_end"]
-theta <- coef_df$Estimate[coef_df$term == "prop_forest_250_end:prop_forest_1000_end"]
-
-if(length(beta1) == 0 || length(theta) == 0) stop("Missing coefficients for prop_forest_250_end.")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("prop_forest_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("prop_forest_1000_end"))],
-  by = "id"
-)
-
-dt_full[, x1 := raw_x1]  # No transformation
-dt_full[, Ma_x1 := raw_Ma_x1]  # No transformation
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data_10 <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-p10 <- ggplot(plot_data_10, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "prop_forest_1000_end", y = "w(x)") +
-  theme_minimal(base_size = 12)
-print(p10)
-
-
-
-
-##############################
-# 11. prop_veg_250_end
-##############################
-raw_to_transformed <- list(
-  "prop_veg_250_end" = "prop_veg_250_end",
-  "prop_veg_1000_end" = "prop_veg_1000_end"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["prop_veg_250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["prop_veg_250_end"]], ":", raw_to_transformed[["prop_veg_1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for prop_veg_250_end or interaction.")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("prop_veg_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("prop_veg_1000_end"))],
-  by = "id"
-)
-
-dt_full[, x1 := raw_x1]
-dt_full[, Ma_x1 := raw_Ma_x1]
-
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-p11 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "prop_veg_1000_end", y = "w(x)") +
-  theme_minimal(base_size = 12)
-print(p11)
-
-
-plot_list <- list(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11)
-patchwork::wrap_plots(plot_list, ncol = 4)
-
-
-
-
 #WINTER
 dat.issa.10.winter.close <- dat.issa.10.winter[dist_anthrodisturbance_250_start <= 20000]
 
@@ -1662,544 +537,6 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
   #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
   geom_hline(aes(yintercept = 0), lty = 'dashed') +
   coord_flip()  
-
-
-
-
-
-###Functional response plots:
-##Start with random slopes vs avg availability
-
-#Get avg availability by id
-dt <- as.data.table(dat.issa.10.winter.close)
-
-vars_1000 <- c(
-  "prop_forest_1000_end",
-  "prop_veg_1000_end",
-  "ts_fires_1000_end",
-  "ts_harv1000_end",
-  "dist_paved_1000_end",
-  "dist_unpaved_1000_end",
-  "dist_lfother_1000_end",
-  "dist_otherpoly_1000_end",
-  "dist_placer_1000_end",
-  "dist_quartz_1000_end",
-  "dist_othermines_1000_end"
-)
-
-# Calculate average availability per id
-avg_data <- dt[, .SD, .SDcols = c("id", vars_1000)]
-
-# Apply transformations to match model
-avg_data[, `:=`(
-  ts_fires_1000_end = log(ts_fires_1000_end + 1),
-  ts_harv1000_end = log(ts_harv1000_end + 1),
-  dist_paved_1000_end = log((dist_paved_1000_end + 1) / 1000),
-  dist_unpaved_1000_end = log((dist_unpaved_1000_end + 1) / 1000),
-  dist_lfother_1000_end = log((dist_lfother_1000_end + 1) / 1000),
-  dist_otherpoly_1000_end = log((dist_otherpoly_1000_end + 1) / 1000),
-  dist_placer_1000_end = log((dist_placer_1000_end + 1) / 1000),
-  dist_quartz_1000_end = log((dist_quartz_1000_end + 1) / 1000),
-  dist_othermines_1000_end = log((dist_othermines_1000_end + 1) / 1000)
-)]
-
-# Now aggregate (after transformation)
-avg_data <- avg_data[, lapply(.SD, mean, na.rm = TRUE), by = id]
-
-re_list <- ranef(m.closedisturbancewinter)$cond
-
-var_map <- list(
-  "I(log((dist_paved_250_end + 1)/1000))" = "dist_paved_1000_end",
-  "I(log((dist_unpaved_250_end + 1)/1000))" = "dist_unpaved_1000_end",
-  "I(log((dist_lfother_250_end + 1)/1000))" = "dist_lfother_1000_end",
-  "I(log((dist_otherpoly_250_end + 1)/1000))" = "dist_otherpoly_1000_end",
-  "I(log((dist_placer_250_end + 1)/1000))" = "dist_placer_1000_end",
-  "I(log((dist_quartz_250_end + 1)/1000))" = "dist_quartz_1000_end",
-  "I(log((dist_othermines_250_end + 1)/1000))" = "dist_othermines_1000_end",
-  "prop_forest_250_end" = "prop_forest_1000_end",
-  "prop_veg_250_end" = "prop_veg_1000_end",
-  "I(log(ts_fires_250_end + 1))" = "ts_fires_1000_end",
-  "I(log(ts_harv250_end + 1))" = "ts_harv1000_end"
-)
-
-# Convert random slopes to data.table
-random_slopes <- as.data.table(re_list$id, keep.rownames = "id")
-
-axis_labels <- list(
-  "I(log((dist_paved_250_end + 1)/1000))"      = list(x = "dist_paved avail", y = "dist_paved"),
-  "I(log((dist_unpaved_250_end + 1)/1000))"    = list(x = "dist_unpaved avail", y = "dist_unpaved"),
-  "I(log(ts_fires_250_end + 1))"               = list(x = "ts_fires avail", y = "ts_fires"),
-  "I(log(ts_harv250_end + 1))"                 = list(x = "ts_harv avail", y = "ts_harv"),
-  "prop_forest_250_end"                        = list(x = "prop_forest avail", y = "prop_forest"),
-  "prop_veg_250_end"                           = list(x = "prop_veg avail", y = "prop_veg"),
-  "I(log((dist_lfother_250_end + 1)/1000))"    = list(x = "dist_lfother avail", y = "dist_lfother"),
-  "I(log((dist_otherpoly_250_end + 1)/1000))"  = list(x = "dist_otherpoly avail", y = "dist_otherpoly"),
-  "I(log((dist_placer_250_end + 1)/1000))"     = list(x = "dist_placer avail", y = "dist_placer"),
-  "I(log((dist_quartz_250_end + 1)/1000))"     = list(x = "dist_quartz avail", y = "dist_quartz"),
-  "I(log((dist_othermines_250_end + 1)/1000))" = list(x = "dist_othermines avail", y = "dist_othermines")
-)
-
-plot_list <- list()
-
-# Loop through each variable
-for (model_var in names(var_map)) {
-  
-  avail_var <- var_map[[model_var]]
-  
-  # Merge data for plotting
-  plot_data <- merge(
-    avg_data[, .(id, avail = get(avail_var))],
-    random_slopes[, .(id, slope = get(model_var))],
-    by = "id"
-  )
-  
-  # Use manual axis labels
-  if (!is.null(axis_labels[[model_var]])) {
-    x_lab <- axis_labels[[model_var]]$x
-    y_lab <- axis_labels[[model_var]]$y
-  } else {
-    x_lab <- paste0("Average ", avail_var)
-    y_lab <- paste0("Random slope for ", model_var)
-  }
-  
-  # Create plot
-  p <- ggplot(plot_data, aes(x = avail, y = slope)) +
-    geom_point(alpha = 0.7) +
-    geom_smooth(method = "loess", color = "darkblue", se = TRUE) +
-    labs(
-      x = x_lab,
-      y = "selection coeff",
-    ) +
-    theme_minimal(base_size = 10)
-  
-  # Add plot to list
-  plot_list[[model_var]] <- p
-}
-
-# Combine and print all plots
-combined_plot <- wrap_plots(plot_list, ncol = 3)
-print(combined_plot)
-
-
-
-##Next plot fixed effect interaction vs average availability
-
-# Coefficient data frame
-coef_df <- as.data.frame(coef(summary(m.closedisturbancewinter))$cond)
-coef_df$term <- rownames(coef_df)
-
-
-line_color <- "steelblue"
-
-##############################
-# 1. ts_fires_250_end
-##############################
-raw_to_transformed <- list(
-  "ts_fires_250_end" = "I(log(ts_fires_250_end + 1))",
-  "ts_fires_1000_end" = "I(log(ts_fires_1000_end + 1))"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["ts_fires_250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["ts_fires_250_end"]], ":", raw_to_transformed[["ts_fires_1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for ts_fires_250_end or interaction.")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("ts_fires_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("ts_fires_1000_end"))],
-  by = "id"
-)
-
-dt_full[, x1 := log(raw_x1 + 1)]
-dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
-
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-p1 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "Transformed ts_fires_1000_end", y = "w(x)") +
-  theme_minimal(base_size = 12)
-
-print(p1)
-
-
-##############################
-# 2. ts_harv250_end
-##############################
-raw_to_transformed <- list(
-  "ts_harv250_end" = "I(log(ts_harv250_end + 1))",
-  "ts_harv1000_end" = "I(log(ts_harv1000_end + 1))"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["ts_harv250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["ts_harv250_end"]], ":", raw_to_transformed[["ts_harv1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for ts_harv250_end or interaction.")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("ts_harv250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("ts_harv1000_end"))],
-  by = "id"
-)
-
-dt_full[, x1 := log(raw_x1 + 1)]
-dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
-
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-p2 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "Transformed ts_harv1000_end", y = "w(x)") +
-  theme_minimal(base_size = 12)
-
-print(p2)
-
-
-##############################
-# 3. dist_paved_250_end
-##############################
-raw_to_transformed <- list(
-  "dist_paved_250_end" = "I(log((dist_paved_250_end + 1)/1000))",
-  "dist_paved_1000_end" = "I(log((dist_paved_1000_end + 1)/1000))"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["dist_paved_250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["dist_paved_250_end"]], ":", raw_to_transformed[["dist_paved_1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for dist_paved_250_end or interaction.")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("dist_paved_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("dist_paved_1000_end"))],
-  by = "id"
-)
-
-dt_full[, x1 := log((raw_x1 + 1) / 1000)]
-dt_full[, Ma_x1 := log((raw_Ma_x1 + 1) / 1000)]
-
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-p3 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "Transformed dist_paved_1000_end", y = "w(x)") +
-  theme_minimal(base_size = 12)
-
-
-print(p3)
-
-
-##############################
-# 4. dist_unpaved_250_end
-##############################
-raw_to_transformed <- list(
-  "dist_unpaved_250_end" = "I(log((dist_unpaved_250_end + 1)/1000))",
-  "dist_unpaved_1000_end" = "I(log((dist_unpaved_1000_end + 1)/1000))"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["dist_unpaved_250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["dist_unpaved_250_end"]], ":", raw_to_transformed[["dist_unpaved_1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for dist_unpaved_250_end or interaction.")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("dist_unpaved_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("dist_unpaved_1000_end"))],
-  by = "id"
-)
-
-dt_full[, x1 := log((raw_x1 + 1) / 1000)]
-dt_full[, Ma_x1 := log((raw_Ma_x1 + 1) / 1000)]
-
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-p4 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "Transformed dist_unpaved_1000_end", y = "w(x)") +
-  theme_minimal(base_size = 12)
-
-print(p4)
-
-
-##############################
-# 5. dist_lfother_250_end
-##############################
-raw_to_transformed <- list(
-  "dist_lfother_250_end" = "I(log((dist_lfother_250_end + 1)/1000))",
-  "dist_lfother_1000_end" = "I(log((dist_lfother_1000_end + 1)/1000))"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["dist_lfother_250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["dist_lfother_250_end"]], ":", raw_to_transformed[["dist_lfother_1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for dist_lfother_250_end or interaction.")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("dist_lfother_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("dist_lfother_1000_end"))],
-  by = "id"
-)
-
-dt_full[, x1 := log((raw_x1 + 1) / 1000)]
-dt_full[, Ma_x1 := log((raw_Ma_x1 + 1) / 1000)]
-
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-p5 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "Transformed dist_lfother_1000_end", y = "w(x)") +
-  theme_minimal(base_size = 12)
-
-print(p5)
-
-
-##############################
-# 6. dist_otherpoly_250_end
-##############################
-raw_to_transformed <- list(
-  "dist_otherpoly_250_end" = "I(log((dist_otherpoly_250_end + 1)/1000))",
-  "dist_otherpoly_1000_end" = "I(log((dist_otherpoly_1000_end + 1)/1000))"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["dist_otherpoly_250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["dist_otherpoly_250_end"]], ":", raw_to_transformed[["dist_otherpoly_1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for dist_otherpoly_250_end or interaction.")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("dist_otherpoly_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("dist_otherpoly_1000_end"))],
-  by = "id"
-)
-
-dt_full[, x1 := log((raw_x1 + 1) / 1000)]
-dt_full[, Ma_x1 := log((raw_Ma_x1 + 1) / 1000)]
-
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-p6 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "Transformed dist_otherpoly_1000_end", y = "w(x)") +
-  theme_minimal(base_size = 12)
-
-print(p6)
-
-
-##############################
-# 7. dist_placer_250_end
-##############################
-raw_to_transformed <- list(
-  "dist_placer_250_end" = "I(log((dist_placer_250_end + 1)/1000))",
-  "dist_placer_1000_end" = "I(log((dist_placer_1000_end + 1)/1000))"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["dist_placer_250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["dist_placer_250_end"]], ":", raw_to_transformed[["dist_placer_1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for dist_placer_250_end or interaction.")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("dist_placer_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("dist_placer_1000_end"))],
-  by = "id"
-)
-
-dt_full[, x1 := log((raw_x1 + 1) / 1000)]
-dt_full[, Ma_x1 := log((raw_Ma_x1 + 1) / 1000)]
-
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-p7 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "Transformed dist_placer_1000_end", y = "w(x)") +
-  theme_minimal(base_size = 12)
-
-print(p7)
-
-
-##############################
-# 8. dist_quartz_250_end
-##############################
-raw_to_transformed <- list(
-  "dist_quartz_250_end" = "I(log((dist_quartz_250_end + 1)/1000))",
-  "dist_quartz_1000_end" = "I(log((dist_quartz_1000_end + 1)/1000))"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["dist_quartz_250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["dist_quartz_250_end"]], ":", raw_to_transformed[["dist_quartz_1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for dist_quartz_250_end or interaction.")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("dist_quartz_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("dist_quartz_1000_end"))],
-  by = "id"
-)
-
-dt_full[, x1 := log((raw_x1 + 1) / 1000)]
-dt_full[, Ma_x1 := log((raw_Ma_x1 + 1) / 1000)]
-
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-p8 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "Transformed dist_quartz_1000_end", y = "w(x)") +
-  theme_minimal(base_size = 12)
-
-print(p8)
-
-
-##############################
-# 9. dist_othermines_250_end
-##############################
-raw_to_transformed <- list(
-  "dist_othermines_250_end" = "I(log((dist_othermines_250_end + 1)/1000))",
-  "dist_othermines_1000_end" = "I(log((dist_othermines_1000_end + 1)/1000))"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["dist_othermines_250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["dist_othermines_250_end"]], ":", raw_to_transformed[["dist_othermines_1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for dist_othermines_250_end or interaction.")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("dist_othermines_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("dist_othermines_1000_end"))],
-  by = "id"
-)
-
-dt_full[, x1 := log((raw_x1 + 1) / 1000)]
-dt_full[, Ma_x1 := log((raw_Ma_x1 + 1) / 1000)]
-
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-p9 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "Transformed dist_othermines_1000_end", y = "w(x)") +
-  theme_minimal(base_size = 12)
-
-
-print(p9)
-
-
-##############################
-# 10. prop_forest_250_end
-##############################
-raw_to_transformed <- list(
-  "prop_forest_250_end" = "prop_forest_250_end",
-  "prop_forest_1000_end" = "prop_forest_1000_end"
-)                                              
-beta1 <- coef_df$Estimate[coef_df$term == "prop_forest_250_end"]
-theta <- coef_df$Estimate[coef_df$term == "prop_forest_250_end:prop_forest_1000_end"]
-
-if(length(beta1) == 0 || length(theta) == 0) stop("Missing coefficients for prop_forest_250_end.")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("prop_forest_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("prop_forest_1000_end"))],
-  by = "id"
-)
-
-dt_full[, x1 := raw_x1]  # No transformation
-dt_full[, Ma_x1 := raw_Ma_x1]  # No transformation
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data_10 <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-p10 <- ggplot(plot_data_10, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "prop_forest_1000_end", y = "w(x)") +
-  theme_minimal(base_size = 12)
-print(p10)
-
-
-
-
-##############################
-# 11. prop_veg_250_end
-##############################
-raw_to_transformed <- list(
-  "prop_veg_250_end" = "prop_veg_250_end",
-  "prop_veg_1000_end" = "prop_veg_1000_end"
-)
-
-beta1 <- coef_df$Estimate[coef_df$term == raw_to_transformed[["prop_veg_250_end"]]]
-theta <- coef_df$Estimate[coef_df$term == paste0(raw_to_transformed[["prop_veg_250_end"]], ":", raw_to_transformed[["prop_veg_1000_end"]])]
-
-if(length(beta1) == 0 | length(theta) == 0) stop("Coefficients missing for prop_veg_250_end or interaction.")
-
-dt_full <- merge(
-  dt[, .(id, raw_x1 = get("prop_veg_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("prop_veg_1000_end"))],
-  by = "id"
-)
-
-dt_full[, x1 := raw_x1]
-dt_full[, Ma_x1 := raw_Ma_x1]
-
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
-
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
-
-p11 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1, linetype = "solid") +
-  labs(x = "prop_veg_1000_end", y = "w(x)") +
-  theme_minimal(base_size = 12)
-print(p11)
-
-
-plot_list <- list(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11)
-patchwork::wrap_plots(plot_list, ncol = 4)
 
 
 
@@ -2481,11 +818,11 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 
 
 
-#Re-trying full dataset, close and far combined, seasons combined
+###Re-trying full dataset, close and far combined, seasons combined - it worked! Sticking with these for now as the main ones
 
-#Year-round
+#Year-round, trying 20 steps for each model now. Re-saving models as x20step (didn't work), trying 15, 15 didnt work
 gc()
-m.fullmod <- glmmTMB(case_ ~ -1 +
+m.fullmod15step <- glmmTMB(case_ ~ -1 +
                                     I(log((sl_+1)/1000)) +
                                     I(cos(ta_)) +
                                     I(log((sl_+1)/1000)):I(cos(ta_)) +
@@ -2573,16 +910,629 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
   coord_flip()  
 
 
-cor_df <- dat.issa.10 %>% select('dist_paved_250_end', 'dist_unpaved_250_end', 'dist_lfother_250_end', 'dist_placer_250_end', 'dist_quartz_250_end', 'harv_dist_250_end', 'dist_otherpoly_250_end', 'dist_othermines_250_end') #create new df with the variables I want
-library(corrplot)
-M = cor(cor_df, use = "complete.obs") #produce plot of correlations
-corrplot(M, method = 'number')
+###Functional response plots:
+##Start with random slopes vs avg availability
+
+#Get avg availability by id
+vars_1000 <- c(
+  "prop_forest_1000_end",
+  "prop_veg_1000_end",
+  "ts_fires_1000_end",
+  "ts_harv1000_end",
+  "dist_paved_1000_end",
+  "dist_unpaved_1000_end",
+  "dist_lfother_1000_end",
+  "dist_otherpoly_1000_end",
+  "dist_placer_1000_end",
+  "dist_quartz_1000_end",
+  "dist_othermines_1000_end"
+)
+
+avg_data <- dt[, lapply(.SD, mean, na.rm = TRUE), by = id, .SDcols = vars_1000]
+
+avg_data[, `:=`(
+  ts_fires_1000_end       = log(ts_fires_1000_end + 1),
+  ts_harv1000_end         = log(ts_harv1000_end + 1),
+  dist_paved_1000_end     = log((dist_paved_1000_end + 1) / 1000),
+  dist_unpaved_1000_end   = log((dist_unpaved_1000_end + 1) / 1000),
+  dist_lfother_1000_end   = log((dist_lfother_1000_end + 1) / 1000),
+  dist_otherpoly_1000_end = log((dist_otherpoly_1000_end + 1) / 1000),
+  dist_placer_1000_end    = log((dist_placer_1000_end + 1) / 1000),
+  dist_quartz_1000_end    = log((dist_quartz_1000_end + 1) / 1000),
+  dist_othermines_1000_end= log((dist_othermines_1000_end + 1) / 1000)
+)]
+
+re_list <- ranef(m.fullmod)$cond
+
+var_map <- list(
+  "I(log((dist_paved_250_end + 1)/1000))" = "dist_paved_1000_end",
+  "I(log((dist_unpaved_250_end + 1)/1000))" = "dist_unpaved_1000_end",
+  "I(log((dist_lfother_250_end + 1)/1000))" = "dist_lfother_1000_end",
+  "I(log((dist_otherpoly_250_end + 1)/1000))" = "dist_otherpoly_1000_end",
+  "I(log((dist_placer_250_end + 1)/1000))" = "dist_placer_1000_end",
+  "I(log((dist_quartz_250_end + 1)/1000))" = "dist_quartz_1000_end",
+  "I(log((dist_othermines_250_end + 1)/1000))" = "dist_othermines_1000_end",
+  "prop_forest_250_end" = "prop_forest_1000_end",
+  "prop_veg_250_end" = "prop_veg_1000_end",
+  "I(log(ts_fires_250_end + 1))" = "ts_fires_1000_end",
+  "I(log(ts_harv250_end + 1))" = "ts_harv1000_end"
+)
+
+# Convert random slopes to data.table
+random_slopes <- as.data.table(re_list$id, keep.rownames = "id")
+
+axis_labels <- list(
+  "I(log((dist_paved_250_end + 1)/1000))"      = list(x = "dist_paved avail", y = "dist_paved"),
+  "I(log((dist_unpaved_250_end + 1)/1000))"    = list(x = "dist_unpaved avail", y = "dist_unpaved"),
+  "I(log(ts_fires_250_end + 1))"               = list(x = "ts_fires avail", y = "ts_fires"),
+  "I(log(ts_harv250_end + 1))"                 = list(x = "ts_harv avail", y = "ts_harv"),
+  "prop_forest_250_end"                        = list(x = "prop_forest avail", y = "prop_forest"),
+  "prop_veg_250_end"                           = list(x = "prop_veg avail", y = "prop_veg"),
+  "I(log((dist_lfother_250_end + 1)/1000))"    = list(x = "dist_lfother avail", y = "dist_lfother"),
+  "I(log((dist_otherpoly_250_end + 1)/1000))"  = list(x = "dist_otherpoly avail", y = "dist_otherpoly"),
+  "I(log((dist_placer_250_end + 1)/1000))"     = list(x = "dist_placer avail", y = "dist_placer"),
+  "I(log((dist_quartz_250_end + 1)/1000))"     = list(x = "dist_quartz avail", y = "dist_quartz"),
+  "I(log((dist_othermines_250_end + 1)/1000))" = list(x = "dist_othermines avail", y = "dist_othermines")
+)
+
+plot_list <- list()
+
+# Loop through each variable
+for (model_var in names(var_map)) {
+  
+  avail_var <- var_map[[model_var]]
+  
+  # Merge data for plotting
+  plot_data <- merge(
+    avg_data[, .(id, avail = get(avail_var))],
+    random_slopes[, .(id, slope = get(model_var))],
+    by = "id"
+  )
+  
+  # Use manual axis labels
+  if (!is.null(axis_labels[[model_var]])) {
+    x_lab <- axis_labels[[model_var]]$x
+    y_lab <- axis_labels[[model_var]]$y
+  } else {
+    x_lab <- paste0("Average ", avail_var)
+    y_lab <- paste0("Random slope for ", model_var)
+  }
+  
+  # Create plot
+  p <- ggplot(plot_data, aes(x = avail, y = slope)) +
+    geom_point(alpha = 0.7) +
+    geom_smooth(method = "loess", color = "darkblue", se = TRUE) +
+    labs(
+      x = x_lab,
+      y = "selection coeff",
+    ) +
+    theme_minimal(base_size = 10)
+  
+  # Add plot to list
+  plot_list[[model_var]] <- p
+}
+
+require(patchwork)
+# Combine and print all plots
+combined_plot <- wrap_plots(plot_list, ncol = 3)
+print(combined_plot)
+
+
+##Next plot fixed effect interaction vs average availability
+
+##############################
+# 1. ts_fires_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmod)$cond$id)
+re_id$id <- rownames(ranef(m.fullmod)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log(ts_fires_250_end + 1))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = ts_fires_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = ts_fires_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log(raw_x1 + 1)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmod))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log(ts_fires_250_end + 1)):I(log(ts_fires_1000_end + 1))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+
+p1 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 2) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "ts_fires_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 14)
+
+print(p1)
+
+##############################
+# 2. ts_harv250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmod)$cond$id)
+re_id$id <- rownames(ranef(m.fullmod)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log(ts_harv250_end + 1))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = ts_harv250_end)],
+  avg_data[, .(id, raw_Ma_x1 = ts_harv1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log(raw_x1 + 1)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmod))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log(ts_harv250_end + 1)):I(log(ts_harv1000_end + 1))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+
+p2 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 2) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "ts_harv1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 14)
+
+print(p2)
+
+
+##############################
+# 3. dist_paved_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmod)$cond$id)
+re_id$id <- rownames(ranef(m.fullmod)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_paved_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_paved_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_paved_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmod))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_paved_250_end + 1)/1000)):I(log((dist_paved_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+
+p3 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 2) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_paved_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 14)
+
+print(p3)
+
+
+
+
+
+##############################
+# 4. dist_unpaved_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmod)$cond$id)
+re_id$id <- rownames(ranef(m.fullmod)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_unpaved_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_unpaved_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_unpaved_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log(raw_x1 + 1)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmod))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_unpaved_250_end + 1)/1000)):I(log((dist_unpaved_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p4 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 2) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_unpaved_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 14)
+
+print(p4)
+
+
+##############################
+# 5. dist_lfother_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmod)$cond$id)
+re_id$id <- rownames(ranef(m.fullmod)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_lfother_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_lfother_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_lfother_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log(raw_x1 + 1)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmod))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_lfother_250_end + 1)/1000)):I(log((dist_lfother_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p5 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 2) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_lfother_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 14)
+
+print(p5)
+
+
+##############################
+# 6. dist_otherpoly_250_end
+##############################
+re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
+re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
+re_slope <- re_id[, c("id", "I(log((dist_otherpoly_250_end + 1)/1000))")]
+colnames(re_slope) <- c("id", "rand_beta1")
+
+dt_full <- merge(
+  dt[, .(id, raw_x1 = get("dist_otherpoly_250_end"))],
+  avg_data[, .(id, raw_Ma_x1 = get("dist_otherpoly_1000_end"))],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+dt_full[, x1 := log(raw_x1 + 1)]
+dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
+
+dt_full[, beta1 := rand_beta1]
+
+coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_otherpoly_250_end + 1)/1000)):I(log((dist_otherpoly_1000_end + 1)/1000))"]
+dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
+
+plot_data <- dt_full[, .(
+  mean_w = mean(w_x, na.rm = TRUE),
+  sd_w = sd(w_x, na.rm = TRUE)
+), by = Ma_x1]
+
+line_color <- "steelblue"
+
+p6 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
+  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
+  labs(
+    x = "dist_otherpoly_250_end avail",
+    y = "w(x)",
+  ) +
+  theme_minimal(base_size = 12)
+
+print(p6)
+
+
+##############################
+# 7. dist_placer_250_end
+##############################
+re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
+re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
+re_slope <- re_id[, c("id", "I(log((dist_placer_250_end + 1)/1000))")]
+colnames(re_slope) <- c("id", "rand_beta1")
+
+dt_full <- merge(
+  dt[, .(id, raw_x1 = get("dist_placer_250_end"))],
+  avg_data[, .(id, raw_Ma_x1 = get("dist_placer_1000_end"))],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+dt_full[, x1 := log(raw_x1 + 1)]
+dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
+
+dt_full[, beta1 := rand_beta1]
+
+coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_placer_250_end + 1)/1000)):I(log((dist_placer_1000_end + 1)/1000))"]
+dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
+
+plot_data <- dt_full[, .(
+  mean_w = mean(w_x, na.rm = TRUE),
+  sd_w = sd(w_x, na.rm = TRUE)
+), by = Ma_x1]
+
+line_color <- "steelblue"
+
+p7 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
+  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
+  labs(
+    x = "dist_placer_250_end avail",
+    y = "w(x)",
+  ) +
+  theme_minimal(base_size = 12)
+
+print(p7)
+
+
+
+##############################
+# 8. dist_quartz_250_end
+##############################
+re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
+re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
+re_slope <- re_id[, c("id", "I(log((dist_quartz_250_end + 1)/1000))")]
+colnames(re_slope) <- c("id", "rand_beta1")
+
+dt_full <- merge(
+  dt[, .(id, raw_x1 = get("dist_quartz_250_end"))],
+  avg_data[, .(id, raw_Ma_x1 = get("dist_quartz_1000_end"))],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+dt_full[, x1 := log(raw_x1 + 1)]
+dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
+
+dt_full[, beta1 := rand_beta1]
+
+coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_quartz_250_end + 1)/1000)):I(log((dist_quartz_1000_end + 1)/1000))"]
+dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
+
+plot_data <- dt_full[, .(
+  mean_w = mean(w_x, na.rm = TRUE),
+  sd_w = sd(w_x, na.rm = TRUE)
+), by = Ma_x1]
+
+line_color <- "steelblue"
+
+p8 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
+  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
+  labs(
+    x = "dist_quartz_250_end avail",
+    y = "w(x)",
+  ) +
+  theme_minimal(base_size = 12)
+
+print(p8)
+
+
+##############################
+# 9. dist_othermines_250_end
+##############################
+re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
+re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
+re_slope <- re_id[, c("id", "I(log((dist_othermines_250_end + 1)/1000))")]
+colnames(re_slope) <- c("id", "rand_beta1")
+
+dt_full <- merge(
+  dt[, .(id, raw_x1 = get("dist_othermines_250_end"))],
+  avg_data[, .(id, raw_Ma_x1 = get("dist_othermines_1000_end"))],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+dt_full[, x1 := log(raw_x1 + 1)]
+dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
+
+dt_full[, beta1 := rand_beta1]
+
+coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_othermines_250_end + 1)/1000)):I(log((dist_othermines_1000_end + 1)/1000))"]
+dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
+
+plot_data <- dt_full[, .(
+  mean_w = mean(w_x, na.rm = TRUE),
+  sd_w = sd(w_x, na.rm = TRUE)
+), by = Ma_x1]
+
+line_color <- "steelblue"
+
+p9 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
+  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
+  labs(
+    x = "dist_othermines_250_end avail",
+    y = "w(x)",
+  ) +
+  theme_minimal(base_size = 12)
+
+print(p9)
+
+
+
+##############################
+# 10. prop_forest_250_end
+##############################
+re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
+re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
+re_slope <- re_id[, c("id", "prop_forest_250_end")]
+colnames(re_slope) <- c("id", "rand_beta1")
+
+dt_full <- merge(
+  dt[, .(id, raw_x1 = get("prop_forest_250_end"))],
+  avg_data[, .(id, raw_Ma_x1 = get("prop_forest_1000_end"))],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+dt_full[, x1 := log(raw_x1 + 1)]
+dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
+
+dt_full[, beta1 := rand_beta1]
+
+coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "prop_forest_250_end:prop_forest_1000_end"]
+dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
+
+plot_data <- dt_full[, .(
+  mean_w = mean(w_x, na.rm = TRUE),
+  sd_w = sd(w_x, na.rm = TRUE)
+), by = Ma_x1]
+
+line_color <- "steelblue"
+
+p10 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
+  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
+  labs(
+    x = "prop_forest_250_end avail",
+    y = "w(x)",
+  ) +
+  theme_minimal(base_size = 12)
+
+print(p10)
+
+
+
+##############################
+# 11. prop_veg_250_end
+##############################
+re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
+re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
+re_slope <- re_id[, c("id", "prop_veg_250_end")]
+colnames(re_slope) <- c("id", "rand_beta1")
+
+dt_full <- merge(
+  dt[, .(id, raw_x1 = get("prop_veg_250_end"))],
+  avg_data[, .(id, raw_Ma_x1 = get("prop_veg_1000_end"))],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+dt_full[, x1 := log(raw_x1 + 1)]
+dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
+
+dt_full[, beta1 := rand_beta1]
+
+coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "prop_veg_250_end:prop_veg_1000_end"]
+dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
+
+plot_data <- dt_full[, .(
+  mean_w = mean(w_x, na.rm = TRUE),
+  sd_w = sd(w_x, na.rm = TRUE)
+), by = Ma_x1]
+
+line_color <- "steelblue"
+
+p11 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
+  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
+  labs(
+    x = "prop_veg_250_end avail",
+    y = "w(x)",
+  ) +
+  theme_minimal(base_size = 12)
+
+print(p11)
+
+
+plot_list <- list(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11)
+patchwork::wrap_plots(plot_list, ncol = 4)
+
+
+
+
+
 
 
 
 #SUMMER
 gc()
-m.fullmodsummer <- glmmTMB(case_ ~ -1 +
+m.fullmodsummer20step <- glmmTMB(case_ ~ -1 +
                        I(log((sl_+1)/1000)) +
                        I(cos(ta_)) +
                        I(log((sl_+1)/1000)):I(cos(ta_)) +
@@ -2621,7 +1571,7 @@ m.fullmodsummer <- glmmTMB(case_ ~ -1 +
                        #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
                        
                        (1|year),
-                     family = poisson(), data = dat.issa.10.summer[,`:=`(year = as.factor(year), 
+                     family = poisson(), data = dat.issa.20.summer[,`:=`(year = as.factor(year), 
                                                                   indiv_step_id = as.factor(indiv_step_id),
                                                                   id = as.factor(id))],
                      map= list(theta = factor(c(NA,1:15))),
@@ -2630,17 +1580,17 @@ m.fullmodsummer <- glmmTMB(case_ ~ -1 +
 )
 
 
-summary(m.fullmodsummer)
+summary(m.fullmodsummer20step)
 # save model output
-saveRDS(m.fullmodsummer, "m.fullsummer.mod_lf20poly20.RDS")
+saveRDS(m.fullmodsummer20step, "m.fullmodsummer20step.RDS")
 #m.fullmodsummer <- readRDS("m.fullsummer.mod_lf20poly20.RDS")
 
 
-m.fullmodsummer.indiv <- coef(m.fullmodsummer)$cond$id %>% rownames_to_column("id") %>%
+m.fullmodsummer20step.indiv <- coef(m.fullmodsummer20step)$cond$id %>% rownames_to_column("id") %>%
   pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
   mutate(method = "ME")
-indivs <- setDT(m.fullmodsummer.indiv)[term!='(Intercept)']
-pop <- setDT(tidy(m.fullmodsummer, effects = 'fixed'))
+indivs <- setDT(m.fullmodsummer20step.indiv)[term!='(Intercept)']
+pop <- setDT(tidy(m.fullmodsummer20step, effects = 'fixed'))
 
 
 require(ggplot2)
@@ -2673,11 +1623,9 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 
 
 
-
-
 #Winter
 gc()
-m.fullmodwinter <- glmmTMB(case_ ~ -1 +
+m.fullmodwinter20step <- glmmTMB(case_ ~ -1 +
                              I(log((sl_+1)/1000)) +
                              I(cos(ta_)) +
                              I(log((sl_+1)/1000)):I(cos(ta_)) +
@@ -2716,7 +1664,7 @@ m.fullmodwinter <- glmmTMB(case_ ~ -1 +
                              #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
                              
                              (1|year),
-                           family = poisson(), data = dat.issa.10.winter[,`:=`(year = as.factor(year), 
+                           family = poisson(), data = dat.issa.20.winter[,`:=`(year = as.factor(year), 
                                                                                indiv_step_id = as.factor(indiv_step_id),
                                                                                id = as.factor(id))],
                            map= list(theta = factor(c(NA,1:15))),
@@ -2725,17 +1673,17 @@ m.fullmodwinter <- glmmTMB(case_ ~ -1 +
 )
 
 
-summary(m.fullmodwinter)
+summary(m.fullmodwinter20step)
 # save model output
-saveRDS(m.fullmodwinter, "m.fullsummer.mod_lf20poly20.RDS")
+saveRDS(m.fullmodwinter20step, "m.fullmodwinter20step.RDS")
 #m.fullmodsummer <- readRDS("m.fullsummer.mod_lf20poly20.RDS")
 
 
-m.fullmodwinter.indiv <- coef(m.fullmodwinter)$cond$id %>% rownames_to_column("id") %>%
+m.fullmodwinter20step.indiv <- coef(m.fullmodwinter20step)$cond$id %>% rownames_to_column("id") %>%
   pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
   mutate(method = "ME")
-indivs <- setDT(m.fullmodwinter.indiv)[term!='(Intercept)']
-pop <- setDT(tidy(m.fullmodwinter, effects = 'fixed'))
+indivs <- setDT(m.fullmodwinter20step.indiv)[term!='(Intercept)']
+pop <- setDT(tidy(m.fullmodwinter20step, effects = 'fixed'))
 
 
 require(ggplot2)
@@ -2773,7 +1721,7 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 
 #Year-round
 gc()
-m.fullmodroadscomb <- glmmTMB(case_ ~ -1 +
+m.fullmodroadscomb15step <- glmmTMB(case_ ~ -1 +
                        I(log((sl_+1)/1000)) +
                        I(cos(ta_)) +
                        I(log((sl_+1)/1000)):I(cos(ta_)) +
@@ -2812,7 +1760,7 @@ m.fullmodroadscomb <- glmmTMB(case_ ~ -1 +
                        #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
                        
                        (1|year),
-                     family = poisson(), data = dat.issa.10[,`:=`(year = as.factor(year), 
+                     family = poisson(), data = dat.issa.15[,`:=`(year = as.factor(year), 
                                                                   indiv_step_id = as.factor(indiv_step_id),
                                                                   id = as.factor(id))],
                      map= list(theta = factor(c(NA,1:14))),
@@ -2821,17 +1769,17 @@ m.fullmodroadscomb <- glmmTMB(case_ ~ -1 +
 )
 
 
-summary(m.fullmodroadscomb)
+summary(m.fullmodroadscomb15step)
 # save model output
-saveRDS(m.fullmodroadscomb, "m.fullmodroadscomb.RDS")
+saveRDS(m.fullmodroadscomb15step, "m.fullmodroadscomb15step.RDS")
 #m.fullmodroadscomb <- readRDS("m.fullmodroadscomb.RDS")
 
 
-m.fullmodroadscomb.indiv <- coef(m.fullmodroadscomb)$cond$id %>% rownames_to_column("id") %>%
+m.fullmodroadscomb15step.indiv <- coef(m.fullmodroadscomb15step)$cond$id %>% rownames_to_column("id") %>%
   pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
   mutate(method = "ME")
-indivs <- setDT(m.fullmodroadscomb.indiv)[term!='(Intercept)']
-pop <- setDT(tidy(m.fullmodroadscomb, effects = 'fixed'))
+indivs <- setDT(m.fullmodroadscomb15step.indiv)[term!='(Intercept)']
+pop <- setDT(tidy(m.fullmodroadscomb15step, effects = 'fixed'))
 
 
 require(ggplot2)
@@ -2864,7 +1812,7 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 
 #SUMMER
 gc()
-m.fullmodsummerroadscomb <- glmmTMB(case_ ~ -1 +
+m.fullmodsummerroadscomb20step <- glmmTMB(case_ ~ -1 +
                              I(log((sl_+1)/1000)) +
                              I(cos(ta_)) +
                              I(log((sl_+1)/1000)):I(cos(ta_)) +
@@ -2903,7 +1851,7 @@ m.fullmodsummerroadscomb <- glmmTMB(case_ ~ -1 +
                              #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
                              
                              (1|year),
-                           family = poisson(), data = dat.issa.10.summer[,`:=`(year = as.factor(year), 
+                           family = poisson(), data = dat.issa.20.summer[,`:=`(year = as.factor(year), 
                                                                                indiv_step_id = as.factor(indiv_step_id),
                                                                                id = as.factor(id))],
                            map= list(theta = factor(c(NA,1:14))),
@@ -2912,17 +1860,17 @@ m.fullmodsummerroadscomb <- glmmTMB(case_ ~ -1 +
 )
 
 
-summary(m.fullmodsummerroadscomb)
+summary(m.fullmodsummerroadscomb20step)
 # save model output
-saveRDS(m.fullmodsummerroadscomb, "m.fullmodsummerroadscomb.RDS")
+saveRDS(m.fullmodsummerroadscomb20step, "m.fullmodsummerroadscomb20step.RDS")
 #m.fullmodsummerroadscomb <- readRDS("m.fullmodsummerroadscomb.RDS")
 
 
-m.fullmodsummerroadscomb.indiv <- coef(m.fullmodsummerroadscomb)$cond$id %>% rownames_to_column("id") %>%
+m.fullmodsummerroadscomb20step.indiv <- coef(m.fullmodsummerroadscomb20step)$cond$id %>% rownames_to_column("id") %>%
   pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
   mutate(method = "ME")
-indivs <- setDT(mm.fullmodsummerroadscomb.indiv)[term!='(Intercept)']
-pop <- setDT(tidy(m.fullmodsummerroadscomb, effects = 'fixed'))
+indivs <- setDT(m.fullmodsummerroadscomb20step.indiv)[term!='(Intercept)']
+pop <- setDT(tidy(m.fullmodsummerroadscomb20step, effects = 'fixed'))
 
 
 require(ggplot2)
@@ -2959,7 +1907,7 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 
 #Winter
 gc()
-m.fullmodwinterroadscomb <- glmmTMB(case_ ~ -1 +
+m.fullmodwinterroadscomb20step <- glmmTMB(case_ ~ -1 +
                              I(log((sl_+1)/1000)) +
                              I(cos(ta_)) +
                              I(log((sl_+1)/1000)):I(cos(ta_)) +
@@ -2998,7 +1946,7 @@ m.fullmodwinterroadscomb <- glmmTMB(case_ ~ -1 +
                              #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
                              
                              (1|year),
-                           family = poisson(), data = dat.issa.10.winter[,`:=`(year = as.factor(year), 
+                           family = poisson(), data = dat.issa.20.winter[,`:=`(year = as.factor(year), 
                                                                                indiv_step_id = as.factor(indiv_step_id),
                                                                                id = as.factor(id))],
                            map= list(theta = factor(c(NA,1:15))),
@@ -3007,17 +1955,17 @@ m.fullmodwinterroadscomb <- glmmTMB(case_ ~ -1 +
 )
 
 
-summary(m.fullmodwinterroadscomb)
+summary(m.fullmodwinterroadscomb20step)
 # save model output
-saveRDS(m.fullmodwinterroadscomb, "m.fullmodwinterroadscomb.RDS")
+saveRDS(m.fullmodwinterroadscomb20step, "m.fullmodwinterroadscomb20step.RDS")
 #m.fullmodwinterroadscomb <- readRDS("m.fullmodwinterroadscomb.RDS")
 
 
-m.fullmodwinterroadscomb.indiv <- coef(m.fullmodwinterroadscomb)$cond$id %>% rownames_to_column("id") %>%
+m.fullmodwinterroadscomb20step.indiv <- coef(m.fullmodwinterroadscomb20step)$cond$id %>% rownames_to_column("id") %>%
   pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
   mutate(method = "ME")
-indivs <- setDT(m.fullmodwinterroadscomb.indiv)[term!='(Intercept)']
-pop <- setDT(tidy(m.fullmodwinterroadscomb, effects = 'fixed'))
+indivs <- setDT(m.fullmodwinterroadscomb20step.indiv)[term!='(Intercept)']
+pop <- setDT(tidy(m.fullmodwinterroadscomb20step, effects = 'fixed'))
 
 
 require(ggplot2)
