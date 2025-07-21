@@ -913,6 +913,8 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 ###Functional response plots:
 ##Start with random slopes vs avg availability
 
+dt <- as.data.table(dat.issa.10)
+
 #Get avg availability by id
 vars_1000 <- c(
   "prop_forest_1000_end",
@@ -998,6 +1000,7 @@ for (model_var in names(var_map)) {
     y_lab <- paste0("Random slope for ", model_var)
   }
   
+  require(ggplot2)
   # Create plot
   p <- ggplot(plot_data, aes(x = avail, y = slope)) +
     geom_point(alpha = 0.7) +
@@ -1054,7 +1057,7 @@ theta <- coef_df$Estimate[coef_df$term == "I(log(ts_fires_250_end + 1)):I(log(ts
 dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
 
 p1 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
-  geom_point(alpha = 0.5, size = 2) +
+  geom_point(alpha = 0.5, size = 1) +
   geom_smooth(
     method = "loess", 
     se = TRUE, 
@@ -1062,7 +1065,7 @@ p1 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
     linewidth = 1.25
   ) +
   labs(x = "ts_fires_1000_end avail", y = "w(x)") +
-  theme_minimal(base_size = 14)
+  theme_minimal(base_size = 10)
 
 print(p1)
 
@@ -1100,7 +1103,7 @@ theta <- coef_df$Estimate[coef_df$term == "I(log(ts_harv250_end + 1)):I(log(ts_h
 dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
 
 p2 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
-  geom_point(alpha = 0.5, size = 2) +
+  geom_point(alpha = 0.5, size = 1) +
   geom_smooth(
     method = "loess", 
     se = TRUE, 
@@ -1108,7 +1111,7 @@ p2 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
     linewidth = 1.25
   ) +
   labs(x = "ts_harv1000_end avail", y = "w(x)") +
-  theme_minimal(base_size = 14)
+  theme_minimal(base_size = 10)
 
 print(p2)
 
@@ -1147,7 +1150,7 @@ theta <- coef_df$Estimate[coef_df$term == "I(log((dist_paved_250_end + 1)/1000))
 dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
 
 p3 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
-  geom_point(alpha = 0.5, size = 2) +
+  geom_point(alpha = 0.5, size = 1) +
   geom_smooth(
     method = "loess", 
     se = TRUE, 
@@ -1155,7 +1158,7 @@ p3 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
     linewidth = 1.25
   ) +
   labs(x = "dist_paved_1000_end avail", y = "w(x)") +
-  theme_minimal(base_size = 14)
+  theme_minimal(base_size = 10)
 
 print(p3)
 
@@ -1186,7 +1189,7 @@ dt_full <- dt_full[, .(
   beta1 = unique(rand_beta1)
 ), by = id]
 
-dt_full[, x1 := log(raw_x1 + 1)]
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
 
 # Get theta (interaction fixed effect)
 coef_df <- as.data.frame(coef(summary(m.fullmod))$cond)
@@ -1198,7 +1201,7 @@ dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
 dt_full <- dt_full[w_x <= 100]
 
 p4 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
-  geom_point(alpha = 0.5, size = 2) +
+  geom_point(alpha = 0.5, size = 1) +
   geom_smooth(
     method = "loess", 
     se = TRUE, 
@@ -1206,7 +1209,7 @@ p4 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
     linewidth = 1.25
   ) +
   labs(x = "dist_unpaved_1000_end avail", y = "w(x)") +
-  theme_minimal(base_size = 14)
+  theme_minimal(base_size = 10)
 
 print(p4)
 
@@ -1234,7 +1237,7 @@ dt_full <- dt_full[, .(
   beta1 = unique(rand_beta1)
 ), by = id]
 
-dt_full[, x1 := log(raw_x1 + 1)]
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
 
 # Get theta (interaction fixed effect)
 coef_df <- as.data.frame(coef(summary(m.fullmod))$cond)
@@ -1246,7 +1249,7 @@ dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
 dt_full <- dt_full[w_x <= 100]
 
 p5 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
-  geom_point(alpha = 0.5, size = 2) +
+  geom_point(alpha = 0.5, size = 1) +
   geom_smooth(
     method = "loess", 
     se = TRUE, 
@@ -1254,7 +1257,7 @@ p5 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
     linewidth = 1.25
   ) +
   labs(x = "dist_lfother_1000_end avail", y = "w(x)") +
-  theme_minimal(base_size = 14)
+  theme_minimal(base_size = 10)
 
 print(p5)
 
@@ -1262,42 +1265,47 @@ print(p5)
 ##############################
 # 6. dist_otherpoly_250_end
 ##############################
-re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
-re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
-re_slope <- re_id[, c("id", "I(log((dist_otherpoly_250_end + 1)/1000))")]
-colnames(re_slope) <- c("id", "rand_beta1")
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmod)$cond$id)
+re_id$id <- rownames(ranef(m.fullmod)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_otherpoly_250_end + 1)/1000))`)]
 
+# Merge raw and avg data by id
 dt_full <- merge(
-  dt[, .(id, raw_x1 = get("dist_otherpoly_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("dist_otherpoly_1000_end"))],
+  dt[, .(id, raw_x1 = dist_otherpoly_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_otherpoly_1000_end)],
   by = "id"
 )
 dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
 
-dt_full[, x1 := log(raw_x1 + 1)]
-dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
 
-dt_full[, beta1 := rand_beta1]
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
 
-coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmod))$cond)
 coef_df$term <- rownames(coef_df)
 theta <- coef_df$Estimate[coef_df$term == "I(log((dist_otherpoly_250_end + 1)/1000)):I(log((dist_otherpoly_1000_end + 1)/1000))"]
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
 
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
 
-line_color <- "steelblue"
-
-p6 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
-  labs(
-    x = "dist_otherpoly_250_end avail",
-    y = "w(x)",
+p6 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
   ) +
-  theme_minimal(base_size = 12)
+  labs(x = "dist_otherpoly_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
 
 print(p6)
 
@@ -1305,42 +1313,47 @@ print(p6)
 ##############################
 # 7. dist_placer_250_end
 ##############################
-re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
-re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
-re_slope <- re_id[, c("id", "I(log((dist_placer_250_end + 1)/1000))")]
-colnames(re_slope) <- c("id", "rand_beta1")
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmod)$cond$id)
+re_id$id <- rownames(ranef(m.fullmod)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_placer_250_end + 1)/1000))`)]
 
+# Merge raw and avg data by id
 dt_full <- merge(
-  dt[, .(id, raw_x1 = get("dist_placer_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("dist_placer_1000_end"))],
+  dt[, .(id, raw_x1 = dist_placer_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_placer_1000_end)],
   by = "id"
 )
 dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
 
-dt_full[, x1 := log(raw_x1 + 1)]
-dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
 
-dt_full[, beta1 := rand_beta1]
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
 
-coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmod))$cond)
 coef_df$term <- rownames(coef_df)
 theta <- coef_df$Estimate[coef_df$term == "I(log((dist_placer_250_end + 1)/1000)):I(log((dist_placer_1000_end + 1)/1000))"]
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
 
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
 
-line_color <- "steelblue"
-
-p7 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
-  labs(
-    x = "dist_placer_250_end avail",
-    y = "w(x)",
+p7 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
   ) +
-  theme_minimal(base_size = 12)
+  labs(x = "dist_placer_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
 
 print(p7)
 
@@ -1349,85 +1362,96 @@ print(p7)
 ##############################
 # 8. dist_quartz_250_end
 ##############################
-re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
-re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
-re_slope <- re_id[, c("id", "I(log((dist_quartz_250_end + 1)/1000))")]
-colnames(re_slope) <- c("id", "rand_beta1")
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmod)$cond$id)
+re_id$id <- rownames(ranef(m.fullmod)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_quartz_250_end + 1)/1000))`)]
 
+# Merge raw and avg data by id
 dt_full <- merge(
-  dt[, .(id, raw_x1 = get("dist_quartz_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("dist_quartz_1000_end"))],
+  dt[, .(id, raw_x1 = dist_quartz_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_quartz_1000_end)],
   by = "id"
 )
 dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
 
-dt_full[, x1 := log(raw_x1 + 1)]
-dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
 
-dt_full[, beta1 := rand_beta1]
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
 
-coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmod))$cond)
 coef_df$term <- rownames(coef_df)
 theta <- coef_df$Estimate[coef_df$term == "I(log((dist_quartz_250_end + 1)/1000)):I(log((dist_quartz_1000_end + 1)/1000))"]
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
 
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
 
-line_color <- "steelblue"
-
-p8 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
-  labs(
-    x = "dist_quartz_250_end avail",
-    y = "w(x)",
+p8 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
   ) +
-  theme_minimal(base_size = 12)
+  labs(x = "dist_quartz_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
 
 print(p8)
+
 
 
 ##############################
 # 9. dist_othermines_250_end
 ##############################
-re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
-re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
-re_slope <- re_id[, c("id", "I(log((dist_othermines_250_end + 1)/1000))")]
-colnames(re_slope) <- c("id", "rand_beta1")
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmod)$cond$id)
+re_id$id <- rownames(ranef(m.fullmod)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_othermines_250_end + 1)/1000))`)]
 
+# Merge raw and avg data by id
 dt_full <- merge(
-  dt[, .(id, raw_x1 = get("dist_othermines_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("dist_othermines_1000_end"))],
+  dt[, .(id, raw_x1 = dist_othermines_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_othermines_1000_end)],
   by = "id"
 )
 dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
 
-dt_full[, x1 := log(raw_x1 + 1)]
-dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
 
-dt_full[, beta1 := rand_beta1]
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
 
-coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmod))$cond)
 coef_df$term <- rownames(coef_df)
 theta <- coef_df$Estimate[coef_df$term == "I(log((dist_othermines_250_end + 1)/1000)):I(log((dist_othermines_1000_end + 1)/1000))"]
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
 
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
 
-line_color <- "steelblue"
-
-p9 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
-  labs(
-    x = "dist_othermines_250_end avail",
-    y = "w(x)",
+p9 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
   ) +
-  theme_minimal(base_size = 12)
+  labs(x = "dist_othermines_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
 
 print(p9)
 
@@ -1436,42 +1460,45 @@ print(p9)
 ##############################
 # 10. prop_forest_250_end
 ##############################
-re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
-re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
-re_slope <- re_id[, c("id", "prop_forest_250_end")]
-colnames(re_slope) <- c("id", "rand_beta1")
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmod)$cond$id)
+re_id$id <- rownames(ranef(m.fullmod)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `prop_forest_250_end`)]
 
+# Merge raw and avg data by id
 dt_full <- merge(
-  dt[, .(id, raw_x1 = get("prop_forest_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("prop_forest_1000_end"))],
+  dt[, .(id, raw_x1 = prop_forest_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = prop_forest_1000_end)],
   by = "id"
 )
 dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
 
-dt_full[, x1 := log(raw_x1 + 1)]
-dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
 
-dt_full[, beta1 := rand_beta1]
-
-coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmod))$cond)
 coef_df$term <- rownames(coef_df)
 theta <- coef_df$Estimate[coef_df$term == "prop_forest_250_end:prop_forest_1000_end"]
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
 
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
 
-line_color <- "steelblue"
-
-p10 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
-  labs(
-    x = "prop_forest_250_end avail",
-    y = "w(x)",
+p10 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
   ) +
-  theme_minimal(base_size = 12)
+  labs(x = "prop_forest_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
 
 print(p10)
 
@@ -1480,53 +1507,51 @@ print(p10)
 ##############################
 # 11. prop_veg_250_end
 ##############################
-re_id <- as.data.frame(ranef(m.closedisturbancefull)$cond$id)
-re_id$id <- rownames(ranef(m.closedisturbancefull)$cond$id)
-re_slope <- re_id[, c("id", "prop_veg_250_end")]
-colnames(re_slope) <- c("id", "rand_beta1")
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmod)$cond$id)
+re_id$id <- rownames(ranef(m.fullmod)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `prop_veg_250_end`)]
 
+# Merge raw and avg data by id
 dt_full <- merge(
-  dt[, .(id, raw_x1 = get("prop_veg_250_end"))],
-  avg_data[, .(id, raw_Ma_x1 = get("prop_veg_1000_end"))],
+  dt[, .(id, raw_x1 = prop_veg_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = prop_veg_1000_end)],
   by = "id"
 )
 dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
 
-dt_full[, x1 := log(raw_x1 + 1)]
-dt_full[, Ma_x1 := log(raw_Ma_x1 + 1)]
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
 
-dt_full[, beta1 := rand_beta1]
-
-coef_df <- as.data.frame(coef(summary(m.closedisturbancefull))$cond)
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmod))$cond)
 coef_df$term <- rownames(coef_df)
 theta <- coef_df$Estimate[coef_df$term == "prop_veg_250_end:prop_veg_1000_end"]
-dt_full[, w_x := exp(beta1 * x1 + theta * x1 * Ma_x1)]
 
-plot_data <- dt_full[, .(
-  mean_w = mean(w_x, na.rm = TRUE),
-  sd_w = sd(w_x, na.rm = TRUE)
-), by = Ma_x1]
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
 
-line_color <- "steelblue"
-
-p11 <- ggplot(plot_data, aes(x = Ma_x1, y = mean_w)) +
-  geom_smooth(method = "loess", se = FALSE, color = line_color, size = 1) +
-  labs(
-    x = "prop_veg_250_end avail",
-    y = "w(x)",
+p11 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
   ) +
-  theme_minimal(base_size = 12)
+  labs(x = "prop_veg_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
 
 print(p11)
 
 
 plot_list <- list(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11)
 patchwork::wrap_plots(plot_list, ncol = 4)
-
-
-
-
-
 
 
 
@@ -1583,7 +1608,7 @@ m.fullmodsummer20step <- glmmTMB(case_ ~ -1 +
 summary(m.fullmodsummer20step)
 # save model output
 saveRDS(m.fullmodsummer20step, "m.fullmodsummer20step.RDS")
-#m.fullmodsummer <- readRDS("m.fullsummer.mod_lf20poly20.RDS")
+#m.fullmodsummer20step <- readRDS("m.fullmodsummer20step.RDS")
 
 
 m.fullmodsummer20step.indiv <- coef(m.fullmodsummer20step)$cond$id %>% rownames_to_column("id") %>%
@@ -1618,6 +1643,658 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
   #geom_errorbar(aes(ymin = estimate - (1.96*std.error), ymax = estimate + (1.96*std.error))) +
   geom_hline(aes(yintercept = 0), lty = 'dashed') +
   coord_flip()  
+
+
+
+
+###Functional response plots:
+##Start with random slopes vs avg availability
+
+dt <- as.data.table(dat.issa.20.summer)
+
+#Get avg availability by id
+vars_1000 <- c(
+  "prop_forest_1000_end",
+  "prop_veg_1000_end",
+  "ts_fires_1000_end",
+  "ts_harv1000_end",
+  "dist_paved_1000_end",
+  "dist_unpaved_1000_end",
+  "dist_lfother_1000_end",
+  "dist_otherpoly_1000_end",
+  "dist_placer_1000_end",
+  "dist_quartz_1000_end",
+  "dist_othermines_1000_end"
+)
+
+avg_data <- dt[, lapply(.SD, mean, na.rm = TRUE), by = id, .SDcols = vars_1000]
+
+avg_data[, `:=`(
+  ts_fires_1000_end       = log(ts_fires_1000_end + 1),
+  ts_harv1000_end         = log(ts_harv1000_end + 1),
+  dist_paved_1000_end     = log((dist_paved_1000_end + 1) / 1000),
+  dist_unpaved_1000_end   = log((dist_unpaved_1000_end + 1) / 1000),
+  dist_lfother_1000_end   = log((dist_lfother_1000_end + 1) / 1000),
+  dist_otherpoly_1000_end = log((dist_otherpoly_1000_end + 1) / 1000),
+  dist_placer_1000_end    = log((dist_placer_1000_end + 1) / 1000),
+  dist_quartz_1000_end    = log((dist_quartz_1000_end + 1) / 1000),
+  dist_othermines_1000_end= log((dist_othermines_1000_end + 1) / 1000)
+)]
+
+re_list <- ranef(m.fullmodsummer20step)$cond
+
+var_map <- list(
+  "I(log((dist_paved_250_end + 1)/1000))" = "dist_paved_1000_end",
+  "I(log((dist_unpaved_250_end + 1)/1000))" = "dist_unpaved_1000_end",
+  "I(log((dist_lfother_250_end + 1)/1000))" = "dist_lfother_1000_end",
+  "I(log((dist_otherpoly_250_end + 1)/1000))" = "dist_otherpoly_1000_end",
+  "I(log((dist_placer_250_end + 1)/1000))" = "dist_placer_1000_end",
+  "I(log((dist_quartz_250_end + 1)/1000))" = "dist_quartz_1000_end",
+  "I(log((dist_othermines_250_end + 1)/1000))" = "dist_othermines_1000_end",
+  "prop_forest_250_end" = "prop_forest_1000_end",
+  "prop_veg_250_end" = "prop_veg_1000_end",
+  "I(log(ts_fires_250_end + 1))" = "ts_fires_1000_end",
+  "I(log(ts_harv250_end + 1))" = "ts_harv1000_end"
+)
+
+# Convert random slopes to data.table
+random_slopes <- as.data.table(re_list$id, keep.rownames = "id")
+
+axis_labels <- list(
+  "I(log((dist_paved_250_end + 1)/1000))"      = list(x = "dist_paved avail", y = "dist_paved"),
+  "I(log((dist_unpaved_250_end + 1)/1000))"    = list(x = "dist_unpaved avail", y = "dist_unpaved"),
+  "I(log(ts_fires_250_end + 1))"               = list(x = "ts_fires avail", y = "ts_fires"),
+  "I(log(ts_harv250_end + 1))"                 = list(x = "ts_harv avail", y = "ts_harv"),
+  "prop_forest_250_end"                        = list(x = "prop_forest avail", y = "prop_forest"),
+  "prop_veg_250_end"                           = list(x = "prop_veg avail", y = "prop_veg"),
+  "I(log((dist_lfother_250_end + 1)/1000))"    = list(x = "dist_lfother avail", y = "dist_lfother"),
+  "I(log((dist_otherpoly_250_end + 1)/1000))"  = list(x = "dist_otherpoly avail", y = "dist_otherpoly"),
+  "I(log((dist_placer_250_end + 1)/1000))"     = list(x = "dist_placer avail", y = "dist_placer"),
+  "I(log((dist_quartz_250_end + 1)/1000))"     = list(x = "dist_quartz avail", y = "dist_quartz"),
+  "I(log((dist_othermines_250_end + 1)/1000))" = list(x = "dist_othermines avail", y = "dist_othermines")
+)
+
+plot_list <- list()
+
+# Loop through each variable
+for (model_var in names(var_map)) {
+  
+  avail_var <- var_map[[model_var]]
+  
+  # Merge data for plotting
+  plot_data <- merge(
+    avg_data[, .(id, avail = get(avail_var))],
+    random_slopes[, .(id, slope = get(model_var))],
+    by = "id"
+  )
+  
+  # Use manual axis labels
+  if (!is.null(axis_labels[[model_var]])) {
+    x_lab <- axis_labels[[model_var]]$x
+    y_lab <- axis_labels[[model_var]]$y
+  } else {
+    x_lab <- paste0("Average ", avail_var)
+    y_lab <- paste0("Random slope for ", model_var)
+  }
+  
+  require(ggplot2)
+  # Create plot
+  p <- ggplot(plot_data, aes(x = avail, y = slope)) +
+    geom_point(alpha = 0.7) +
+    geom_smooth(method = "loess", color = "darkblue", se = TRUE) +
+    labs(
+      x = x_lab,
+      y = "selection coeff",
+    ) +
+    theme_minimal(base_size = 10)
+  
+  # Add plot to list
+  plot_list[[model_var]] <- p
+}
+
+require(patchwork)
+# Combine and print all plots
+combined_plot <- wrap_plots(plot_list, ncol = 3)
+print(combined_plot)
+
+
+##Next plot fixed effect interaction vs average availability
+
+##############################
+# 1. ts_fires_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodsummer20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodsummer20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log(ts_fires_250_end + 1))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = ts_fires_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = ts_fires_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log(raw_x1 + 1)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodsummer20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log(ts_fires_250_end + 1)):I(log(ts_fires_1000_end + 1))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+
+p1 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "ts_fires_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p1)
+
+##############################
+# 2. ts_harv250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodsummer20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodsummer20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log(ts_harv250_end + 1))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = ts_harv250_end)],
+  avg_data[, .(id, raw_Ma_x1 = ts_harv1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log(raw_x1 + 1)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodsummer20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log(ts_harv250_end + 1)):I(log(ts_harv1000_end + 1))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+
+p2 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "ts_harv1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p2)
+
+
+##############################
+# 3. dist_paved_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodsummer20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodsummer20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_paved_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_paved_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_paved_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodsummer20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_paved_250_end + 1)/1000)):I(log((dist_paved_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+
+p3 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_paved_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p3)
+
+
+
+
+
+##############################
+# 4. dist_unpaved_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodsummer20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodsummer20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_unpaved_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_unpaved_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_unpaved_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodsummer20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_unpaved_250_end + 1)/1000)):I(log((dist_unpaved_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p4 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_unpaved_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p4)
+
+
+##############################
+# 5. dist_lfother_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodsummer20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodsummer20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_lfother_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_lfother_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_lfother_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodsummer20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_lfother_250_end + 1)/1000)):I(log((dist_lfother_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p5 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_lfother_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p5)
+
+
+##############################
+# 6. dist_otherpoly_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodsummer20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodsummer20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_otherpoly_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_otherpoly_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_otherpoly_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodsummer20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_otherpoly_250_end + 1)/1000)):I(log((dist_otherpoly_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p6 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_otherpoly_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p6)
+
+
+##############################
+# 7. dist_placer_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodsummer20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodsummer20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_placer_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_placer_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_placer_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodsummer20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_placer_250_end + 1)/1000)):I(log((dist_placer_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p7 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_placer_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p7)
+
+
+
+##############################
+# 8. dist_quartz_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodsummer20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodsummer20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_quartz_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_quartz_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_quartz_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodsummer20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_quartz_250_end + 1)/1000)):I(log((dist_quartz_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p8 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_quartz_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p8)
+
+
+
+##############################
+# 9. dist_othermines_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodsummer20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodsummer20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_othermines_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_othermines_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_othermines_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodsummer20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_othermines_250_end + 1)/1000)):I(log((dist_othermines_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p9 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_othermines_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p9)
+
+
+
+##############################
+# 10. prop_forest_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodsummer20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodsummer20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `prop_forest_250_end`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = prop_forest_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = prop_forest_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodsummer20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "prop_forest_250_end:prop_forest_1000_end"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p10 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "prop_forest_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p10)
+
+
+
+##############################
+# 11. prop_veg_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodsummer20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodsummer20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `prop_veg_250_end`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = prop_veg_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = prop_veg_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodsummer20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "prop_veg_250_end:prop_veg_1000_end"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p11 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "prop_veg_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p11)
+
+
+plot_list <- list(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11)
+patchwork::wrap_plots(plot_list, ncol = 4)
+
+
+
+
+
+
 
 
 
@@ -1676,7 +2353,7 @@ m.fullmodwinter20step <- glmmTMB(case_ ~ -1 +
 summary(m.fullmodwinter20step)
 # save model output
 saveRDS(m.fullmodwinter20step, "m.fullmodwinter20step.RDS")
-#m.fullmodsummer <- readRDS("m.fullsummer.mod_lf20poly20.RDS")
+#m.fullmodwinter20step <- readRDS("m.fullmodwinter20step.RDS")
 
 
 m.fullmodwinter20step.indiv <- coef(m.fullmodwinter20step)$cond$id %>% rownames_to_column("id") %>%
@@ -1714,6 +2391,651 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 
 
 
+###Functional response plots:
+##Start with random slopes vs avg availability
+
+dt <- as.data.table(dat.issa.20.winter)
+
+#Get avg availability by id
+vars_1000 <- c(
+  "prop_forest_1000_end",
+  "prop_veg_1000_end",
+  "ts_fires_1000_end",
+  "ts_harv1000_end",
+  "dist_paved_1000_end",
+  "dist_unpaved_1000_end",
+  "dist_lfother_1000_end",
+  "dist_otherpoly_1000_end",
+  "dist_placer_1000_end",
+  "dist_quartz_1000_end",
+  "dist_othermines_1000_end"
+)
+
+avg_data <- dt[, lapply(.SD, mean, na.rm = TRUE), by = id, .SDcols = vars_1000]
+
+avg_data[, `:=`(
+  ts_fires_1000_end       = log(ts_fires_1000_end + 1),
+  ts_harv1000_end         = log(ts_harv1000_end + 1),
+  dist_paved_1000_end     = log((dist_paved_1000_end + 1) / 1000),
+  dist_unpaved_1000_end   = log((dist_unpaved_1000_end + 1) / 1000),
+  dist_lfother_1000_end   = log((dist_lfother_1000_end + 1) / 1000),
+  dist_otherpoly_1000_end = log((dist_otherpoly_1000_end + 1) / 1000),
+  dist_placer_1000_end    = log((dist_placer_1000_end + 1) / 1000),
+  dist_quartz_1000_end    = log((dist_quartz_1000_end + 1) / 1000),
+  dist_othermines_1000_end= log((dist_othermines_1000_end + 1) / 1000)
+)]
+
+re_list <- ranef(m.fullmodwinter20step)$cond
+
+var_map <- list(
+  "I(log((dist_paved_250_end + 1)/1000))" = "dist_paved_1000_end",
+  "I(log((dist_unpaved_250_end + 1)/1000))" = "dist_unpaved_1000_end",
+  "I(log((dist_lfother_250_end + 1)/1000))" = "dist_lfother_1000_end",
+  "I(log((dist_otherpoly_250_end + 1)/1000))" = "dist_otherpoly_1000_end",
+  "I(log((dist_placer_250_end + 1)/1000))" = "dist_placer_1000_end",
+  "I(log((dist_quartz_250_end + 1)/1000))" = "dist_quartz_1000_end",
+  "I(log((dist_othermines_250_end + 1)/1000))" = "dist_othermines_1000_end",
+  "prop_forest_250_end" = "prop_forest_1000_end",
+  "prop_veg_250_end" = "prop_veg_1000_end",
+  "I(log(ts_fires_250_end + 1))" = "ts_fires_1000_end",
+  "I(log(ts_harv250_end + 1))" = "ts_harv1000_end"
+)
+
+# Convert random slopes to data.table
+random_slopes <- as.data.table(re_list$id, keep.rownames = "id")
+
+axis_labels <- list(
+  "I(log((dist_paved_250_end + 1)/1000))"      = list(x = "dist_paved avail", y = "dist_paved"),
+  "I(log((dist_unpaved_250_end + 1)/1000))"    = list(x = "dist_unpaved avail", y = "dist_unpaved"),
+  "I(log(ts_fires_250_end + 1))"               = list(x = "ts_fires avail", y = "ts_fires"),
+  "I(log(ts_harv250_end + 1))"                 = list(x = "ts_harv avail", y = "ts_harv"),
+  "prop_forest_250_end"                        = list(x = "prop_forest avail", y = "prop_forest"),
+  "prop_veg_250_end"                           = list(x = "prop_veg avail", y = "prop_veg"),
+  "I(log((dist_lfother_250_end + 1)/1000))"    = list(x = "dist_lfother avail", y = "dist_lfother"),
+  "I(log((dist_otherpoly_250_end + 1)/1000))"  = list(x = "dist_otherpoly avail", y = "dist_otherpoly"),
+  "I(log((dist_placer_250_end + 1)/1000))"     = list(x = "dist_placer avail", y = "dist_placer"),
+  "I(log((dist_quartz_250_end + 1)/1000))"     = list(x = "dist_quartz avail", y = "dist_quartz"),
+  "I(log((dist_othermines_250_end + 1)/1000))" = list(x = "dist_othermines avail", y = "dist_othermines")
+)
+
+plot_list <- list()
+
+# Loop through each variable
+for (model_var in names(var_map)) {
+  
+  avail_var <- var_map[[model_var]]
+  
+  # Merge data for plotting
+  plot_data <- merge(
+    avg_data[, .(id, avail = get(avail_var))],
+    random_slopes[, .(id, slope = get(model_var))],
+    by = "id"
+  )
+  
+  # Use manual axis labels
+  if (!is.null(axis_labels[[model_var]])) {
+    x_lab <- axis_labels[[model_var]]$x
+    y_lab <- axis_labels[[model_var]]$y
+  } else {
+    x_lab <- paste0("Average ", avail_var)
+    y_lab <- paste0("Random slope for ", model_var)
+  }
+  
+  require(ggplot2)
+  # Create plot
+  p <- ggplot(plot_data, aes(x = avail, y = slope)) +
+    geom_point(alpha = 0.7) +
+    geom_smooth(method = "loess", color = "darkblue", se = TRUE) +
+    labs(
+      x = x_lab,
+      y = "selection coeff",
+    ) +
+    theme_minimal(base_size = 10)
+  
+  # Add plot to list
+  plot_list[[model_var]] <- p
+}
+
+require(patchwork)
+# Combine and print all plots
+combined_plot <- wrap_plots(plot_list, ncol = 3)
+print(combined_plot)
+
+
+##Next plot fixed effect interaction vs average availability
+
+##############################
+# 1. ts_fires_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodwinter20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodwinter20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log(ts_fires_250_end + 1))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = ts_fires_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = ts_fires_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log(raw_x1 + 1)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodwinter20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log(ts_fires_250_end + 1)):I(log(ts_fires_1000_end + 1))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+
+p1 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "ts_fires_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p1)
+
+##############################
+# 2. ts_harv250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodwinter20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodwinter20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log(ts_harv250_end + 1))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = ts_harv250_end)],
+  avg_data[, .(id, raw_Ma_x1 = ts_harv1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log(raw_x1 + 1)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodwinter20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log(ts_harv250_end + 1)):I(log(ts_harv1000_end + 1))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+
+p2 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "ts_harv1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p2)
+
+
+##############################
+# 3. dist_paved_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodwinter20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodwinter20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_paved_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_paved_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_paved_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodwinter20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_paved_250_end + 1)/1000)):I(log((dist_paved_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+
+p3 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_paved_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p3)
+
+
+
+
+
+##############################
+# 4. dist_unpaved_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodwinter20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodwinter20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_unpaved_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_unpaved_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_unpaved_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodwinter20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_unpaved_250_end + 1)/1000)):I(log((dist_unpaved_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p4 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_unpaved_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p4)
+
+
+##############################
+# 5. dist_lfother_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodwinter20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodwinter20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_lfother_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_lfother_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_lfother_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodwinter20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_lfother_250_end + 1)/1000)):I(log((dist_lfother_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p5 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_lfother_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p5)
+
+
+##############################
+# 6. dist_otherpoly_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodwinter20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodwinter20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_otherpoly_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_otherpoly_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_otherpoly_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodwinter20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_otherpoly_250_end + 1)/1000)):I(log((dist_otherpoly_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p6 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_otherpoly_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p6)
+
+
+##############################
+# 7. dist_placer_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodwinter20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodwinter20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_placer_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_placer_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_placer_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodwinter20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_placer_250_end + 1)/1000)):I(log((dist_placer_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p7 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_placer_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p7)
+
+
+
+##############################
+# 8. dist_quartz_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodwinter20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodwinter20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_quartz_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_quartz_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_quartz_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodwinter20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_quartz_250_end + 1)/1000)):I(log((dist_quartz_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p8 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_quartz_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p8)
+
+
+
+##############################
+# 9. dist_othermines_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodwinter20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodwinter20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_othermines_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_othermines_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_othermines_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodwinter20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_othermines_250_end + 1)/1000)):I(log((dist_othermines_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p9 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_othermines_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p9)
+
+
+
+##############################
+# 10. prop_forest_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodwinter20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodwinter20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `prop_forest_250_end`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = prop_forest_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = prop_forest_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodwinter20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "prop_forest_250_end:prop_forest_1000_end"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p10 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "prop_forest_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p10)
+
+
+
+##############################
+# 11. prop_veg_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodwinter20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodwinter20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `prop_veg_250_end`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = prop_veg_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = prop_veg_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodwinter20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "prop_veg_250_end:prop_veg_1000_end"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p11 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "prop_veg_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p11)
+
+
+plot_list <- list(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11)
+patchwork::wrap_plots(plot_list, ncol = 4)
+
+
+
 
 
 
@@ -1731,7 +3053,7 @@ m.fullmodroadscomb15step <- glmmTMB(case_ ~ -1 +
                        I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
                        #I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
                        #I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
-                       I(log(((dist_road_250_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
+                       I(log(((dist_road_250_end+1)/1000))) + I(log((dist_road_250_end+1)/1000)):I(log((dist_road_1000_end+1)/1000)) +
                        I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
                        I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
                        I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
@@ -1772,7 +3094,7 @@ m.fullmodroadscomb15step <- glmmTMB(case_ ~ -1 +
 summary(m.fullmodroadscomb15step)
 # save model output
 saveRDS(m.fullmodroadscomb15step, "m.fullmodroadscomb15step.RDS")
-#m.fullmodroadscomb <- readRDS("m.fullmodroadscomb.RDS")
+#m.fullmodroadscomb15step <- readRDS("m.fullmodroadscomb15step.RDS")
 
 
 m.fullmodroadscomb15step.indiv <- coef(m.fullmodroadscomb15step)$cond$id %>% rownames_to_column("id") %>%
@@ -1810,6 +3132,600 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 
 
 
+
+
+###Functional response plots:
+##Start with random slopes vs avg availability
+
+dt <- as.data.table(dat.issa.15)
+
+#Get avg availability by id
+vars_1000 <- c(
+  "prop_forest_1000_end",
+  "prop_veg_1000_end",
+  "ts_fires_1000_end",
+  "ts_harv1000_end",
+  "dist_road_1000_end",
+  "dist_lfother_1000_end",
+  "dist_otherpoly_1000_end",
+  "dist_placer_1000_end",
+  "dist_quartz_1000_end",
+  "dist_othermines_1000_end"
+)
+
+avg_data <- dt[, lapply(.SD, mean, na.rm = TRUE), by = id, .SDcols = vars_1000]
+
+avg_data[, `:=`(
+  ts_fires_1000_end       = log(ts_fires_1000_end + 1),
+  ts_harv1000_end         = log(ts_harv1000_end + 1),
+  dist_road_1000_end     = log((dist_road_1000_end + 1) / 1000),
+  dist_lfother_1000_end   = log((dist_lfother_1000_end + 1) / 1000),
+  dist_otherpoly_1000_end = log((dist_otherpoly_1000_end + 1) / 1000),
+  dist_placer_1000_end    = log((dist_placer_1000_end + 1) / 1000),
+  dist_quartz_1000_end    = log((dist_quartz_1000_end + 1) / 1000),
+  dist_othermines_1000_end= log((dist_othermines_1000_end + 1) / 1000)
+)]
+
+re_list <- ranef(m.fullmodroadscomb15step)$cond
+
+var_map <- list(
+  "I(log((dist_road_250_end + 1)/1000))" = "dist_road_1000_end",
+  "I(log((dist_lfother_250_end + 1)/1000))" = "dist_lfother_1000_end",
+  "I(log((dist_otherpoly_250_end + 1)/1000))" = "dist_otherpoly_1000_end",
+  "I(log((dist_placer_250_end + 1)/1000))" = "dist_placer_1000_end",
+  "I(log((dist_quartz_250_end + 1)/1000))" = "dist_quartz_1000_end",
+  "I(log((dist_othermines_250_end + 1)/1000))" = "dist_othermines_1000_end",
+  "prop_forest_250_end" = "prop_forest_1000_end",
+  "prop_veg_250_end" = "prop_veg_1000_end",
+  "I(log(ts_fires_250_end + 1))" = "ts_fires_1000_end",
+  "I(log(ts_harv250_end + 1))" = "ts_harv1000_end"
+)
+
+# Convert random slopes to data.table
+random_slopes <- as.data.table(re_list$id, keep.rownames = "id")
+
+axis_labels <- list(
+  "I(log((dist_road_250_end + 1)/1000))"      = list(x = "dist_road avail", y = "dist_road"),
+  "I(log(ts_fires_250_end + 1))"               = list(x = "ts_fires avail", y = "ts_fires"),
+  "I(log(ts_harv250_end + 1))"                 = list(x = "ts_harv avail", y = "ts_harv"),
+  "prop_forest_250_end"                        = list(x = "prop_forest avail", y = "prop_forest"),
+  "prop_veg_250_end"                           = list(x = "prop_veg avail", y = "prop_veg"),
+  "I(log((dist_lfother_250_end + 1)/1000))"    = list(x = "dist_lfother avail", y = "dist_lfother"),
+  "I(log((dist_otherpoly_250_end + 1)/1000))"  = list(x = "dist_otherpoly avail", y = "dist_otherpoly"),
+  "I(log((dist_placer_250_end + 1)/1000))"     = list(x = "dist_placer avail", y = "dist_placer"),
+  "I(log((dist_quartz_250_end + 1)/1000))"     = list(x = "dist_quartz avail", y = "dist_quartz"),
+  "I(log((dist_othermines_250_end + 1)/1000))" = list(x = "dist_othermines avail", y = "dist_othermines")
+)
+
+plot_list <- list()
+
+# Loop through each variable
+for (model_var in names(var_map)) {
+  
+  avail_var <- var_map[[model_var]]
+  
+  # Merge data for plotting
+  plot_data <- merge(
+    avg_data[, .(id, avail = get(avail_var))],
+    random_slopes[, .(id, slope = get(model_var))],
+    by = "id"
+  )
+  
+  # Use manual axis labels
+  if (!is.null(axis_labels[[model_var]])) {
+    x_lab <- axis_labels[[model_var]]$x
+    y_lab <- axis_labels[[model_var]]$y
+  } else {
+    x_lab <- paste0("Average ", avail_var)
+    y_lab <- paste0("Random slope for ", model_var)
+  }
+  
+  require(ggplot2)
+  # Create plot
+  p <- ggplot(plot_data, aes(x = avail, y = slope)) +
+    geom_point(alpha = 0.7) +
+    geom_smooth(method = "loess", color = "darkblue", se = TRUE) +
+    labs(
+      x = x_lab,
+      y = "selection coeff",
+    ) +
+    theme_minimal(base_size = 10)
+  
+  # Add plot to list
+  plot_list[[model_var]] <- p
+}
+
+require(patchwork)
+# Combine and print all plots
+combined_plot <- wrap_plots(plot_list, ncol = 3)
+print(combined_plot)
+
+
+##Next plot fixed effect interaction vs average availability
+
+##############################
+# 1. ts_fires_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodroadscomb15step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodroadscomb15step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log(ts_fires_250_end + 1))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = ts_fires_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = ts_fires_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log(raw_x1 + 1)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodroadscomb15step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log(ts_fires_250_end + 1)):I(log(ts_fires_1000_end + 1))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+
+p1 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "ts_fires_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p1)
+
+##############################
+# 2. ts_harv250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodroadscomb15step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodroadscomb15step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log(ts_harv250_end + 1))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = ts_harv250_end)],
+  avg_data[, .(id, raw_Ma_x1 = ts_harv1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log(raw_x1 + 1)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodroadscomb15step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log(ts_harv250_end + 1)):I(log(ts_harv1000_end + 1))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+
+p2 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "ts_harv1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p2)
+
+
+##############################
+# 3. dist_road_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodroadscomb15step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodroadscomb15step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_road_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_road_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_road_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodroadscomb15step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_road_250_end + 1)/1000)):I(log((dist_road_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+
+p3 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_road_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p3)
+
+
+
+##############################
+# 4. dist_lfother_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodroadscomb15step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodroadscomb15step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_lfother_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_lfother_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_lfother_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodroadscomb15step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_lfother_250_end + 1)/1000)):I(log((dist_lfother_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p4 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_lfother_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p4)
+
+
+##############################
+# 5. dist_otherpoly_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodroadscomb15step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodroadscomb15step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_otherpoly_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_otherpoly_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_otherpoly_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodroadscomb15step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_otherpoly_250_end + 1)/1000)):I(log((dist_otherpoly_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p5 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_otherpoly_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p5)
+
+
+##############################
+# 6. dist_placer_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodroadscomb15step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodroadscomb15step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_placer_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_placer_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_placer_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodroadscomb15step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_placer_250_end + 1)/1000)):I(log((dist_placer_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p6 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_placer_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p6)
+
+
+
+##############################
+# 7. dist_quartz_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodroadscomb15step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodroadscomb15step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_quartz_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_quartz_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_quartz_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodroadscomb15step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_quartz_250_end + 1)/1000)):I(log((dist_quartz_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p7 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_quartz_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p7)
+
+
+
+##############################
+# 8. dist_othermines_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodroadscomb15step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodroadscomb15step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_othermines_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_othermines_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_othermines_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodroadscomb15step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_othermines_250_end + 1)/1000)):I(log((dist_othermines_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p8 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_othermines_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p8)
+
+
+
+##############################
+# 9. prop_forest_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodroadscomb15step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodroadscomb15step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `prop_forest_250_end`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = prop_forest_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = prop_forest_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodroadscomb15step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "prop_forest_250_end:prop_forest_1000_end"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p9 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "prop_forest_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p9)
+
+
+
+##############################
+# 10. prop_veg_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodroadscomb15step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodroadscomb15step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `prop_veg_250_end`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = prop_veg_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = prop_veg_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodroadscomb15step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "prop_veg_250_end:prop_veg_1000_end"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p10 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "prop_veg_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p10)
+
+
+plot_list <- list(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10)
+patchwork::wrap_plots(plot_list, ncol = 4)
+
+
+
+
 #SUMMER
 gc()
 m.fullmodsummerroadscomb20step <- glmmTMB(case_ ~ -1 +
@@ -1822,7 +3738,7 @@ m.fullmodsummerroadscomb20step <- glmmTMB(case_ ~ -1 +
                              I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
                              #I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
                              #I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
-                             I(log(((dist_road_250_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
+                             I(log(((dist_road_250_end+1)/1000))) + I(log((dist_road_250_end+1)/1000)):I(log((dist_road_1000_end+1)/1000)) +
                              I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
                              I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
                              I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
@@ -1863,7 +3779,7 @@ m.fullmodsummerroadscomb20step <- glmmTMB(case_ ~ -1 +
 summary(m.fullmodsummerroadscomb20step)
 # save model output
 saveRDS(m.fullmodsummerroadscomb20step, "m.fullmodsummerroadscomb20step.RDS")
-#m.fullmodsummerroadscomb <- readRDS("m.fullmodsummerroadscomb.RDS")
+#m.fullmodsummerroadscomb20step <- readRDS("m.fullmodsummerroadscomb20step.RDS")
 
 
 m.fullmodsummerroadscomb20step.indiv <- coef(m.fullmodsummerroadscomb20step)$cond$id %>% rownames_to_column("id") %>%
@@ -1901,7 +3817,594 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 
 
 
+###Functional response plots:
+##Start with random slopes vs avg availability
 
+dt <- as.data.table(dat.issa.20.summer)
+
+#Get avg availability by id
+vars_1000 <- c(
+  "prop_forest_1000_end",
+  "prop_veg_1000_end",
+  "ts_fires_1000_end",
+  "ts_harv1000_end",
+  "dist_road_1000_end",
+  "dist_lfother_1000_end",
+  "dist_otherpoly_1000_end",
+  "dist_placer_1000_end",
+  "dist_quartz_1000_end",
+  "dist_othermines_1000_end"
+)
+
+avg_data <- dt[, lapply(.SD, mean, na.rm = TRUE), by = id, .SDcols = vars_1000]
+
+avg_data[, `:=`(
+  ts_fires_1000_end       = log(ts_fires_1000_end + 1),
+  ts_harv1000_end         = log(ts_harv1000_end + 1),
+  dist_road_1000_end     = log((dist_road_1000_end + 1) / 1000),
+  dist_lfother_1000_end   = log((dist_lfother_1000_end + 1) / 1000),
+  dist_otherpoly_1000_end = log((dist_otherpoly_1000_end + 1) / 1000),
+  dist_placer_1000_end    = log((dist_placer_1000_end + 1) / 1000),
+  dist_quartz_1000_end    = log((dist_quartz_1000_end + 1) / 1000),
+  dist_othermines_1000_end= log((dist_othermines_1000_end + 1) / 1000)
+)]
+
+re_list <- ranef(m.fullmodsummerroadscomb20step)$cond
+
+var_map <- list(
+  "I(log((dist_road_250_end + 1)/1000))" = "dist_road_1000_end",
+  "I(log((dist_lfother_250_end + 1)/1000))" = "dist_lfother_1000_end",
+  "I(log((dist_otherpoly_250_end + 1)/1000))" = "dist_otherpoly_1000_end",
+  "I(log((dist_placer_250_end + 1)/1000))" = "dist_placer_1000_end",
+  "I(log((dist_quartz_250_end + 1)/1000))" = "dist_quartz_1000_end",
+  "I(log((dist_othermines_250_end + 1)/1000))" = "dist_othermines_1000_end",
+  "prop_forest_250_end" = "prop_forest_1000_end",
+  "prop_veg_250_end" = "prop_veg_1000_end",
+  "I(log(ts_fires_250_end + 1))" = "ts_fires_1000_end",
+  "I(log(ts_harv250_end + 1))" = "ts_harv1000_end"
+)
+
+# Convert random slopes to data.table
+random_slopes <- as.data.table(re_list$id, keep.rownames = "id")
+
+axis_labels <- list(
+  "I(log((dist_road_250_end + 1)/1000))"      = list(x = "dist_road avail", y = "dist_road"),
+  "I(log(ts_fires_250_end + 1))"               = list(x = "ts_fires avail", y = "ts_fires"),
+  "I(log(ts_harv250_end + 1))"                 = list(x = "ts_harv avail", y = "ts_harv"),
+  "prop_forest_250_end"                        = list(x = "prop_forest avail", y = "prop_forest"),
+  "prop_veg_250_end"                           = list(x = "prop_veg avail", y = "prop_veg"),
+  "I(log((dist_lfother_250_end + 1)/1000))"    = list(x = "dist_lfother avail", y = "dist_lfother"),
+  "I(log((dist_otherpoly_250_end + 1)/1000))"  = list(x = "dist_otherpoly avail", y = "dist_otherpoly"),
+  "I(log((dist_placer_250_end + 1)/1000))"     = list(x = "dist_placer avail", y = "dist_placer"),
+  "I(log((dist_quartz_250_end + 1)/1000))"     = list(x = "dist_quartz avail", y = "dist_quartz"),
+  "I(log((dist_othermines_250_end + 1)/1000))" = list(x = "dist_othermines avail", y = "dist_othermines")
+)
+
+plot_list <- list()
+
+# Loop through each variable
+for (model_var in names(var_map)) {
+  
+  avail_var <- var_map[[model_var]]
+  
+  # Merge data for plotting
+  plot_data <- merge(
+    avg_data[, .(id, avail = get(avail_var))],
+    random_slopes[, .(id, slope = get(model_var))],
+    by = "id"
+  )
+  
+  # Use manual axis labels
+  if (!is.null(axis_labels[[model_var]])) {
+    x_lab <- axis_labels[[model_var]]$x
+    y_lab <- axis_labels[[model_var]]$y
+  } else {
+    x_lab <- paste0("Average ", avail_var)
+    y_lab <- paste0("Random slope for ", model_var)
+  }
+  
+  require(ggplot2)
+  # Create plot
+  p <- ggplot(plot_data, aes(x = avail, y = slope)) +
+    geom_point(alpha = 0.7) +
+    geom_smooth(method = "loess", color = "darkblue", se = TRUE) +
+    labs(
+      x = x_lab,
+      y = "selection coeff",
+    ) +
+    theme_minimal(base_size = 10)
+  
+  # Add plot to list
+  plot_list[[model_var]] <- p
+}
+
+require(patchwork)
+# Combine and print all plots
+combined_plot <- wrap_plots(plot_list, ncol = 3)
+print(combined_plot)
+
+
+##Next plot fixed effect interaction vs average availability
+
+##############################
+# 1. ts_fires_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodsummerroadscomb20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodsummerroadscomb20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log(ts_fires_250_end + 1))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = ts_fires_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = ts_fires_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log(raw_x1 + 1)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodsummerroadscomb20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log(ts_fires_250_end + 1)):I(log(ts_fires_1000_end + 1))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+
+p1 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "ts_fires_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p1)
+
+##############################
+# 2. ts_harv250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodsummerroadscomb20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodsummerroadscomb20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log(ts_harv250_end + 1))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = ts_harv250_end)],
+  avg_data[, .(id, raw_Ma_x1 = ts_harv1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log(raw_x1 + 1)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodsummerroadscomb20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log(ts_harv250_end + 1)):I(log(ts_harv1000_end + 1))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+
+p2 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "ts_harv1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p2)
+
+
+##############################
+# 3. dist_road_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodsummerroadscomb20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodsummerroadscomb20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_road_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_road_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_road_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodsummerroadscomb20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_road_250_end + 1)/1000)):I(log((dist_road_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+
+p3 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_road_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p3)
+
+
+
+##############################
+# 4. dist_lfother_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodsummerroadscomb20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodsummerroadscomb20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_lfother_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_lfother_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_lfother_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodsummerroadscomb20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_lfother_250_end + 1)/1000)):I(log((dist_lfother_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p4 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_lfother_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p4)
+
+
+##############################
+# 5. dist_otherpoly_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodsummerroadscomb20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodsummerroadscomb20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_otherpoly_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_otherpoly_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_otherpoly_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodsummerroadscomb20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_otherpoly_250_end + 1)/1000)):I(log((dist_otherpoly_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p5 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_otherpoly_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p5)
+
+
+##############################
+# 6. dist_placer_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodsummerroadscomb20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodsummerroadscomb20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_placer_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_placer_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_placer_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodsummerroadscomb20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_placer_250_end + 1)/1000)):I(log((dist_placer_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p6 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_placer_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p6)
+
+
+
+##############################
+# 7. dist_quartz_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodsummerroadscomb20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodsummerroadscomb20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_quartz_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_quartz_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_quartz_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodsummerroadscomb20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_quartz_250_end + 1)/1000)):I(log((dist_quartz_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p7 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_quartz_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p7)
+
+
+
+##############################
+# 8. dist_othermines_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodsummerroadscomb20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodsummerroadscomb20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_othermines_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_othermines_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_othermines_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodsummerroadscomb20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_othermines_250_end + 1)/1000)):I(log((dist_othermines_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p8 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_othermines_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p8)
+
+
+
+##############################
+# 9. prop_forest_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodsummerroadscomb20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodsummerroadscomb20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `prop_forest_250_end`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = prop_forest_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = prop_forest_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodsummerroadscomb20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "prop_forest_250_end:prop_forest_1000_end"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p9 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "prop_forest_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p9)
+
+
+
+##############################
+# 10. prop_veg_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodsummerroadscomb20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodsummerroadscomb20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `prop_veg_250_end`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = prop_veg_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = prop_veg_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodsummerroadscomb20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "prop_veg_250_end:prop_veg_1000_end"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p10 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "prop_veg_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p10)
+
+
+plot_list <- list(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10)
+patchwork::wrap_plots(plot_list, ncol = 4)
 
 
 
@@ -1917,7 +4420,7 @@ m.fullmodwinterroadscomb20step <- glmmTMB(case_ ~ -1 +
                              I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
                              #I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
                              #I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
-                             I(log(((dist_road_250_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
+                             I(log(((dist_road_250_end+1)/1000))) + I(log((dist_road_250_end+1)/1000)):I(log((dist_road_1000_end+1)/1000)) +
                              I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
                              I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
                              I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
@@ -1934,9 +4437,9 @@ m.fullmodwinterroadscomb20step <- glmmTMB(case_ ~ -1 +
                              (0 + prop_veg_250_end|id) +
                              (0 + (I(log(ts_fires_250_end+1)))|id) +
                              (0 + (I(log(ts_harv250_end+1)))|id) + 
-                             (0 + I(log((dist_paved_250_end+1)/1000))|id) + 
-                             (0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
-                             #(0 + I(log((dist_road_250_end+1)/1000))|id) + 
+                             #(0 + I(log((dist_paved_250_end+1)/1000))|id) + 
+                             #(0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
+                             (0 + I(log((dist_road_250_end+1)/1000))|id) + 
                              (0 + I(log((dist_lfother_250_end+1)/1000))|id) +
                              (0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
                              (0 + I(log((dist_placer_250_end+1)/1000))|id) + 
@@ -1958,7 +4461,7 @@ m.fullmodwinterroadscomb20step <- glmmTMB(case_ ~ -1 +
 summary(m.fullmodwinterroadscomb20step)
 # save model output
 saveRDS(m.fullmodwinterroadscomb20step, "m.fullmodwinterroadscomb20step.RDS")
-#m.fullmodwinterroadscomb <- readRDS("m.fullmodwinterroadscomb.RDS")
+#m.fullmodwinterroadscomb20step <- readRDS("m.fullmodwinterroadscomb20step.RDS")
 
 
 m.fullmodwinterroadscomb20step.indiv <- coef(m.fullmodwinterroadscomb20step)$cond$id %>% rownames_to_column("id") %>%
@@ -1996,7 +4499,594 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 
 
 
+###Functional response plots:
+##Start with random slopes vs avg availability
 
+dt <- as.data.table(dat.issa.20.winter)
+
+#Get avg availability by id
+vars_1000 <- c(
+  "prop_forest_1000_end",
+  "prop_veg_1000_end",
+  "ts_fires_1000_end",
+  "ts_harv1000_end",
+  "dist_road_1000_end",
+  "dist_lfother_1000_end",
+  "dist_otherpoly_1000_end",
+  "dist_placer_1000_end",
+  "dist_quartz_1000_end",
+  "dist_othermines_1000_end"
+)
+
+avg_data <- dt[, lapply(.SD, mean, na.rm = TRUE), by = id, .SDcols = vars_1000]
+
+avg_data[, `:=`(
+  ts_fires_1000_end       = log(ts_fires_1000_end + 1),
+  ts_harv1000_end         = log(ts_harv1000_end + 1),
+  dist_road_1000_end     = log((dist_road_1000_end + 1) / 1000),
+  dist_lfother_1000_end   = log((dist_lfother_1000_end + 1) / 1000),
+  dist_otherpoly_1000_end = log((dist_otherpoly_1000_end + 1) / 1000),
+  dist_placer_1000_end    = log((dist_placer_1000_end + 1) / 1000),
+  dist_quartz_1000_end    = log((dist_quartz_1000_end + 1) / 1000),
+  dist_othermines_1000_end= log((dist_othermines_1000_end + 1) / 1000)
+)]
+
+re_list <- ranef(m.fullmodwinterroadscomb20step)$cond
+
+var_map <- list(
+  "I(log((dist_road_250_end + 1)/1000))" = "dist_road_1000_end",
+  "I(log((dist_lfother_250_end + 1)/1000))" = "dist_lfother_1000_end",
+  "I(log((dist_otherpoly_250_end + 1)/1000))" = "dist_otherpoly_1000_end",
+  "I(log((dist_placer_250_end + 1)/1000))" = "dist_placer_1000_end",
+  "I(log((dist_quartz_250_end + 1)/1000))" = "dist_quartz_1000_end",
+  "I(log((dist_othermines_250_end + 1)/1000))" = "dist_othermines_1000_end",
+  "prop_forest_250_end" = "prop_forest_1000_end",
+  "prop_veg_250_end" = "prop_veg_1000_end",
+  "I(log(ts_fires_250_end + 1))" = "ts_fires_1000_end",
+  "I(log(ts_harv250_end + 1))" = "ts_harv1000_end"
+)
+
+# Convert random slopes to data.table
+random_slopes <- as.data.table(re_list$id, keep.rownames = "id")
+
+axis_labels <- list(
+  "I(log((dist_road_250_end + 1)/1000))"      = list(x = "dist_road avail", y = "dist_road"),
+  "I(log(ts_fires_250_end + 1))"               = list(x = "ts_fires avail", y = "ts_fires"),
+  "I(log(ts_harv250_end + 1))"                 = list(x = "ts_harv avail", y = "ts_harv"),
+  "prop_forest_250_end"                        = list(x = "prop_forest avail", y = "prop_forest"),
+  "prop_veg_250_end"                           = list(x = "prop_veg avail", y = "prop_veg"),
+  "I(log((dist_lfother_250_end + 1)/1000))"    = list(x = "dist_lfother avail", y = "dist_lfother"),
+  "I(log((dist_otherpoly_250_end + 1)/1000))"  = list(x = "dist_otherpoly avail", y = "dist_otherpoly"),
+  "I(log((dist_placer_250_end + 1)/1000))"     = list(x = "dist_placer avail", y = "dist_placer"),
+  "I(log((dist_quartz_250_end + 1)/1000))"     = list(x = "dist_quartz avail", y = "dist_quartz"),
+  "I(log((dist_othermines_250_end + 1)/1000))" = list(x = "dist_othermines avail", y = "dist_othermines")
+)
+
+plot_list <- list()
+
+# Loop through each variable
+for (model_var in names(var_map)) {
+  
+  avail_var <- var_map[[model_var]]
+  
+  # Merge data for plotting
+  plot_data <- merge(
+    avg_data[, .(id, avail = get(avail_var))],
+    random_slopes[, .(id, slope = get(model_var))],
+    by = "id"
+  )
+  
+  # Use manual axis labels
+  if (!is.null(axis_labels[[model_var]])) {
+    x_lab <- axis_labels[[model_var]]$x
+    y_lab <- axis_labels[[model_var]]$y
+  } else {
+    x_lab <- paste0("Average ", avail_var)
+    y_lab <- paste0("Random slope for ", model_var)
+  }
+  
+  require(ggplot2)
+  # Create plot
+  p <- ggplot(plot_data, aes(x = avail, y = slope)) +
+    geom_point(alpha = 0.7) +
+    geom_smooth(method = "loess", color = "darkblue", se = TRUE) +
+    labs(
+      x = x_lab,
+      y = "selection coeff",
+    ) +
+    theme_minimal(base_size = 10)
+  
+  # Add plot to list
+  plot_list[[model_var]] <- p
+}
+
+require(patchwork)
+# Combine and print all plots
+combined_plot <- wrap_plots(plot_list, ncol = 3)
+print(combined_plot)
+
+
+##Next plot fixed effect interaction vs average availability
+
+##############################
+# 1. ts_fires_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodwinterroadscomb20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodwinterroadscomb20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log(ts_fires_250_end + 1))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = ts_fires_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = ts_fires_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log(raw_x1 + 1)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodwinterroadscomb20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log(ts_fires_250_end + 1)):I(log(ts_fires_1000_end + 1))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+
+p1 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "ts_fires_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p1)
+
+##############################
+# 2. ts_harv250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodwinterroadscomb20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodwinterroadscomb20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log(ts_harv250_end + 1))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = ts_harv250_end)],
+  avg_data[, .(id, raw_Ma_x1 = ts_harv1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log(raw_x1 + 1)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodwinterroadscomb20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log(ts_harv250_end + 1)):I(log(ts_harv1000_end + 1))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+
+p2 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "ts_harv1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p2)
+
+
+##############################
+# 3. dist_road_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodwinterroadscomb20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodwinterroadscomb20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_road_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_road_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_road_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodwinterroadscomb20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_road_250_end + 1)/1000)):I(log((dist_road_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+
+p3 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_road_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p3)
+
+
+
+##############################
+# 4. dist_lfother_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodwinterroadscomb20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodwinterroadscomb20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_lfother_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_lfother_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_lfother_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodwinterroadscomb20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_lfother_250_end + 1)/1000)):I(log((dist_lfother_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p4 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_lfother_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p4)
+
+
+##############################
+# 5. dist_otherpoly_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodwinterroadscomb20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodwinterroadscomb20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_otherpoly_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_otherpoly_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_otherpoly_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodwinterroadscomb20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_otherpoly_250_end + 1)/1000)):I(log((dist_otherpoly_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p5 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_otherpoly_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p5)
+
+
+##############################
+# 6. dist_placer_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodwinterroadscomb20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodwinterroadscomb20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_placer_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_placer_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_placer_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodwinterroadscomb20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_placer_250_end + 1)/1000)):I(log((dist_placer_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p6 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_placer_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p6)
+
+
+
+##############################
+# 7. dist_quartz_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodwinterroadscomb20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodwinterroadscomb20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_quartz_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_quartz_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_quartz_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodwinterroadscomb20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_quartz_250_end + 1)/1000)):I(log((dist_quartz_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p7 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_quartz_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p7)
+
+
+
+##############################
+# 8. dist_othermines_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodwinterroadscomb20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodwinterroadscomb20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `I(log((dist_othermines_250_end + 1)/1000))`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = dist_othermines_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = dist_othermines_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  raw_x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+dt_full[, x1 := log((raw_x1 + 1)/1000)]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodwinterroadscomb20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "I(log((dist_othermines_250_end + 1)/1000)):I(log((dist_othermines_1000_end + 1)/1000))"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p8 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "dist_othermines_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p8)
+
+
+
+##############################
+# 9. prop_forest_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodwinterroadscomb20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodwinterroadscomb20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `prop_forest_250_end`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = prop_forest_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = prop_forest_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodwinterroadscomb20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "prop_forest_250_end:prop_forest_1000_end"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p9 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "prop_forest_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p9)
+
+
+
+##############################
+# 10. prop_veg_250_end
+##############################
+# Extract random slopes
+re_id <- as.data.table(ranef(m.fullmodwinterroadscomb20step)$cond$id)
+re_id$id <- rownames(ranef(m.fullmodwinterroadscomb20step)$cond$id)
+re_slope <- re_id[, .(id, rand_beta1 = `prop_veg_250_end`)]
+
+# Merge raw and avg data by id
+dt_full <- merge(
+  dt[, .(id, raw_x1 = prop_veg_250_end)],
+  avg_data[, .(id, raw_Ma_x1 = prop_veg_1000_end)],
+  by = "id"
+)
+dt_full <- merge(dt_full, re_slope, by = "id", all.x = TRUE)
+
+# Aggregate to one row per id
+dt_full <- dt_full[, .(
+  x1 = mean(raw_x1, na.rm = TRUE),
+  Ma_x1 = mean(raw_Ma_x1, na.rm = TRUE),
+  beta1 = unique(rand_beta1)
+), by = id]
+
+# Get theta (interaction fixed effect)
+coef_df <- as.data.frame(coef(summary(m.fullmodwinterroadscomb20step))$cond)
+coef_df$term <- rownames(coef_df)
+theta <- coef_df$Estimate[coef_df$term == "prop_veg_250_end:prop_veg_1000_end"]
+
+# Calculate w_x using random slopes + fixed interaction term
+dt_full[, w_x := exp((beta1 * x1) + (theta * x1 * Ma_x1))]
+dt_full <- dt_full[w_x <= 100]
+
+p10 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
+  geom_point(alpha = 0.5, size = 1) +
+  geom_smooth(
+    method = "loess", 
+    se = TRUE, 
+    color = "darkblue", 
+    linewidth = 1.25
+  ) +
+  labs(x = "prop_veg_1000_end avail", y = "w(x)") +
+  theme_minimal(base_size = 10)
+
+print(p10)
+
+
+plot_list <- list(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10)
+patchwork::wrap_plots(plot_list, ncol = 4)
 
 
 
