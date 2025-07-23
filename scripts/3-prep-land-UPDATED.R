@@ -499,7 +499,6 @@ bc.union <- union(bc.union, bc.urresidence.proj)
 bc.polys <- bc.union
 
 #Yukon
-
 #Loading old data first
 yt.lf <- st_read(roads.yt)
 yt.lf.ls <- summary(as.factor(yt.lf$TYPE_DI))
@@ -536,7 +535,12 @@ other.yt_cropped   <- erase(other.yt, mask.poly.vect)
 miningpolys.yt_cropped     <- erase(miningpolys.yt, mask.poly.vect)
 yt.otherpolys_cropped <- erase(yt.otherpolys, mask.poly.vect)
 
-#Checking, looks good!
+summary(as.factor(miningpolys.yt_cropped$RC_Dstr))
+yt_placer_cropped <- miningpolys.yt_cropped[miningpolys.yt_cropped$RC_Dstr == "Placer Mining", ]
+yt_quartz_cropped <- miningpolys.yt_cropped[miningpolys.yt_cropped$RC_Dstr == "Quartz Mining", ]
+
+
+#Checking paved, looks good!
 plot(paved.yt, col = "gray", main = "Before erase")
 plot(mask.poly.vect, add = TRUE, border = "red")
 
@@ -557,8 +561,158 @@ WP1_paved   <- WP1_lf[WP1_lf$TYPE_DISTU %in% c("Highway", "Railway"), ]
 WP1_unpaved <- WP1_lf[WP1_lf$TYPE_DISTU == "Unpaved Road", ]
 WP1_other   <- WP1_lf[!(WP1_lf$TYPE_DISTU %in% c("Highway", "Railway", "Unpaved Road")), ]
 
-WP1_mining <- subset(WP1_poly, TYPE_DISTU %in% c("Quartz Mining", "Placer Mining"))
-WP1_otherpolys <- subset(WP1_poly, !(TYPE_DISTU %in% c("Quartz Mining", "Placer Mining", "Harvest")))
+WP1_othermines <- WP1_poly[WP1_poly$TYPE_DISTU %in% c("Mining"),]
+WP1_placer <- WP1_poly[WP1_poly$TYPE_DISTU %in% c("Placer Mining - Minor", "Placer Mining - Significant"),]
+WP1_quartz <- WP1_poly[WP1_poly$TYPE_DISTU %in% c("Quartz Mining - Minor", "Quartz Mining - Significant"),]
+WP1_otherpolys <- WP1_poly[!(WP1_poly$TYPE_DISTU %in% c("Placer Mining - Minor", "Placer Mining - Significant", "Forestry", "Quartz Mining - Minor", "Quartz Mining - Significant", "Mining")),]
+
+#WP2
+WP2_lf   <- st_read(file.path(raw, 'YT_disturb', 'WP2_lf.shp'))
+WP2_poly   <- st_read(file.path(raw, 'YT_disturb', 'WP2_poly.shp'))
+WP2_lf <- st_transform(WP2_lf, crs)
+WP2_poly <- st_transform(WP2_poly, crs)
+WP2_lf <- vect(WP2_lf)
+WP2_poly <- vect(WP2_poly)
+
+summary(as.factor(WP2_lf$TYPE_DISTU))
+
+WP2_paved   <- WP2_lf[WP2_lf$TYPE_DISTU %in% c("Highway", "Railway"), ]
+WP2_unpaved <- WP2_lf[WP2_lf$TYPE_DISTU == "Unpaved Road", ]
+WP2_other   <- WP2_lf[!(WP2_lf$TYPE_DISTU %in% c("Highway", "Railway", "Unpaved Road")), ]
+
+WP2_othermines <- WP2_poly[WP2_poly$TYPE_DISTU %in% c("Mining"),]
+WP2_placer <- WP2_poly[WP2_poly$TYPE_DISTU %in% c("Placer Mining - Minor", "Placer Mining - Significant"),]
+WP2_quartz <- WP2_poly[WP2_poly$TYPE_DISTU %in% c("Quartz Mining - Minor", "Quartz Mining - Significant"),]
+WP2_otherpolys <- WP2_poly[!(WP2_poly$TYPE_DISTU %in% c("Placer Mining - Minor", "Placer Mining - Significant", "Forestry", "Quartz Mining - Minor", "Quartz Mining - Significant", "Mining")),]
+
+#WP3
+WP3_lf   <- st_read(file.path(raw, 'YT_disturb', 'WP3_lf.shp'))
+WP3_poly   <- st_read(file.path(raw, 'YT_disturb', 'WP3_poly.shp'))
+WP3_lf <- st_transform(WP3_lf, crs)
+WP3_poly <- st_transform(WP3_poly, crs)
+WP3_lf <- vect(WP3_lf)
+WP3_poly <- vect(WP3_poly)
+
+summary(as.factor(WP3_poly$TYPE_DISTU))
+
+WP3_paved   <- WP3_lf[WP3_lf$TYPE_DISTU %in% c("Highway", "Railway"), ]
+WP3_unpaved <- WP3_lf[WP3_lf$TYPE_DISTU == "Unpaved Road", ]
+WP3_other   <- WP3_lf[!(WP3_lf$TYPE_DISTU %in% c("Highway", "Railway", "Unpaved Road")), ]
+
+WP3_othermines <- WP3_poly[WP3_poly$TYPE_DISTU %in% c("Mining"),]
+WP3_placer <- WP3_poly[WP3_poly$TYPE_DISTU %in% c("Placer Mining - Minor", "Placer Mining - Significant"),]
+WP3_quartz <- WP3_poly[WP3_poly$TYPE_DISTU %in% c("Quartz Mining - Minor", "Quartz Mining - Significant"),]
+WP3_otherpolys <- WP3_poly[!(WP3_poly$TYPE_DISTU %in% c("Placer Mining - Minor", "Placer Mining - Significant", "Forestry", "Quartz Mining - Minor", "Quartz Mining - Significant", "Mining")),]
+
+#WP4
+WP4_lf   <- st_read(file.path(raw, 'YT_disturb', 'WP4_lf.shp'))
+WP4_poly   <- st_read(file.path(raw, 'YT_disturb', 'WP4_poly.shp'))
+WP4_lf <- st_transform(WP4_lf, crs)
+WP4_poly <- st_transform(WP4_poly, crs)
+WP4_lf <- vect(WP4_lf)
+WP4_poly <- vect(WP4_poly)
+
+summary(as.factor(WP4_poly$TYPE_DISTU))
+
+WP4_paved   <- WP4_lf[WP4_lf$TYPE_DISTU %in% c("Highway", "Railway"), ]
+WP4_unpaved <- WP4_lf[WP4_lf$TYPE_DISTU == "Unpaved Road", ]
+WP4_other   <- WP4_lf[!(WP4_lf$TYPE_DISTU %in% c("Highway", "Railway", "Unpaved Road")), ]
+
+WP4_othermines <- WP4_poly[WP4_poly$TYPE_DISTU %in% c("Mining"),]
+WP4_placer <- WP4_poly[WP4_poly$TYPE_DISTU %in% c("Placer Mining - Minor", "Placer Mining - Significant"),]
+WP4_quartz <- WP4_poly[WP4_poly$TYPE_DISTU %in% c("Quartz Mining - Minor", "Quartz Mining - Significant"),]
+WP4_otherpolys <- WP4_poly[!(WP4_poly$TYPE_DISTU %in% c("Placer Mining - Minor", "Placer Mining - Significant", "Forestry", "Quartz Mining - Minor", "Quartz Mining - Significant", "Mining")),]
+
+
+#WP5
+WP5_lf   <- st_read(file.path(raw, 'YT_disturb', 'WP5_lf.shp'))
+WP5_poly   <- st_read(file.path(raw, 'YT_disturb', 'WP5_poly.shp'))
+WP5_lf <- st_transform(WP5_lf, crs)
+WP5_poly <- st_transform(WP5_poly, crs)
+WP5_lf <- vect(WP5_lf)
+WP5_poly <- vect(WP5_poly)
+
+summary(as.factor(WP5_poly$TYPE_DISTU))
+
+WP5_paved   <- WP5_lf[WP5_lf$TYPE_DISTU %in% c("Highway", "Railway"), ]
+WP5_unpaved <- WP5_lf[WP5_lf$TYPE_DISTU == "Unpaved Road", ]
+WP5_other   <- WP5_lf[!(WP5_lf$TYPE_DISTU %in% c("Highway", "Railway", "Unpaved Road")), ]
+
+WP5_othermines <- WP5_poly[WP5_poly$TYPE_DISTU %in% c("Mining"),]
+WP5_placer <- WP5_poly[WP5_poly$TYPE_DISTU %in% c("Placer Mining - Minor", "Placer Mining - Significant"),]
+WP5_quartz <- WP5_poly[WP5_poly$TYPE_DISTU %in% c("Quartz Mining - Minor", "Quartz Mining - Significant"),]
+WP5_otherpolys <- WP5_poly[!(WP5_poly$TYPE_DISTU %in% c("Placer Mining - Minor", "Placer Mining - Significant", "Forestry", "Quartz Mining - Minor", "Quartz Mining - Significant", "Mining")),]
+
+#Combining new 
+yt_paved_new <- rbind(
+  WP1_paved,
+  WP2_paved,
+  WP3_paved,
+  WP4_paved,
+  WP5_paved
+)
+
+yt_unpaved_new <- rbind(
+  WP1_unpaved,
+  WP2_unpaved,
+  WP3_unpaved,
+  WP4_unpaved,
+  WP5_unpaved
+)
+
+
+yt_other_new <- rbind(
+  WP1_other,
+  WP2_other,
+  WP3_other,
+  WP4_other,
+  WP5_other
+)
+
+yt_othermines_new <- rbind(
+  WP1_othermines,
+  WP2_othermines,
+  WP3_othermines,
+  WP4_othermines,
+  WP5_othermines
+)
+
+
+yt_placer_new <- rbind(
+  WP1_placer,
+  WP2_placer,
+  WP3_placer,
+  WP4_placer,
+  WP5_placer
+)
+
+
+yt_quartz_new <- rbind(
+  WP1_quartz,
+  WP2_quartz,
+  WP3_quartz,
+  WP4_quartz,
+  WP5_quartz
+)
+
+
+yt_otherpolys_new <- rbind(
+  WP1_otherpolys,
+  WP2_otherpolys,
+  WP3_otherpolys,
+  WP4_otherpolys,
+  WP5_otherpolys
+)
+
+
+#Now combine old with new
+yt_paved_comb <- rbind(yt_paved_new, paved.yt_cropped)
+yt_unpaved_comb <-rbind(yt_unpaved_new, unpaved.yt_cropped)
+yt_otherlf_comb <-rbind(yt_other_new, other.yt_cropped)
+yt_placer_comb <- rbind(yt_placer_new, yt_placer_cropped)
+yt_quartz_comb <- rbind(yt_quartz_new, yt_quartz_cropped)
+yt_othermines_comb <- yt_othermines_new
+yt_otherpolys_comb <- rbind(yt_otherpolys_new, yt.otherpolys_cropped)
 
 
 #NWT
