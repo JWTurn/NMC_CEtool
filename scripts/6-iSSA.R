@@ -981,17 +981,14 @@ plot_list <- list()
 
 # Loop through each variable
 for (model_var in names(var_map)) {
-  
   avail_var <- var_map[[model_var]]
   
-  # Merge data for plotting
   plot_data <- merge(
     avg_data[, .(id, avail = get(avail_var))],
     random_slopes[, .(id, slope = get(model_var))],
     by = "id"
   )
   
-  # Use manual axis labels
   if (!is.null(axis_labels[[model_var]])) {
     x_lab <- axis_labels[[model_var]]$x
     y_lab <- axis_labels[[model_var]]$y
@@ -1000,25 +997,30 @@ for (model_var in names(var_map)) {
     y_lab <- paste0("Random slope for ", model_var)
   }
   
-  require(ggplot2)
-  # Create plot
+  if (avail_var == "ts_harv1000_end") {
+    plot_data <- plot_data[avail >= 4.3]
+  } else if (avail_var == "ts_fires_1000_end") {
+    plot_data <- plot_data[avail >= 5.0]
+  }
+  
+  print(paste("Plotting", model_var, "with x label:", x_lab, "and rows:", nrow(plot_data)))
+  
   p <- ggplot(plot_data, aes(x = avail, y = slope)) +
     geom_point(alpha = 0.7) +
     geom_smooth(method = "loess", color = "darkblue", se = TRUE) +
-    labs(
-      x = x_lab,
-      y = "selection coeff",
-    ) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "gray40", size = 0.8) +
+    labs(x = x_lab, y = "selection coeff") +
     theme_minimal(base_size = 10)
   
-  # Add plot to list
   plot_list[[model_var]] <- p
 }
-
+  
 require(patchwork)
 # Combine and print all plots
 combined_plot <- wrap_plots(plot_list, ncol = 3)
 print(combined_plot)
+
+
 
 
 ##Next plot fixed effect interaction vs average availability
@@ -1718,17 +1720,14 @@ plot_list <- list()
 
 # Loop through each variable
 for (model_var in names(var_map)) {
-  
   avail_var <- var_map[[model_var]]
   
-  # Merge data for plotting
   plot_data <- merge(
     avg_data[, .(id, avail = get(avail_var))],
     random_slopes[, .(id, slope = get(model_var))],
     by = "id"
   )
   
-  # Use manual axis labels
   if (!is.null(axis_labels[[model_var]])) {
     x_lab <- axis_labels[[model_var]]$x
     y_lab <- axis_labels[[model_var]]$y
@@ -1737,18 +1736,21 @@ for (model_var in names(var_map)) {
     y_lab <- paste0("Random slope for ", model_var)
   }
   
-  require(ggplot2)
-  # Create plot
+  if (avail_var == "ts_harv1000_end") {
+    plot_data <- plot_data[avail >= 4.0]
+  #} else if (avail_var == "ts_fires_1000_end") {
+    #plot_data <- plot_data[avail >= 5.0]
+  }
+  
+  print(paste("Plotting", model_var, "with x label:", x_lab, "and rows:", nrow(plot_data)))
+  
   p <- ggplot(plot_data, aes(x = avail, y = slope)) +
     geom_point(alpha = 0.7) +
     geom_smooth(method = "loess", color = "darkblue", se = TRUE) +
-    labs(
-      x = x_lab,
-      y = "selection coeff",
-    ) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "gray40", size = 0.8) +
+    labs(x = x_lab, y = "selection coeff") +
     theme_minimal(base_size = 10)
   
-  # Add plot to list
   plot_list[[model_var]] <- p
 }
 
@@ -2462,17 +2464,14 @@ plot_list <- list()
 
 # Loop through each variable
 for (model_var in names(var_map)) {
-  
   avail_var <- var_map[[model_var]]
   
-  # Merge data for plotting
   plot_data <- merge(
     avg_data[, .(id, avail = get(avail_var))],
     random_slopes[, .(id, slope = get(model_var))],
     by = "id"
   )
   
-  # Use manual axis labels
   if (!is.null(axis_labels[[model_var]])) {
     x_lab <- axis_labels[[model_var]]$x
     y_lab <- axis_labels[[model_var]]$y
@@ -2481,18 +2480,21 @@ for (model_var in names(var_map)) {
     y_lab <- paste0("Random slope for ", model_var)
   }
   
-  require(ggplot2)
-  # Create plot
+  if (avail_var == "ts_fires_1000_end") {
+    plot_data <- plot_data[avail >= 4.9]
+    #} else if (avail_var == "ts_fires_1000_end") {
+    #plot_data <- plot_data[avail >= 5.0]
+  }
+  
+  print(paste("Plotting", model_var, "with x label:", x_lab, "and rows:", nrow(plot_data)))
+  
   p <- ggplot(plot_data, aes(x = avail, y = slope)) +
     geom_point(alpha = 0.7) +
     geom_smooth(method = "loess", color = "darkblue", se = TRUE) +
-    labs(
-      x = x_lab,
-      y = "selection coeff",
-    ) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "gray40", size = 0.8) +
+    labs(x = x_lab, y = "selection coeff") +
     theme_minimal(base_size = 10)
   
-  # Add plot to list
   plot_list[[model_var]] <- p
 }
 
@@ -3043,7 +3045,7 @@ patchwork::wrap_plots(plot_list, ncol = 4)
 
 #Year-round
 gc()
-m.fullmodroadscomb15step <- glmmTMB(case_ ~ -1 +
+m.fullmodroadscomb10step <- glmmTMB(case_ ~ -1 +
                        I(log((sl_+1)/1000)) +
                        I(cos(ta_)) +
                        I(log((sl_+1)/1000)):I(cos(ta_)) +
@@ -3082,7 +3084,7 @@ m.fullmodroadscomb15step <- glmmTMB(case_ ~ -1 +
                        #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
                        
                        (1|year),
-                     family = poisson(), data = dat.issa.15[,`:=`(year = as.factor(year), 
+                     family = poisson(), data = dat.issa.10[,`:=`(year = as.factor(year), 
                                                                   indiv_step_id = as.factor(indiv_step_id),
                                                                   id = as.factor(id))],
                      map= list(theta = factor(c(NA,1:14))),
@@ -3201,17 +3203,14 @@ plot_list <- list()
 
 # Loop through each variable
 for (model_var in names(var_map)) {
-  
   avail_var <- var_map[[model_var]]
   
-  # Merge data for plotting
   plot_data <- merge(
     avg_data[, .(id, avail = get(avail_var))],
     random_slopes[, .(id, slope = get(model_var))],
     by = "id"
   )
   
-  # Use manual axis labels
   if (!is.null(axis_labels[[model_var]])) {
     x_lab <- axis_labels[[model_var]]$x
     y_lab <- axis_labels[[model_var]]$y
@@ -3220,18 +3219,19 @@ for (model_var in names(var_map)) {
     y_lab <- paste0("Random slope for ", model_var)
   }
   
-  require(ggplot2)
-  # Create plot
+  if (avail_var == "ts_harv1000_end") {
+    plot_data <- plot_data[avail >= 4.4]
+    } else if (avail_var == "ts_fires_1000_end") {
+    plot_data <- plot_data[avail >= 4.9]
+  }
+  
   p <- ggplot(plot_data, aes(x = avail, y = slope)) +
     geom_point(alpha = 0.7) +
     geom_smooth(method = "loess", color = "darkblue", se = TRUE) +
-    labs(
-      x = x_lab,
-      y = "selection coeff",
-    ) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "gray40", size = 0.8) +
+    labs(x = x_lab, y = "selection coeff") +
     theme_minimal(base_size = 10)
   
-  # Add plot to list
   plot_list[[model_var]] <- p
 }
 
@@ -3884,17 +3884,14 @@ plot_list <- list()
 
 # Loop through each variable
 for (model_var in names(var_map)) {
-  
   avail_var <- var_map[[model_var]]
   
-  # Merge data for plotting
   plot_data <- merge(
     avg_data[, .(id, avail = get(avail_var))],
     random_slopes[, .(id, slope = get(model_var))],
     by = "id"
   )
   
-  # Use manual axis labels
   if (!is.null(axis_labels[[model_var]])) {
     x_lab <- axis_labels[[model_var]]$x
     y_lab <- axis_labels[[model_var]]$y
@@ -3903,18 +3900,19 @@ for (model_var in names(var_map)) {
     y_lab <- paste0("Random slope for ", model_var)
   }
   
-  require(ggplot2)
-  # Create plot
+  if (avail_var == "ts_harv1000_end") {
+    plot_data <- plot_data[avail >= 4.3]
+  #} else if (avail_var == "ts_fires_1000_end") {
+   # plot_data <- plot_data[avail >= 4.9]
+  }
+  
   p <- ggplot(plot_data, aes(x = avail, y = slope)) +
     geom_point(alpha = 0.7) +
     geom_smooth(method = "loess", color = "darkblue", se = TRUE) +
-    labs(
-      x = x_lab,
-      y = "selection coeff",
-    ) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "gray40", size = 0.8) +
+    labs(x = x_lab, y = "selection coeff") +
     theme_minimal(base_size = 10)
   
-  # Add plot to list
   plot_list[[model_var]] <- p
 }
 
@@ -4410,7 +4408,7 @@ patchwork::wrap_plots(plot_list, ncol = 4)
 
 #Winter
 gc()
-m.fullmodwinterroadscomb20step <- glmmTMB(case_ ~ -1 +
+m.fullmodwinterroadscomb10step <- glmmTMB(case_ ~ -1 +
                              I(log((sl_+1)/1000)) +
                              I(cos(ta_)) +
                              I(log((sl_+1)/1000)):I(cos(ta_)) +
@@ -4449,26 +4447,26 @@ m.fullmodwinterroadscomb20step <- glmmTMB(case_ ~ -1 +
                              #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
                              
                              (1|year),
-                           family = poisson(), data = dat.issa.20.winter[,`:=`(year = as.factor(year), 
+                           family = poisson(), data = dat.issa.10.winter[,`:=`(year = as.factor(year), 
                                                                                indiv_step_id = as.factor(indiv_step_id),
                                                                                id = as.factor(id))],
-                           map= list(theta = factor(c(NA,1:15))),
-                           start = list(theta =c(log(1000), seq(0,0, length.out = 15))), 
+                           map= list(theta = factor(c(NA,1:14))),
+                           start = list(theta =c(log(1000), seq(0,0, length.out = 14))), 
                            verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
 
 
-summary(m.fullmodwinterroadscomb20step)
+summary(m.fullmodwinterroadscomb10step)
 # save model output
-saveRDS(m.fullmodwinterroadscomb20step, "m.fullmodwinterroadscomb20step.RDS")
+saveRDS(m.fullmodwinterroadscomb10step, "m.fullmodwinterroadscomb10step.RDS")
 #m.fullmodwinterroadscomb20step <- readRDS("m.fullmodwinterroadscomb20step.RDS")
 
 
-m.fullmodwinterroadscomb20step.indiv <- coef(m.fullmodwinterroadscomb20step)$cond$id %>% rownames_to_column("id") %>%
+m.fullmodwinterroadscomb10step.indiv <- coef(m.fullmodwinterroadscomb10step)$cond$id %>% rownames_to_column("id") %>%
   pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
   mutate(method = "ME")
-indivs <- setDT(m.fullmodwinterroadscomb20step.indiv)[term!='(Intercept)']
-pop <- setDT(tidy(m.fullmodwinterroadscomb20step, effects = 'fixed'))
+indivs <- setDT(m.fullmodwinterroadscomb10step.indiv)[term!='(Intercept)']
+pop <- setDT(tidy(m.fullmodwinterroadscomb10step, effects = 'fixed'))
 
 
 require(ggplot2)
@@ -4502,7 +4500,7 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 ###Functional response plots:
 ##Start with random slopes vs avg availability
 
-dt <- as.data.table(dat.issa.20.winter)
+dt <- as.data.table(dat.issa.10.winter)
 
 #Get avg availability by id
 vars_1000 <- c(
@@ -4531,7 +4529,7 @@ avg_data[, `:=`(
   dist_othermines_1000_end= log((dist_othermines_1000_end + 1) / 1000)
 )]
 
-re_list <- ranef(m.fullmodwinterroadscomb20step)$cond
+re_list <- ranef(m.fullmodwinterroadscomb10step)$cond
 
 var_map <- list(
   "I(log((dist_road_250_end + 1)/1000))" = "dist_road_1000_end",
@@ -4566,17 +4564,14 @@ plot_list <- list()
 
 # Loop through each variable
 for (model_var in names(var_map)) {
-  
   avail_var <- var_map[[model_var]]
   
-  # Merge data for plotting
   plot_data <- merge(
     avg_data[, .(id, avail = get(avail_var))],
     random_slopes[, .(id, slope = get(model_var))],
     by = "id"
   )
   
-  # Use manual axis labels
   if (!is.null(axis_labels[[model_var]])) {
     x_lab <- axis_labels[[model_var]]$x
     y_lab <- axis_labels[[model_var]]$y
@@ -4585,18 +4580,19 @@ for (model_var in names(var_map)) {
     y_lab <- paste0("Random slope for ", model_var)
   }
   
+  #if (avail_var == "ts_harv1000_end") {
+    #plot_data <- plot_data[avail >= 4.3]
+    #} else if (avail_var == "ts_fires_1000_end") {
+    # plot_data <- plot_data[avail >= 4.9]
+  #}
   require(ggplot2)
-  # Create plot
   p <- ggplot(plot_data, aes(x = avail, y = slope)) +
     geom_point(alpha = 0.7) +
     geom_smooth(method = "loess", color = "darkblue", se = TRUE) +
-    labs(
-      x = x_lab,
-      y = "selection coeff",
-    ) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "gray40", size = 0.8) +
+    labs(x = x_lab, y = "selection coeff") +
     theme_minimal(base_size = 10)
   
-  # Add plot to list
   plot_list[[model_var]] <- p
 }
 
