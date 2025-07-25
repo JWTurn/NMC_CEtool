@@ -1,5 +1,5 @@
 # === iSSA -------------------------------------
-# Julie Turner
+# Julie Turner & Peter Baker
 # started 14 August 2024
 
 #### Packages ####
@@ -215,6 +215,7 @@ dat.issa[,dist_anthrodisturbance_250_end_adj:= ifelse(.SD[,.(min(dist_anthrodist
 #dat.issa[,dist_anthrodisturbance_avail:= mean(dist_anthrodisturbance_end, na.rm = T), by = indiv_step_id]
 #saveRDS(dat.issa, file.path(derived, 'dat_iSSA_20lf20poly_adj_updated.RDS'))
 
+#---- Load-in iSSA data ----
 dat.issa <- readRDS(file.path(derived, 'dat_iSSA_20lf20poly_adj_updated.RDS'))
 dat.issa.20 <- dat.issa[,.SD[1:21], by = .(indiv_step_id)]
 dat.issa.15 <- dat.issa[,.SD[1:16], by = .(indiv_step_id)]
@@ -259,13 +260,12 @@ dat.issa.20.summer <- dat.issa.20[dat.issa.20$season == 'summer',] #Assign to ne
 
 
 
+# ---- FINE SCALE MODELS ----
 
-###FINE SCALE MODELS: winter, summer, full, for both close to and far from disturbance (6 models), adjusted distances used for far from disturbance
-
-##CLOSE TO DISTURBANCE
+## ---- CLOSE TO DISTURBANCE (SKIPPING) ----
 dat.issa.10.close <- dat.issa.10[dist_anthrodisturbance_250_start <= 20000]
 
-#Year-round
+### ---- Year-round ----
 gc()
 m.closedisturbancefull <- glmmTMB(case_ ~ -1 +
                                 I(log((sl_+1)/1000)) +
@@ -358,7 +358,7 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 
 
 
-#SUMMER
+### ---- SUMMER ----
 dat.issa.10.summer.close <- dat.issa.10.summer[dist_anthrodisturbance_250_start <= 20000]
 
 gc()
@@ -449,7 +449,7 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 
 
 
-#WINTER
+### ---- WINTER ----
 dat.issa.10.winter.close <- dat.issa.10.winter[dist_anthrodisturbance_250_start <= 20000]
 
 gc()
@@ -540,9 +540,9 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 
 
 
-###FAR FROM DISTURBANCE
+## ---- FAR FROM DISTURBANCE (SKIPPING) ----
 
-#Year-round, did not run
+### ---- Year-round ----
 gc()
 m.fardisturbancefull <- glmmTMB(case_ ~ -1 +
                                     I(log((sl_+1)/1000)) +
@@ -632,7 +632,7 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 
 
 
-#SUMMER
+### ---- SUMMER ----
 gc()
 m.fardisturbancesummer <- glmmTMB(case_ ~ -1 +
                                   I(log((sl_+1)/1000)) +
@@ -722,7 +722,7 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 
 
 
-#WINTER
+### ---- WINTER ----
 gc()
 m.fardisturbancewinter <- glmmTMB(case_ ~ -1 +
                                     I(log((sl_+1)/1000)) +
@@ -813,14 +813,11 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 
 
 
+## --- Full Models (using) ----
+#Re-trying full dataset, close and far combined, seasons combined - it worked! Sticking with these for now as the main ones
 
-
-
-
-
-###Re-trying full dataset, close and far combined, seasons combined - it worked! Sticking with these for now as the main ones
-
-#Year-round, trying 20 steps for each model now. Re-saving models as x20step (didn't work), trying 15, 15 didnt work
+### --- Year-round ---- 
+#Trying 20 steps for each model now. Re-saving models as x20step (didn't work), trying 15, 15 didnt work
 gc()
 m.fullmod15step <- glmmTMB(case_ ~ -1 +
                                     I(log((sl_+1)/1000)) +
@@ -1025,9 +1022,9 @@ print(combined_plot)
 
 ##Next plot fixed effect interaction vs average availability
 
-##############################
+
 # 1. ts_fires_250_end
-##############################
+
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmod)$cond$id)
 re_id$id <- rownames(ranef(m.fullmod)$cond$id)
@@ -1071,9 +1068,8 @@ p1 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 
 print(p1)
 
-##############################
+
 # 2. ts_harv250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmod)$cond$id)
 re_id$id <- rownames(ranef(m.fullmod)$cond$id)
@@ -1118,9 +1114,8 @@ p2 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p2)
 
 
-##############################
+
 # 3. dist_paved_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmod)$cond$id)
 re_id$id <- rownames(ranef(m.fullmod)$cond$id)
@@ -1166,11 +1161,7 @@ print(p3)
 
 
 
-
-
-##############################
 # 4. dist_unpaved_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmod)$cond$id)
 re_id$id <- rownames(ranef(m.fullmod)$cond$id)
@@ -1216,9 +1207,7 @@ p4 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p4)
 
 
-##############################
 # 5. dist_lfother_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmod)$cond$id)
 re_id$id <- rownames(ranef(m.fullmod)$cond$id)
@@ -1264,9 +1253,7 @@ p5 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p5)
 
 
-##############################
 # 6. dist_otherpoly_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmod)$cond$id)
 re_id$id <- rownames(ranef(m.fullmod)$cond$id)
@@ -1312,9 +1299,7 @@ p6 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p6)
 
 
-##############################
 # 7. dist_placer_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmod)$cond$id)
 re_id$id <- rownames(ranef(m.fullmod)$cond$id)
@@ -1360,10 +1345,7 @@ p7 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p7)
 
 
-
-##############################
 # 8. dist_quartz_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmod)$cond$id)
 re_id$id <- rownames(ranef(m.fullmod)$cond$id)
@@ -1410,9 +1392,7 @@ print(p8)
 
 
 
-##############################
 # 9. dist_othermines_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmod)$cond$id)
 re_id$id <- rownames(ranef(m.fullmod)$cond$id)
@@ -1459,9 +1439,7 @@ print(p9)
 
 
 
-##############################
 # 10. prop_forest_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmod)$cond$id)
 re_id$id <- rownames(ranef(m.fullmod)$cond$id)
@@ -1506,9 +1484,7 @@ print(p10)
 
 
 
-##############################
 # 11. prop_veg_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmod)$cond$id)
 re_id$id <- rownames(ranef(m.fullmod)$cond$id)
@@ -1557,7 +1533,7 @@ patchwork::wrap_plots(plot_list, ncol = 4)
 
 
 
-#SUMMER
+### --- Summer ----
 gc()
 m.fullmodsummer20step <- glmmTMB(case_ ~ -1 +
                        I(log((sl_+1)/1000)) +
@@ -1762,9 +1738,7 @@ print(combined_plot)
 
 ##Next plot fixed effect interaction vs average availability
 
-##############################
 # 1. ts_fires_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodsummer20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodsummer20step)$cond$id)
@@ -1808,9 +1782,7 @@ p1 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 
 print(p1)
 
-##############################
 # 2. ts_harv250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodsummer20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodsummer20step)$cond$id)
@@ -1855,9 +1827,7 @@ p2 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p2)
 
 
-##############################
 # 3. dist_paved_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodsummer20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodsummer20step)$cond$id)
@@ -1902,12 +1872,7 @@ p3 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p3)
 
 
-
-
-
-##############################
 # 4. dist_unpaved_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodsummer20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodsummer20step)$cond$id)
@@ -1953,9 +1918,7 @@ p4 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p4)
 
 
-##############################
 # 5. dist_lfother_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodsummer20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodsummer20step)$cond$id)
@@ -2001,9 +1964,7 @@ p5 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p5)
 
 
-##############################
 # 6. dist_otherpoly_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodsummer20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodsummer20step)$cond$id)
@@ -2048,10 +2009,7 @@ p6 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 
 print(p6)
 
-
-##############################
 # 7. dist_placer_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodsummer20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodsummer20step)$cond$id)
@@ -2097,10 +2055,7 @@ p7 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p7)
 
 
-
-##############################
 # 8. dist_quartz_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodsummer20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodsummer20step)$cond$id)
@@ -2146,10 +2101,7 @@ p8 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p8)
 
 
-
-##############################
 # 9. dist_othermines_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodsummer20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodsummer20step)$cond$id)
@@ -2195,10 +2147,7 @@ p9 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p9)
 
 
-
-##############################
 # 10. prop_forest_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodsummer20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodsummer20step)$cond$id)
@@ -2242,10 +2191,7 @@ p10 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p10)
 
 
-
-##############################
 # 11. prop_veg_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodsummer20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodsummer20step)$cond$id)
@@ -2295,14 +2241,7 @@ patchwork::wrap_plots(plot_list, ncol = 4)
 
 
 
-
-
-
-
-
-
-
-#Winter
+### --- Winter ----
 gc()
 m.fullmodwinter20step <- glmmTMB(case_ ~ -1 +
                              I(log((sl_+1)/1000)) +
@@ -2506,9 +2445,7 @@ print(combined_plot)
 
 ##Next plot fixed effect interaction vs average availability
 
-##############################
 # 1. ts_fires_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodwinter20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodwinter20step)$cond$id)
@@ -2552,9 +2489,7 @@ p1 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 
 print(p1)
 
-##############################
 # 2. ts_harv250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodwinter20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodwinter20step)$cond$id)
@@ -2599,9 +2534,7 @@ p2 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p2)
 
 
-##############################
 # 3. dist_paved_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodwinter20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodwinter20step)$cond$id)
@@ -2647,11 +2580,7 @@ print(p3)
 
 
 
-
-
-##############################
 # 4. dist_unpaved_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodwinter20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodwinter20step)$cond$id)
@@ -2697,9 +2626,7 @@ p4 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p4)
 
 
-##############################
 # 5. dist_lfother_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodwinter20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodwinter20step)$cond$id)
@@ -2745,9 +2672,7 @@ p5 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p5)
 
 
-##############################
 # 6. dist_otherpoly_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodwinter20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodwinter20step)$cond$id)
@@ -2793,9 +2718,7 @@ p6 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p6)
 
 
-##############################
 # 7. dist_placer_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodwinter20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodwinter20step)$cond$id)
@@ -2842,9 +2765,7 @@ print(p7)
 
 
 
-##############################
 # 8. dist_quartz_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodwinter20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodwinter20step)$cond$id)
@@ -2891,9 +2812,7 @@ print(p8)
 
 
 
-##############################
 # 9. dist_othermines_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodwinter20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodwinter20step)$cond$id)
@@ -2939,10 +2858,7 @@ p9 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p9)
 
 
-
-##############################
 # 10. prop_forest_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodwinter20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodwinter20step)$cond$id)
@@ -2987,9 +2903,7 @@ print(p10)
 
 
 
-##############################
 # 11. prop_veg_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodwinter20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodwinter20step)$cond$id)
@@ -3039,11 +2953,9 @@ patchwork::wrap_plots(plot_list, ncol = 4)
 
 
 
+## --- Roads combined ----
 
-
-#Running the three full models (two seasons and one full year) with roads collapsed
-
-#Year-round
+### ---Year-round ----
 gc()
 m.fullmodroadscomb10step <- glmmTMB(case_ ~ -1 +
                        I(log((sl_+1)/1000)) +
@@ -3243,9 +3155,7 @@ print(combined_plot)
 
 ##Next plot fixed effect interaction vs average availability
 
-##############################
 # 1. ts_fires_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodroadscomb15step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodroadscomb15step)$cond$id)
@@ -3289,9 +3199,7 @@ p1 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 
 print(p1)
 
-##############################
 # 2. ts_harv250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodroadscomb15step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodroadscomb15step)$cond$id)
@@ -3336,9 +3244,7 @@ p2 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p2)
 
 
-##############################
 # 3. dist_road_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodroadscomb15step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodroadscomb15step)$cond$id)
@@ -3384,9 +3290,7 @@ print(p3)
 
 
 
-##############################
 # 4. dist_lfother_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodroadscomb15step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodroadscomb15step)$cond$id)
@@ -3432,9 +3336,7 @@ p4 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p4)
 
 
-##############################
 # 5. dist_otherpoly_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodroadscomb15step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodroadscomb15step)$cond$id)
@@ -3480,9 +3382,7 @@ p5 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p5)
 
 
-##############################
 # 6. dist_placer_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodroadscomb15step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodroadscomb15step)$cond$id)
@@ -3529,9 +3429,7 @@ print(p6)
 
 
 
-##############################
 # 7. dist_quartz_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodroadscomb15step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodroadscomb15step)$cond$id)
@@ -3577,10 +3475,7 @@ p7 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p7)
 
 
-
-##############################
 # 8. dist_othermines_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodroadscomb15step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodroadscomb15step)$cond$id)
@@ -3627,9 +3522,7 @@ print(p8)
 
 
 
-##############################
 # 9. prop_forest_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodroadscomb15step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodroadscomb15step)$cond$id)
@@ -3674,9 +3567,7 @@ print(p9)
 
 
 
-##############################
 # 10. prop_veg_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodroadscomb15step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodroadscomb15step)$cond$id)
@@ -3726,7 +3617,7 @@ patchwork::wrap_plots(plot_list, ncol = 4)
 
 
 
-#SUMMER
+### ---SUMMER ----
 gc()
 m.fullmodsummerroadscomb20step <- glmmTMB(case_ ~ -1 +
                              I(log((sl_+1)/1000)) +
@@ -3924,9 +3815,7 @@ print(combined_plot)
 
 ##Next plot fixed effect interaction vs average availability
 
-##############################
 # 1. ts_fires_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodsummerroadscomb20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodsummerroadscomb20step)$cond$id)
@@ -3970,9 +3859,7 @@ p1 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 
 print(p1)
 
-##############################
 # 2. ts_harv250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodsummerroadscomb20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodsummerroadscomb20step)$cond$id)
@@ -4017,9 +3904,7 @@ p2 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p2)
 
 
-##############################
 # 3. dist_road_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodsummerroadscomb20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodsummerroadscomb20step)$cond$id)
@@ -4064,10 +3949,7 @@ p3 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p3)
 
 
-
-##############################
 # 4. dist_lfother_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodsummerroadscomb20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodsummerroadscomb20step)$cond$id)
@@ -4113,9 +3995,7 @@ p4 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p4)
 
 
-##############################
 # 5. dist_otherpoly_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodsummerroadscomb20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodsummerroadscomb20step)$cond$id)
@@ -4161,9 +4041,7 @@ p5 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p5)
 
 
-##############################
 # 6. dist_placer_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodsummerroadscomb20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodsummerroadscomb20step)$cond$id)
@@ -4209,10 +4087,7 @@ p6 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p6)
 
 
-
-##############################
 # 7. dist_quartz_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodsummerroadscomb20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodsummerroadscomb20step)$cond$id)
@@ -4258,10 +4133,7 @@ p7 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p7)
 
 
-
-##############################
 # 8. dist_othermines_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodsummerroadscomb20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodsummerroadscomb20step)$cond$id)
@@ -4307,10 +4179,7 @@ p8 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p8)
 
 
-
-##############################
 # 9. prop_forest_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodsummerroadscomb20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodsummerroadscomb20step)$cond$id)
@@ -4355,9 +4224,7 @@ print(p9)
 
 
 
-##############################
 # 10. prop_veg_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodsummerroadscomb20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodsummerroadscomb20step)$cond$id)
@@ -4406,7 +4273,7 @@ patchwork::wrap_plots(plot_list, ncol = 4)
 
 
 
-#Winter
+### ---Winter ----
 gc()
 m.fullmodwinterroadscomb10step <- glmmTMB(case_ ~ -1 +
                              I(log((sl_+1)/1000)) +
@@ -4604,9 +4471,7 @@ print(combined_plot)
 
 ##Next plot fixed effect interaction vs average availability
 
-##############################
 # 1. ts_fires_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodwinterroadscomb20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodwinterroadscomb20step)$cond$id)
@@ -4650,9 +4515,7 @@ p1 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 
 print(p1)
 
-##############################
 # 2. ts_harv250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodwinterroadscomb20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodwinterroadscomb20step)$cond$id)
@@ -4697,9 +4560,7 @@ p2 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p2)
 
 
-##############################
 # 3. dist_road_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodwinterroadscomb20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodwinterroadscomb20step)$cond$id)
@@ -4745,9 +4606,7 @@ print(p3)
 
 
 
-##############################
 # 4. dist_lfother_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodwinterroadscomb20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodwinterroadscomb20step)$cond$id)
@@ -4793,9 +4652,7 @@ p4 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p4)
 
 
-##############################
 # 5. dist_otherpoly_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodwinterroadscomb20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodwinterroadscomb20step)$cond$id)
@@ -4841,9 +4698,7 @@ p5 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
 print(p5)
 
 
-##############################
 # 6. dist_placer_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodwinterroadscomb20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodwinterroadscomb20step)$cond$id)
@@ -4890,9 +4745,7 @@ print(p6)
 
 
 
-##############################
 # 7. dist_quartz_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodwinterroadscomb20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodwinterroadscomb20step)$cond$id)
@@ -4939,9 +4792,7 @@ print(p7)
 
 
 
-##############################
 # 8. dist_othermines_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodwinterroadscomb20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodwinterroadscomb20step)$cond$id)
@@ -4988,9 +4839,7 @@ print(p8)
 
 
 
-##############################
 # 9. prop_forest_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodwinterroadscomb20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodwinterroadscomb20step)$cond$id)
@@ -5035,9 +4884,8 @@ print(p9)
 
 
 
-##############################
+
 # 10. prop_veg_250_end
-##############################
 # Extract random slopes
 re_id <- as.data.table(ranef(m.fullmodwinterroadscomb20step)$cond$id)
 re_id$id <- rownames(ranef(m.fullmodwinterroadscomb20step)$cond$id)
@@ -5079,7 +4927,6 @@ p10 <- ggplot(dt_full, aes(x = Ma_x1, y = w_x)) +
   theme_minimal(base_size = 10)
 
 print(p10)
-
 
 plot_list <- list(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10)
 patchwork::wrap_plots(plot_list, ncol = 4)
