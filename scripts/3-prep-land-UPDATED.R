@@ -125,35 +125,33 @@ writeRaster(harv5000m, file.path(derived, 'nmc_harv5000m_1985-2020.tif'), overwr
 
 years <- 2012:2020
 
+# Each raster stores the year of harvest in each cell (0 = no harvest, will be set to NA)
 resolutions <- list(
-  "harv250" = harv250m,
-  "harv1000" = harv1000m,
-  "harv5000" = harv5000m
+  "harv250" = harv250m,     # 250m resolution raster
+  "harv1000" = harv1000m,   # 1000m resolution raster
+  "harv5000" = harv5000m    # 5000m resolution raster
 )
 
+# Loop through each resolution
 for (res_name in names(resolutions)) {
-  out_dir <- file.path(derived, res_name) 
   
   original_rast <- resolutions[[res_name]]
+ 
+  out_dir <- file.path(derived, res_name)
+  dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
   
-  cumulative_rast <- classify(original_rast, matrix(c(-Inf, Inf, NA), ncol = 3, byrow = TRUE))
-  
+  # Loop through each target year
   for (yr in years) {
+    message("Processing ", res_name, " for year ", yr)
+    
+    # Keep only harvests that occurred up to and including the current year
+    # All cells harvested after 'yr' will be masked out (set to NA)
     masked_rast <- mask(original_rast, original_rast <= yr, maskvalue = FALSE)
-    harvested_this_year <- masked_rast == yr
     
-    values_to_update <- which(values(harvested_this_year) == 1)
-    if (length(values_to_update) > 0) {
-      v <- values(cumulative_rast)
-      v[values_to_update] <- yr
-      values(cumulative_rast) <- v
-    }
-    
-    out_path <- file.path(out_dir, paste0("harv_", yr, ".tif"))
-    writeRaster(cumulative_rast, out_path, overwrite = TRUE)
+    out_path <- file.path(out_dir, paste0(res_name, "_", yr, ".tif"))
+    writeRaster(masked_rast, out_path, overwrite = TRUE)
   }
 }
-
 
 ## Dist to harv ----
 ## Calculating average distance to harvest (in current year or year before) for each year and resolutions (250, 1000, and 5000)
@@ -161,9 +159,9 @@ for (res_name in names(resolutions)) {
 dist_results <- list()
 
 # Define output folders for each resolution
-dir_250 <- file.path(derived, "harv250")
-dir_1000 <- file.path(derived, "harv1000")
-dir_5000 <- file.path(derived, "harv5000")
+dir_250 <- file.path(derived, "harv_dist_250m")
+dir_1000 <- file.path(derived, "harv_dist_1000m")
+dir_5000 <- file.path(derived, "harv_dist_5000m")
 
 # Create directories if they don't exist
 dir.create(dir_250, recursive = TRUE, showWarnings = FALSE)
@@ -214,13 +212,23 @@ for (year in 2012:2020) {
 ## P/A harv ----
 # Making presence/absence rasters of harvest in recent two years for each year and res
 
+# Define output folders for each resolution
+dir_250 <- file.path(derived, "harv_pa_250m")
+dir_1000 <- file.path(derived, "harv_pa_1000m")
+dir_5000 <- file.path(derived, "harv_pa_5000m")
+
+# Create directories if they don't exist
+dir.create(dir_250, recursive = TRUE, showWarnings = FALSE)
+dir.create(dir_1000, recursive = TRUE, showWarnings = FALSE)
+dir.create(dir_5000, recursive = TRUE, showWarnings = FALSE)
+
 for (year in 2012:2020) {
   message("Processing presence/absence for harvest in year ", year)
   
   # Define output files
-  out_file_250m <- file.path(derived, "harv250", paste0("harvpres_250m_", year, ".tif"))
-  out_file_1000m <- file.path(derived, "harv1000", paste0("harvpres_1000m_", year, ".tif"))
-  out_file_5000m <- file.path(derived, "harv5000", paste0("harvpres_5000m_", year, ".tif"))
+  out_file_250m <- file.path(derived, "harv_pa_250m", paste0("harvpres_250m_", year, ".tif"))
+  out_file_1000m <- file.path(derived, "harv_pa_1000m", paste0("harvpres_1000m_", year, ".tif"))
+  out_file_5000m <- file.path(derived, "harv_pa_5000m", paste0("harvpres_5000m_", year, ".tif"))
   
   # Create binary raster: 1 = harvest this year or last year, 0 = no harvest
   harvest_bin <- harv30m == year | harv30m == (year - 1)
@@ -260,15 +268,26 @@ for (year in 2012:2020) {
 
 
 #---- Density of harv ----
+# Define output folders for each resolution
+dir_250 <- file.path(derived, "harv_dens_250m")
+dir_1000 <- file.path(derived, "harv_dens_1000m")
+dir_5000 <- file.path(derived, "harv_dens_5000m")
+
+# Create directories if they don't exist
+dir.create(dir_250, recursive = TRUE, showWarnings = FALSE)
+dir.create(dir_1000, recursive = TRUE, showWarnings = FALSE)
+dir.create(dir_5000, recursive = TRUE, showWarnings = FALSE)
+
+
 # Making presence/absence rasters of harvest in recent two years for each year and res
 
 for (year in 2012:2020) {
   message("Processing density for harvest in year ", year)
   
   # Define output files
-  out_file_250m <- file.path(derived, "harv250", paste0("harvdens_250m_", year, ".tif"))
-  out_file_1000m <- file.path(derived, "harv1000", paste0("harvdens_1000m_", year, ".tif"))
-  out_file_5000m <- file.path(derived, "harv5000", paste0("harvdens_5000m_", year, ".tif"))
+  out_file_250m <- file.path(derived, "harv_dens_250m", paste0("harvdens_250m_", year, ".tif"))
+  out_file_1000m <- file.path(derived, "harv_dens_1000m", paste0("harvdens_1000m_", year, ".tif"))
+  out_file_5000m <- file.path(derived, "harv_dens_5000m", paste0("harvdens_5000m_", year, ".tif"))
   
   # Create binary raster: 1 = harvest this year or last year, 0 = no harvest
   harvest_bin <- harv30m == year | harv30m == (year - 1)
@@ -1085,17 +1104,23 @@ for (cat in c(line_categories, poly_categories)) {
 
 
 # ---- PRESENCE/ABSENCE ------
-
+gc()
 for (cat in c(line_categories, poly_categories)) {
   message("======= Processing presence/absence for: ", cat, " =======")
   
   for (year in years) {
     message("→ Year ", year)
     
-    #Define output files
+    # Define output files
     out_file_250m   <- file.path("data", "derived", "pa_disturb_250m",  paste0(cat, "_pa_250m_", year, ".tif"))
     out_file_1000m  <- file.path("data", "derived", "pa_disturb_1000m", paste0(cat, "_pa_1000m_", year, ".tif"))
     out_file_5000m  <- file.path("data", "derived", "pa_disturb_5000m", paste0(cat, "_pa_5000m_", year, ".tif"))
+    
+    # Skip if all outputs already exist
+    if (file.exists(out_file_250m) && file.exists(out_file_1000m) && file.exists(out_file_5000m)) {
+      message("  Skipping ", cat, " for year ", year, " (files already exist)")
+      next
+    }
     
     # Subset feature data for year/category
     if (cat %in% line_categories) {
@@ -1109,14 +1134,14 @@ for (cat in c(line_categories, poly_categories)) {
     writeVector(feat, temp_vec_file, overwrite = TRUE)
     feat <- vect(temp_vec_file)
     
-    #Make base raster of the feature, where 1 = present, 0 = absent
+    # Make base raster of the feature, where 1 = present, 0 = absent
     bin_ras_30m <- terra::rasterize(feat, rasterToMatch_extendedLandscape30m, touches = TRUE)
     bin_ras_30m[!is.na(bin_ras_30m)] <- 1
     bin_ras_30m[is.na(bin_ras_30m)] <- 0  # Make 0 = absent
     rm(feat)
     gc()
-
-    #Scale up to the different resolutions, using max. If any square has the feature, it counts it as present in the large scales
+    
+    # Scale up to the different resolutions, using max
     message("  Writing 250m raster...")
     bin_250 <- terra::resample(bin_ras_30m, rasterToMatch_extendedLandscape250m, method = "max")
     writeRaster(bin_250, out_file_250m, filetype = "GTiff", overwrite = TRUE)
@@ -1143,7 +1168,7 @@ for (cat in c(line_categories, poly_categories)) {
 }
 
 # ----- DENSITY (FOR LF DISTURBANCE) -----
-
+gc()
 for (cat in c(line_categories)) {
   message("======= Processing density for: ", cat, " =======")
   
@@ -1174,6 +1199,7 @@ for (cat in c(line_categories)) {
     rm(feat)
     gc()
     
+    #Resample to each coarser resolution
     message("  Writing 250m raster...")
     bin_250 <- terra::resample(bin_ras_30m, rasterToMatch_extendedLandscape250m, method = "average")
     writeRaster(bin_250, out_file_250m, filetype = "GTiff", overwrite = TRUE)
@@ -1201,7 +1227,7 @@ for (cat in c(line_categories)) {
 
 
 # ---- DENSITY (FOR POLYGONAL DISTURBANCE) ------
-
+gc()
 for (cat in poly_categories) {
   message("======= Processing polygonal density for: ", cat, " =======")
   
