@@ -62,6 +62,7 @@ fires_250 <- file.path('data', 'derived', 'fireRasters250m', 'fires')
 harv250 <- file.path('harv250', 'harv')
 harv_dist_250 <- file.path('data', 'derived', 'harv_dist_250m', 'harvdist_250m')
 harv_pa_250 <- file.path('data', 'derived', 'harv_pa_250m', 'harvpres_250m')
+harv_dens_250 <- file.path('data', 'derived', 'harv_dens_250m', 'harvdens_250m')
 
 #Forest age 250
 for_age_250 <- file.path('data', 'raw', 'age250', 'forest_age')
@@ -70,6 +71,10 @@ for_age_250 <- file.path('data', 'raw', 'age250', 'forest_age')
 dens_lfother_250 <- file.path('data', 'derived', 'dens_disturb_250m', 'otherlf_dens_250m')
 dens_paved_250 <- file.path('data', 'derived', 'dens_disturb_250m', 'paved_dens_250m')
 dens_unpaved_250 <- file.path('data', 'derived', 'dens_disturb_250m', 'unpaved_dens_250m')
+dens_placer_250 <- file.path('data', 'derived', 'dens_disturb_250m', 'placer_dens_250m')
+dens_quartz_250 <- file.path('data', 'derived', 'dens_disturb_250m', 'quartz_dens_250m')
+dens_otherpoly_250 <- file.path('data', 'derived', 'dens_disturb_250m', 'otherpoly_dens_250m')
+dens_othermines_250 <- file.path('data', 'derived', 'dens_disturb_250m', 'othermines_dens_250m')
 dist_paved_250 <- file.path('data', 'derived', 'dist_disturb_250m', 'paved_distance_250m')
 dist_unpaved_250 <- file.path('data', 'derived', 'dist_disturb_250m', 'unpaved_distance_250m')
 dist_lfother_250 <- file.path('data', 'derived', 'dist_disturb_250m', 'otherlf_distance_250m')
@@ -100,7 +105,6 @@ prop_needleleaf_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_spl
 prop_deciduous_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_deciduous_1000')
 prop_mixed_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_mixed_1000')
 
-
 #Fires 1000
 fires_1000 <- file.path('data', 'derived', 'fireRasters1000m', 'fires')
 
@@ -108,6 +112,7 @@ fires_1000 <- file.path('data', 'derived', 'fireRasters1000m', 'fires')
 harv1000 <- file.path('harv1000', 'harv')
 harv_dist_1000 <- file.path('data', 'derived', 'harv_dist_1000m', 'harvdist_1000m')
 harv_pa_1000 <- file.path('data', 'derived', 'harv_pa_1000m', 'harvpres_1000m')
+harv_dens_1000 <- file.path('data', 'derived', 'harv_dens_1000m', 'harvdens_1000m')
 
 #Forest age 1000
 for_age_1000 <- file.path('data', 'raw', 'age1000', 'forest_age')
@@ -116,6 +121,10 @@ for_age_1000 <- file.path('data', 'raw', 'age1000', 'forest_age')
 dens_lfother_1000 <- file.path('data', 'derived', 'dens_disturb_1000m', 'otherlf_dens_1000m')
 dens_paved_1000 <- file.path('data', 'derived', 'dens_disturb_1000m', 'paved_dens_1000m')
 dens_unpaved_1000 <- file.path('data', 'derived', 'dens_disturb_1000m', 'unpaved_dens_1000m')
+dens_placer_1000 <- file.path('data', 'derived', 'dens_disturb_1000m', 'placer_dens_1000m')
+dens_quartz_1000 <- file.path('data', 'derived', 'dens_disturb_1000m', 'quartz_dens_1000m')
+dens_otherpoly_1000 <- file.path('data', 'derived', 'dens_disturb_1000m', 'otherpoly_dens_1000m')
+dens_othermines_1000 <- file.path('data', 'derived', 'dens_disturb_1000m', 'othermines_dens_1000m')
 dist_paved_1000 <- file.path('data', 'derived', 'dist_disturb_1000m', 'paved_distance_1000m')
 dist_unpaved_1000 <- file.path('data', 'derived', 'dist_disturb_1000m', 'unpaved_distance_1000m')
 dist_lfother_1000 <- file.path('data', 'derived', 'dist_disturb_1000m', 'otherlf_distance_1000m')
@@ -130,7 +139,6 @@ pa_placer_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'placer_pa_10
 pa_quartz_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'quartz_pa_1000m')
 pa_othermines_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'othermines_pa_1000m')
 pa_otherpoly_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'otherpoly_pa_1000m')
-
 
 
 id <- 'id'
@@ -607,11 +615,30 @@ targets_disturbance <- c(
     extract_by_year(dens_unpaved, var = dens_lfother_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
-  
+tar_target(
+  dens_placer,
+  extract_by_year(dens_other, var = dens_placer_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+),
+
+tar_target(
+  dens_quartz,
+  extract_by_year(dens_placer, var = dens_quartz_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+),
+
+tar_target(
+  dens_otherpoly,
+  extract_by_year(dens_quartz, var = dens_otherpoly_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+),
+
+tar_target(
+  dens_othermines,
+  extract_by_year(dens_otherpoly, var = dens_othermines_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+),
+
 #Distance to harv
   tar_target(
     dist_harv,
-    extract_by_year(dens_other, var = harv_dist_250, startyr = minyr, endyr = 2020, maxyr, where = 'both')
+    extract_by_year(dens_othermines, var = harv_dist_250, startyr = minyr, endyr = 2020, maxyr, where = 'both')
   ),
 #Harv presence/absence
 tar_target(
@@ -619,11 +646,17 @@ tar_target(
   extract_by_year(dist_harv, var = harv_pa_250, startyr = minyr, endyr = 2020, maxyr, where = 'both')
  ),
 
+#Harv density
+tar_target(
+  dens_harv,
+  extract_by_year(pa_harv, var = harv_dens_250, startyr = minyr, endyr = 2020, maxyr, where = 'both')
+),
+
 
 #1000
 tar_target(
   dist_paved1000,
-  extract_by_year(pa_harv, var = dist_paved_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  extract_by_year(dens_harv, var = dist_paved_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
 ),
 
 tar_target(
@@ -710,16 +743,41 @@ tar_target(
   extract_by_year(dens_unpaved1000, var = dens_lfother_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
 ),
 
+tar_target(
+  dens_placer1000,
+  extract_by_year(dens_other1000, var = dens_placer_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+),
+
+tar_target(
+  dens_quartz1000,
+  extract_by_year(dens_placer1000, var = dens_quartz_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+),
+
+tar_target(
+  dens_otherpoly1000,
+  extract_by_year(dens_quartz1000, var = dens_otherpoly_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+),
+
+tar_target(
+  dens_othermines1000,
+  extract_by_year(dens_otherpoly1000, var = dens_othermines_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+),
+
 
 #Distance to harv
 tar_target(
   dist_harv1000,
-  extract_by_year(dens_other1000, var = harv_dist_1000, startyr = minyr, endyr = 2020, maxyr, where = 'both')
+  extract_by_year(dens_othermines1000, var = harv_dist_1000, startyr = minyr, endyr = 2020, maxyr, where = 'both')
 ),
 #Harv presence/absence
 tar_target(
   pa_harv1000,
   extract_by_year(dist_harv1000, var = harv_pa_1000, startyr = minyr, endyr = 2020, maxyr, where = 'both')
+),
+
+tar_target(
+  dens_harv1000,
+  extract_by_year(pa_harv1000, var = harv_dens_1000, startyr = minyr, endyr = 2020, maxyr, where = 'both')
 )
 )
 

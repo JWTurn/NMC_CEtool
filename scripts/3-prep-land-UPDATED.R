@@ -937,6 +937,7 @@ otherpoly <- vect(file.path(raw, 'polygonal_features', 'anthropolys.shp'))
 miningpoly <- vect(file.path(raw, 'polygonal_features', 'miningpolys.shp'))
 lfother <- vect(file.path(raw, 'linear_features', 'lfother.shp'))
 
+table(miningpoly$feature_t0)
 
 #Combine all lf's into single shp
 table(unpaved$year)

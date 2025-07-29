@@ -104,6 +104,7 @@ dat.issa <- dat[,.(id, area, prov, x1_, y1_, x2_, y2_, sl_, ta_, burst_, t1_, t2
                                                            harv_dist_250_start, dist_placer_250_start, dist_quartz_250_start, na.rm = T), 
                    dist_anthrodisturbance_250_end = pmin(dist_paved_250_end, dist_unpaved_250_end, dist_lfother_250_end, dist_otherpoly_250_end,
                                                          harv_dist_250_end, dist_placer_250_end, dist_quartz_250_end, na.rm = T),
+                   dist_poly_250_end = pmin(dist_placer_250_end, dist_quartz_250_end, harv_dist_250_end, dist_othermines_250_end, dist_otherpoly_250_end, na.rm = T),
                    for_age_250_start, for_age_250_end,
                    ts_harv250_start, ts_harv250_end, ts_fires_250_start, ts_fires_250_end,
                 #1000
@@ -127,6 +128,7 @@ dat.issa <- dat[,.(id, area, prov, x1_, y1_, x2_, y2_, sl_, ta_, burst_, t1_, t2
                                                             harv_dist_1000_start, dist_placer_1000_start, dist_quartz_1000_start, na.rm = T), 
                    dist_anthrodisturbance_1000_end = pmin(dist_paved_1000_end, dist_unpaved_1000_end, dist_lfother_1000_end, dist_otherpoly_1000_end,
                                                           harv_dist_1000_end, dist_placer_1000_end, dist_quartz_1000_end, na.rm = T),
+                   dist_poly_1000_end = pmin(dist_placer_1000_end, dist_quartz_1000_end, harv_dist_1000_end, dist_othermines_1000_end, dist_otherpoly_1000_end, na.rm = T),
                    for_age_1000_start, for_age_1000_end,
                    ts_harv1000_start, ts_harv1000_end, ts_fires_1000_start, ts_fires_1000_end)]
 
@@ -213,10 +215,10 @@ dat.issa[,dist_otherdisturbance_250_end_adj:= ifelse(.SD[,.(min(dist_otherdistur
 dat.issa[,dist_anthrodisturbance_250_start_adj:= ifelse(.SD[,.(min(dist_anthrodisturbance_250_start, na.rm = T))]>20000, 20001, dist_anthrodisturbance_250_start), by = indiv_step_id]
 dat.issa[,dist_anthrodisturbance_250_end_adj:= ifelse(.SD[,.(min(dist_anthrodisturbance_250_end, na.rm = T))]>20000, 20001, dist_anthrodisturbance_250_end), by = indiv_step_id]
 #dat.issa[,dist_anthrodisturbance_avail:= mean(dist_anthrodisturbance_end, na.rm = T), by = indiv_step_id]
-#saveRDS(dat.issa, file.path(derived, 'dat_iSSA_20lf20poly_adj_updated.RDS'))
+#saveRDS(dat.issa, file.path(derived, 'dat_iSSA_updated.RDS'))
 
 #---- Load-in iSSA data ----
-dat.issa <- readRDS(file.path(derived, 'dat_iSSA_20lf20poly_adj_updated.RDS'))
+dat.issa <- readRDS(file.path(derived, 'dat_iSSA_updated.RDS'))
 dat.issa.20 <- dat.issa[,.SD[1:21], by = .(indiv_step_id)]
 dat.issa.15 <- dat.issa[,.SD[1:16], by = .(indiv_step_id)]
 dat.issa.10 <- dat.issa[,.SD[1:11], by = .(indiv_step_id)]
@@ -4936,3 +4938,247 @@ patchwork::wrap_plots(plot_list, ncol = 4)
 
 
 
+##---- Simplified model ----
+
+### ---- Year-round ----
+gc()
+m.simple <- glmmTMB(case_ ~ -1 +
+                                I(log((sl_+1)/1000)) +
+                                I(cos(ta_)) +
+                                I(log((sl_+1)/1000)):I(cos(ta_)) +
+                                prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
+                                prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
+                                I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
+                                I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
+                                I(log((dist_lf_250_end+1)/1000)) + I(log((dist_lf_250_end+1)/1000)):I(log((dist_lf_1000_end+1)/1000)) +
+                                I(log((dist_poly_250_end+1)/1000)) + I(log((dist_poly_250_end+1)/1000)):I(log((dist_poly_1000_end+1)/1000)) +
+                                
+                                            
+                                (1|indiv_step_id) +
+                                (0 + I(log((sl_ +1)/1000))|id) +
+                                (0 + I(cos(ta_))|id) +
+                                (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                                (0 + prop_forest_250_end|id) +
+                                (0 + prop_veg_250_end|id) +
+                                (0 + (I(log(ts_fires_250_end+1)))|id) +
+                                (0 + (I(log(ts_harv250_end+1)))|id) + 
+                                (0 + I(log((dist_lf_250_end+1)/1000))|id) + 
+                                (0 + I(log((dist_poly_250_end+1)/1000))|id) + 
+                                
+                                      
+                                (1|year),
+                               family = poisson(), data = dat.issa.20[,`:=`(year = as.factor(year), 
+                                                                                  indiv_step_id = as.factor(indiv_step_id),
+                                                                                  id = as.factor(id))],
+                               map= list(theta = factor(c(NA,1:10))),
+                               start = list(theta =c(log(1000), seq(0,0, length.out = 10))), 
+                               verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+)
+
+
+summary(m.simple)
+# save model output
+saveRDS(m.simple, "m.simple.RDS")
+#m.fullmodwinterroadscomb20step <- readRDS("m.fullmodwinterroadscomb20step.RDS")
+
+
+m.simple.indiv <- coef(m.simple)$cond$id %>% rownames_to_column("id") %>%
+  pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
+  mutate(method = "ME")
+indivs <- setDT(m.simple.indiv)[term!='(Intercept)']
+pop <- setDT(tidy(m.simple, effects = 'fixed'))
+indivs <- indivs[!term %like% ":"]
+
+
+ggplot() +
+  geom_jitter(data = indivs[term %like% "dist"], aes(x = term, y = estimate),
+              width = 0.15, height = 0, alpha = 0.2, color = "#9467bd") +
+  geom_point(data = pop[term %like% "dist"], aes(x = term, y = estimate),
+             color = "black", size = 2.5) +
+  geom_errorbar(data = pop[term %like% "dist"],
+                aes(x = term,
+                    ymin = estimate - 1.96 * std.error,
+                    ymax = estimate + 1.96 * std.error),
+                width = 0.2, color = "black") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray30") +
+  coord_flip() +
+  theme_minimal(base_size = 14) +
+  labs(x = "", y = "Estimate") 
+
+
+ggplot() +
+  geom_jitter(data = indivs[!(term %like% "dist")], aes(x = term, y = estimate),
+              width = 0.15, height = 0, alpha = 0.2, color = "#9467bd") +
+  geom_point(data = pop[!(term %like% "dist")], aes(x = term, y = estimate),
+             color = "black", size = 2.5) +
+  geom_errorbar(data = pop[!(term %like% "dist")],
+                aes(x = term,
+                    ymin = estimate - 1.96 * std.error,
+                    ymax = estimate + 1.96 * std.error),
+                width = 0.2, color = "black") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray30") +
+  coord_flip() +
+  theme_minimal(base_size = 14) +
+  labs(x = "", y = "Estimate") 
+
+### ---- Summer ----
+gc()
+m.simplesum <- glmmTMB(case_ ~ -1 +
+                      I(log((sl_+1)/1000)) +
+                      I(cos(ta_)) +
+                      I(log((sl_+1)/1000)):I(cos(ta_)) +
+                      prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
+                      prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
+                      I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
+                      I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
+                      I(log((dist_lf_250_end+1)/1000)) + I(log((dist_lf_250_end+1)/1000)):I(log((dist_lf_1000_end+1)/1000)) +
+                      I(log((dist_poly_250_end+1)/1000)) + I(log((dist_poly_250_end+1)/1000)):I(log((dist_poly_1000_end+1)/1000)) +
+                      
+                      
+                      (1|indiv_step_id) +
+                      (0 + I(log((sl_ +1)/1000))|id) +
+                      (0 + I(cos(ta_))|id) +
+                      (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                      (0 + prop_forest_250_end|id) +
+                      (0 + prop_veg_250_end|id) +
+                      (0 + (I(log(ts_fires_250_end+1)))|id) +
+                      (0 + (I(log(ts_harv250_end+1)))|id) + 
+                      (0 + I(log((dist_lf_250_end+1)/1000))|id) + 
+                      (0 + I(log((dist_poly_250_end+1)/1000))|id) + 
+                      
+                      
+                      (1|year),
+                    family = poisson(), data = dat.issa.20.summer[,`:=`(year = as.factor(year), 
+                                                                 indiv_step_id = as.factor(indiv_step_id),
+                                                                 id = as.factor(id))],
+                    map= list(theta = factor(c(NA,1:10))),
+                    start = list(theta =c(log(1000), seq(0,0, length.out = 10))), 
+                    verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+)
+
+
+summary(m.simplesum)
+# save model output
+saveRDS(m.simplesum, "m.simplesum.RDS")
+#m.fullmodwinterroadscomb20step <- readRDS("m.fullmodwinterroadscomb20step.RDS")
+
+
+m.simplesum.indiv <- coef(m.simplesum)$cond$id %>% rownames_to_column("id") %>%
+  pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
+  mutate(method = "ME")
+indivs <- setDT(m.simplesum.indiv)[term!='(Intercept)']
+pop <- setDT(tidy(m.simplesum, effects = 'fixed'))
+indivs <- indivs[!term %like% ":"]
+
+
+ggplot() +
+  geom_jitter(data = indivs[term %like% "dist"], aes(x = term, y = estimate),
+              width = 0.15, height = 0, alpha = 0.2, color = "#9467bd") +
+  geom_point(data = pop[term %like% "dist"], aes(x = term, y = estimate),
+             color = "black", size = 2.5) +
+  geom_errorbar(data = pop[term %like% "dist"],
+                aes(x = term,
+                    ymin = estimate - 1.96 * std.error,
+                    ymax = estimate + 1.96 * std.error),
+                width = 0.2, color = "black") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray30") +
+  coord_flip() +
+  theme_minimal(base_size = 14) +
+  labs(x = "", y = "Estimate") 
+
+
+ggplot() +
+  geom_jitter(data = indivs[!(term %like% "dist")], aes(x = term, y = estimate),
+              width = 0.15, height = 0, alpha = 0.2, color = "#9467bd") +
+  geom_point(data = pop[!(term %like% "dist")], aes(x = term, y = estimate),
+             color = "black", size = 2.5) +
+  geom_errorbar(data = pop[!(term %like% "dist")],
+                aes(x = term,
+                    ymin = estimate - 1.96 * std.error,
+                    ymax = estimate + 1.96 * std.error),
+                width = 0.2, color = "black") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray30") +
+  coord_flip() +
+  theme_minimal(base_size = 14) +
+  labs(x = "", y = "Estimate") 
+
+### ---- Winter ----
+gc()
+m.simplewin <- glmmTMB(case_ ~ -1 +
+                      I(log((sl_+1)/1000)) +
+                      I(cos(ta_)) +
+                      I(log((sl_+1)/1000)):I(cos(ta_)) +
+                      prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
+                      prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
+                      I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
+                      I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
+                      I(log((dist_lf_250_end+1)/1000)) + I(log((dist_lf_250_end+1)/1000)):I(log((dist_lf_1000_end+1)/1000)) +
+                      I(log((dist_poly_250_end+1)/1000)) + I(log((dist_poly_250_end+1)/1000)):I(log((dist_poly_1000_end+1)/1000)) +
+                      
+                      
+                      (1|indiv_step_id) +
+                      (0 + I(log((sl_ +1)/1000))|id) +
+                      (0 + I(cos(ta_))|id) +
+                      (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                      (0 + prop_forest_250_end|id) +
+                      (0 + prop_veg_250_end|id) +
+                      (0 + (I(log(ts_fires_250_end+1)))|id) +
+                      (0 + (I(log(ts_harv250_end+1)))|id) + 
+                      (0 + I(log((dist_lf_250_end+1)/1000))|id) + 
+                      (0 + I(log((dist_poly_250_end+1)/1000))|id) + 
+                      
+                      
+                      (1|year),
+                    family = poisson(), data = dat.issa.20.winter[,`:=`(year = as.factor(year), 
+                                                                 indiv_step_id = as.factor(indiv_step_id),
+                                                                 id = as.factor(id))],
+                    map= list(theta = factor(c(NA,1:10))),
+                    start = list(theta =c(log(1000), seq(0,0, length.out = 10))), 
+                    verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+)
+
+
+summary(m.simplewin)
+# save model output
+saveRDS(m.simplewin, "m.simplewin.RDS")
+#m.fullmodwinterroadscomb20step <- readRDS("m.fullmodwinterroadscomb20step.RDS")
+
+
+m.simplewin.indiv <- coef(m.simplewin)$cond$id %>% rownames_to_column("id") %>%
+  pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
+  mutate(method = "ME")
+indivs <- setDT(m.simplewin.indiv)[term!='(Intercept)']
+pop <- setDT(tidy(m.simplewin, effects = 'fixed'))
+indivs <- indivs[!term %like% ":"]
+
+
+ggplot() +
+  geom_jitter(data = indivs[term %like% "dist"], aes(x = term, y = estimate),
+              width = 0.15, height = 0, alpha = 0.2, color = "#9467bd") +
+  geom_point(data = pop[term %like% "dist"], aes(x = term, y = estimate),
+             color = "black", size = 2.5) +
+  geom_errorbar(data = pop[term %like% "dist"],
+                aes(x = term,
+                    ymin = estimate - 1.96 * std.error,
+                    ymax = estimate + 1.96 * std.error),
+                width = 0.2, color = "black") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray30") +
+  coord_flip() +
+  theme_minimal(base_size = 14) +
+  labs(x = "", y = "Estimate") 
+
+
+ggplot() +
+  geom_jitter(data = indivs[!(term %like% "dist")], aes(x = term, y = estimate),
+              width = 0.15, height = 0, alpha = 0.2, color = "#9467bd") +
+  geom_point(data = pop[!(term %like% "dist")], aes(x = term, y = estimate),
+             color = "black", size = 2.5) +
+  geom_errorbar(data = pop[!(term %like% "dist")],
+                aes(x = term,
+                    ymin = estimate - 1.96 * std.error,
+                    ymax = estimate + 1.96 * std.error),
+                width = 0.2, color = "black") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray30") +
+  coord_flip() +
+  theme_minimal(base_size = 14) +
+  labs(x = "", y = "Estimate") 
