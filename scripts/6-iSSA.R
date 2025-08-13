@@ -821,7 +821,7 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 ### --- Year-round ---- 
 #Trying 20 steps for each model now. Re-saving models as x20step (didn't work), trying 15, 15 didnt work
 gc()
-m.fullmod15step <- glmmTMB(case_ ~ -1 +
+m.fullmod10step <- glmmTMB(case_ ~ -1 +
                                     I(log((sl_+1)/1000)) +
                                     I(cos(ta_)) +
                                     I(log((sl_+1)/1000)):I(cos(ta_)) +
@@ -869,9 +869,9 @@ m.fullmod15step <- glmmTMB(case_ ~ -1 +
 )
 
 
-summary(m.fullmod)
+summary(m.fullmod10step)
 # save model output
-saveRDS(m.fullmod, "m.full.mod_lf20poly20.RDS")
+saveRDS(m.fullmod10step, "m.fullmod10step.RDS")
 #m.fullmod <- readRDS("m.full.mod_lf20poly20.RDS")
 
 
@@ -3007,9 +3007,9 @@ m.fullmodroadscomb10step <- glmmTMB(case_ ~ -1 +
 )
 
 
-summary(m.fullmodroadscomb15step)
+summary(m.fullmodroadscomb10step)
 # save model output
-saveRDS(m.fullmodroadscomb15step, "m.fullmodroadscomb15step.RDS")
+saveRDS(m.fullmodroadscomb10step, "m.fullmodroadscomb10step.RDS")
 #m.fullmodroadscomb15step <- readRDS("m.fullmodroadscomb15step.RDS")
 
 
@@ -3619,7 +3619,7 @@ patchwork::wrap_plots(plot_list, ncol = 4)
 
 
 
-### ---SUMMER ----
+### ---Summer ----
 gc()
 m.fullmodsummerroadscomb20step <- glmmTMB(case_ ~ -1 +
                              I(log((sl_+1)/1000)) +
@@ -4277,7 +4277,7 @@ patchwork::wrap_plots(plot_list, ncol = 4)
 
 ### ---Winter ----
 gc()
-m.fullmodwinterroadscomb10step <- glmmTMB(case_ ~ -1 +
+m.fullmodwinterroadscomb20step <- glmmTMB(case_ ~ -1 +
                              I(log((sl_+1)/1000)) +
                              I(cos(ta_)) +
                              I(log((sl_+1)/1000)):I(cos(ta_)) +
@@ -4316,7 +4316,7 @@ m.fullmodwinterroadscomb10step <- glmmTMB(case_ ~ -1 +
                              #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
                              
                              (1|year),
-                           family = poisson(), data = dat.issa.10.winter[,`:=`(year = as.factor(year), 
+                           family = poisson(), data = dat.issa.20.winter[,`:=`(year = as.factor(year), 
                                                                                indiv_step_id = as.factor(indiv_step_id),
                                                                                id = as.factor(id))],
                            map= list(theta = factor(c(NA,1:14))),
@@ -4325,9 +4325,9 @@ m.fullmodwinterroadscomb10step <- glmmTMB(case_ ~ -1 +
 )
 
 
-summary(m.fullmodwinterroadscomb10step)
+summary(m.fullmodwinterroadscomb20step)
 # save model output
-saveRDS(m.fullmodwinterroadscomb10step, "m.fullmodwinterroadscomb10step.RDS")
+saveRDS(m.fullmodwinterroadscomb20step, "m.fullmodwinterroadscomb20step.RDS")
 #m.fullmodwinterroadscomb20step <- readRDS("m.fullmodwinterroadscomb20step.RDS")
 
 
@@ -4942,7 +4942,7 @@ patchwork::wrap_plots(plot_list, ncol = 4)
 
 ### ---- Year-round ----
 gc()
-m.simple <- glmmTMB(case_ ~ -1 +
+m.simple15step <- glmmTMB(case_ ~ -1 +
                                 I(log((sl_+1)/1000)) +
                                 I(cos(ta_)) +
                                 I(log((sl_+1)/1000)):I(cos(ta_)) +
@@ -4967,7 +4967,7 @@ m.simple <- glmmTMB(case_ ~ -1 +
                                 
                                       
                                 (1|year),
-                               family = poisson(), data = dat.issa.20[,`:=`(year = as.factor(year), 
+                               family = poisson(), data = dat.issa.15[,`:=`(year = as.factor(year), 
                                                                                   indiv_step_id = as.factor(indiv_step_id),
                                                                                   id = as.factor(id))],
                                map= list(theta = factor(c(NA,1:10))),
@@ -4976,9 +4976,9 @@ m.simple <- glmmTMB(case_ ~ -1 +
 )
 
 
-summary(m.simple)
+summary(m.simple15step)
 # save model output
-saveRDS(m.simple, "m.simple.RDS")
+saveRDS(m.simple20step, "m.simple15step.RDS")
 #m.fullmodwinterroadscomb20step <- readRDS("m.fullmodwinterroadscomb20step.RDS")
 
 
@@ -5023,7 +5023,7 @@ ggplot() +
 
 ### ---- Summer ----
 gc()
-m.simplesum <- glmmTMB(case_ ~ -1 +
+m.simplesum20step <- glmmTMB(case_ ~ -1 +
                       I(log((sl_+1)/1000)) +
                       I(cos(ta_)) +
                       I(log((sl_+1)/1000)):I(cos(ta_)) +
@@ -5057,9 +5057,9 @@ m.simplesum <- glmmTMB(case_ ~ -1 +
 )
 
 
-summary(m.simplesum)
+summary(m.simplesum20step)
 # save model output
-saveRDS(m.simplesum, "m.simplesum.RDS")
+saveRDS(m.simplesum20step, "m.simplesum20step.RDS")
 #m.fullmodwinterroadscomb20step <- readRDS("m.fullmodwinterroadscomb20step.RDS")
 
 
@@ -5104,7 +5104,7 @@ ggplot() +
 
 ### ---- Winter ----
 gc()
-m.simplewin <- glmmTMB(case_ ~ -1 +
+m.simplewin15step <- glmmTMB(case_ ~ -1 +
                       I(log((sl_+1)/1000)) +
                       I(cos(ta_)) +
                       I(log((sl_+1)/1000)):I(cos(ta_)) +
@@ -5129,7 +5129,7 @@ m.simplewin <- glmmTMB(case_ ~ -1 +
                       
                       
                       (1|year),
-                    family = poisson(), data = dat.issa.20.winter[,`:=`(year = as.factor(year), 
+                    family = poisson(), data = dat.issa.15.winter[,`:=`(year = as.factor(year), 
                                                                  indiv_step_id = as.factor(indiv_step_id),
                                                                  id = as.factor(id))],
                     map= list(theta = factor(c(NA,1:10))),
@@ -5138,9 +5138,9 @@ m.simplewin <- glmmTMB(case_ ~ -1 +
 )
 
 
-summary(m.simplewin)
+summary(m.simplewin15step)
 # save model output
-saveRDS(m.simplewin, "m.simplewin.RDS")
+saveRDS(m.simplewin15step, "m.simplewin15step.RDS")
 #m.fullmodwinterroadscomb20step <- readRDS("m.fullmodwinterroadscomb20step.RDS")
 
 
