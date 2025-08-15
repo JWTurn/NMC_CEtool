@@ -18,6 +18,8 @@ canada <- file.path('~/Dropbox', 'ActiveDocs', 'Git-local', 'Can_GIS_layers')
 
 dat.in <- readRDS(file.path(derived, 'prepDat_nmc.RDS'))
 dat <- readRDS(file.path(derived, 'clean_NMC.RDS'))
+#dat.new <- readRDS(file.path(derived, 'clean_NMC.RDS'))
+#dat.old <- readRDS(file.path(derived, 'clean_NMC_old.RDS'))
 mort <- setDT(read_excel(file.path(raw, "Mortality Tracker NEW_20240429.xlsx"), sheet = 'Caribou Mort Tracker'))
 
 crs <- st_crs(3154)

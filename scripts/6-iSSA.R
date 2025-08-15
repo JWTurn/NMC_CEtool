@@ -872,8 +872,7 @@ m.fullmod10step <- glmmTMB(case_ ~ -1 +
 summary(m.fullmod10step)
 # save model output
 saveRDS(m.fullmod10step, "m.fullmod10step.RDS")
-#m.fullmod <- readRDS("m.full.mod_lf20poly20.RDS")
-
+m.fullmod10step <- readRDS("m.fullmod10step")
 
 m.fullmod.indiv <- coef(m.fullmod)$cond$id %>% rownames_to_column("id") %>%
   pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
