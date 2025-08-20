@@ -1301,9 +1301,9 @@ fires.old.proj <- project(fires.old, crs)
 #Subset only pre-1972 fires from NFDB
 fires.pre <- subset(fires.old.proj, fires.old.proj$YEAR < 1972)
 
-#Crop new and old fires to study area extent (saves memory)
-nmc.fires.proj <- crop(fires.proj, ext(vect(sArea.ext)))
-nmc.fires.pre  <- crop(fires.pre, ext(vect(sArea.ext)))
+#Crop new and old fires to study area extent
+nmc.fires.proj <- crop(fires.proj, ext(vect(studyArea_extendedLandscape)))
+nmc.fires.pre  <- crop(fires.pre, ext(vect(studyArea_extendedLandscape)))
 
 #Merge pre-1972 and post-1972 fire polygons
 gc()
