@@ -31,6 +31,21 @@ int.yr <- 2015
 set.seed(53)
 
 
+
+#Create seasonal data
+# Separate seasons into diff datasets
+finedat.20$monthday <- format(as.Date(finedat.20$t1_, format="%Y/%m/%d"),"%m/%d") #Create new column that isolates the month and day out of t1_
+finedat.20$monthday #Confirming that the new column was created correctly
+names(finedat.10) #Confirming that the new column exists
+
+finedat.20[monthday >= '11/01' | monthday <= '04/15', season:="winter"] #Create new season column, with Nov to mid-April being called Winter
+finedat.20.winter <- finedat.20[finedat.20$season == 'winter',] #Assign to new winter dataframe
+
+finedat.20[monthday >= '07/01' & monthday <= '09/30', season:="summer"] #Create summer season from July through September
+finedat.20.summer <- finedat.20[finedat.20$season == 'summer',] #Assign to new summer dataframe
+
+
+
 #First prioritizing year-round full model, and year-round simple model for the year- validation
 # Year- validation -----
 ## 2022+ ----
@@ -48,6 +63,20 @@ finemod.train.15[,prov := as.factor(prov)]
 finemod.train.15[,year:=as.factor(year)]
 finemod.train.15[,area := as.factor(area)]
 finemod.train.15[,id := as.factor(id)]
+
+finemod.train.summer <- finedat.20.summer[!(year %in% c(2022, 2023, 2024, 2025))]
+finemod.train.summer[,indiv_step_id := as.factor(indiv_step_id)]
+finemod.train.summer[,prov := as.factor(prov)]
+finemod.train.summer[,year:=as.factor(year)]
+finemod.train.summer[,area := as.factor(area)]
+finemod.train.summer[,id := as.factor(id)]
+
+finemod.train.winter <- finedat.20.winter[!(year %in% c(2022, 2023, 2024, 2025))]
+finemod.train.winter[,indiv_step_id := as.factor(indiv_step_id)]
+finemod.train.winter[,prov := as.factor(prov)]
+finemod.train.winter[,year:=as.factor(year)]
+finemod.train.winter[,area := as.factor(area)]
+finemod.train.winter[,id := as.factor(id)]
 
 coarsemod.train <- coarsedat.20[!(year %in% c(2022, 2023, 2024, 2025))]
 coarsemod.train[,indiv_step_id := as.factor(indiv_step_id)]
@@ -186,6 +215,122 @@ summary(finemod.train_full)
 # save model output
 saveRDS(finemod.train_full, "finemod.train_full.RDS")
 finemod.train_full <- file.path("finemod.train_full.RDS")
+
+
+#### Full Model Summer ----
+gc()
+finemod.train_full.summer <- glmmTMB(case_ ~ -1 +
+                                I(log((sl_+1)/1000)) +
+                                I(cos(ta_)) +
+                                I(log((sl_+1)/1000)):I(cos(ta_)) +
+                                prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
+                                prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
+                                I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
+                                I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
+                                I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
+                                I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
+                                #I(log(((dist_road_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
+                                I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
+                                I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
+                                I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
+                                I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
+                                I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
+                                #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
+                                #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
+                                
+                                (1|indiv_step_id) +
+                                (0 + I(log((sl_ +1)/1000))|id) +
+                                (0 + I(cos(ta_))|id) +
+                                (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                                (0 + prop_forest_250_end|id) +
+                                (0 + prop_veg_250_end|id) +
+                                (0 + (I(log(ts_fires_250_end+1)))|id) +
+                                (0 + (I(log(ts_harv250_end+1)))|id) + 
+                                (0 + I(log((dist_paved_250_end+1)/1000))|id) + 
+                                (0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
+                                #(0 + I(log((dist_road_250_end+1)/1000))|id) + 
+                                (0 + I(log((dist_lfother_250_end+1)/1000))|id) +
+                                (0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
+                                (0 + I(log((dist_placer_250_end+1)/1000))|id) + 
+                                (0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
+                                (0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
+                                #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
+                                #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
+                                
+                                (1|year),
+                              family = poisson(), data = finemod.train.summer[,`:=`(year = as.factor(year), 
+                                                                             indiv_step_id = as.factor(indiv_step_id),
+                                                                             id = as.factor(id))],
+                              map= list(theta = factor(c(NA,1:15))),
+                              start = list(theta =c(log(1000), seq(0,0, length.out = 15))), 
+                              verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+)
+
+
+summary(finemod.train_full.summer)
+# save model output
+saveRDS(finemod.train_full.summer, "finemod.train_full.summer.RDS")
+finemod.train_full.summer <- file.path("finemod.train_full.summer.RDS")
+
+
+#### Full Model Winter ----
+gc()
+finemod.train_full.winter <- glmmTMB(case_ ~ -1 +
+                                       I(log((sl_+1)/1000)) +
+                                       I(cos(ta_)) +
+                                       I(log((sl_+1)/1000)):I(cos(ta_)) +
+                                       prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
+                                       prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
+                                       I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
+                                       I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
+                                       I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
+                                       I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
+                                       #I(log(((dist_road_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
+                                       I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
+                                       I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
+                                       I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
+                                       I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
+                                       I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
+                                       #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
+                                       #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
+                                       
+                                       (1|indiv_step_id) +
+                                       (0 + I(log((sl_ +1)/1000))|id) +
+                                       (0 + I(cos(ta_))|id) +
+                                       (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                                       (0 + prop_forest_250_end|id) +
+                                       (0 + prop_veg_250_end|id) +
+                                       (0 + (I(log(ts_fires_250_end+1)))|id) +
+                                       (0 + (I(log(ts_harv250_end+1)))|id) + 
+                                       (0 + I(log((dist_paved_250_end+1)/1000))|id) + 
+                                       (0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
+                                       #(0 + I(log((dist_road_250_end+1)/1000))|id) + 
+                                       (0 + I(log((dist_lfother_250_end+1)/1000))|id) +
+                                       (0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
+                                       (0 + I(log((dist_placer_250_end+1)/1000))|id) + 
+                                       (0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
+                                       (0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
+                                       #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
+                                       #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
+                                       
+                                       (1|year),
+                                     family = poisson(), data = finemod.train.winter[,`:=`(year = as.factor(year), 
+                                                                                           indiv_step_id = as.factor(indiv_step_id),
+                                                                                           id = as.factor(id))],
+                                     map= list(theta = factor(c(NA,1:15))),
+                                     start = list(theta =c(log(1000), seq(0,0, length.out = 15))), 
+                                     verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+)
+
+
+summary(finemod.train_full.winter)
+# save model output
+saveRDS(finemod.train_full.winter, "finemod.train_full.winter.RDS")
+finemod.train_full.winter <- file.path("finemod.train_full.winter.RDS")
+
+
+
+
 
 ### Simple Model ----
 gc()

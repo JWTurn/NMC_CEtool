@@ -44,11 +44,13 @@ dsNames <-c('Aishihik Caribou', 'Bonnet Plume caribou - Yukon Collars', 'Clear C
 # make a list of all data from Movebank
 # TODO: update this with prepInputs()
 # LAST downloaded May 2025
+#Missing southern lakes, and clear lakes caribou
 move <- list()
 for (ds in 1:length(dsNames)) {
   #hh = 1
   move[[ds]]<-movebank_download_study(study =dsNames[[ds]], )
-}
+gc()
+  }
 
 saveRDS(move, file.path(raw, 'YTdata_DL.RDS'))
 #move <- readRDS(file.path(raw, 'YTdata_DL.RDS'))
@@ -101,16 +103,34 @@ move.expand <- rbindlist(lapply(1:length(hab), function(hh){
 # gathering metadata
 metadat <- rbindlist(move.meta, fill =T)
 
+#Fixed to include Southern Lakes and Clear Creek where they had diff names for ID
+move.clean <- move.expand[, .(
+  area,
+  id = fifelse(
+    "individual_local_identifier" %in% names(.SD) & !all(is.na(individual_local_identifier)),
+    as.character(individual_local_identifier),
+    as.character(deployment_id)
+  ),
+  gps_dop, gps_fix_type_raw, migration_stage,
+  gps_satellite_count, gps_twilight, import_marked_outlier,
+  manually_marked_outlier, visible,
+  datetime = timestamp,
+  longitude = x,
+  latitude = y
+)]
 
-move.clean <- move.expand[,.(area, id=as.character(individual_local_identifier), 
-                   gps_dop, gps_fix_type_raw, migration_stage,
-                   gps_satellite_count, gps_twilight, import_marked_outlier,
-                   manually_marked_outlier, visible,
-                   datetime = timestamp, longitude=x, latitude=y)]
-
-meta.clean <- metadat[,.(id=as.character(individual_local_identifier), 
-                         deploy_on_timestamp, deploy_off_timestamp, duty_cycle,
-                         individual_number_of_deployments, deployment_end_type)]
+meta.clean <- metadat[, .(
+  id = fifelse(
+    "individual_local_identifier" %in% names(.SD) & !all(is.na(individual_local_identifier)),
+    as.character(individual_local_identifier),
+    as.character(deployment_id)
+  ),
+  deploy_on_timestamp,
+  deploy_off_timestamp,
+  duty_cycle,
+  individual_number_of_deployments,
+  deployment_end_type
+)]
 
 yt.clean <- merge(move.clean, meta.clean, by = 'id')
 yt.clean[,`:=`(deploy_start = min(datetime), 
@@ -118,6 +138,10 @@ yt.clean[,`:=`(deploy_start = min(datetime),
 
 # save 'clean' data 
 #saveRDS(yt.clean, paste0(derived, 'data_all_yt.RDS'))
+#yt.clean <- readRDS(file.path(derived, 'data_all_yt.RDS'))
+
+#unique(yt.clean$area)
+
 
 # BC DATA ----
 bc <- fread(file.path(raw, 'BC_NMC_Telemetry.csv'))
