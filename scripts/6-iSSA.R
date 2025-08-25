@@ -872,7 +872,7 @@ m.fullmod10step <- glmmTMB(case_ ~ -1 +
 summary(m.fullmod10step)
 # save model output
 saveRDS(m.fullmod10step, "m.fullmod10step.RDS")
-m.fullmod10step <- readRDS("m.fullmod10step")
+#m.fullmod10step <- readRDS("m.fullmod10step.rds")
 
 m.fullmod.indiv <- coef(m.fullmod)$cond$id %>% rownames_to_column("id") %>%
   pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
@@ -3009,7 +3009,7 @@ m.fullmodroadscomb10step <- glmmTMB(case_ ~ -1 +
 summary(m.fullmodroadscomb10step)
 # save model output
 saveRDS(m.fullmodroadscomb10step, "m.fullmodroadscomb10step.RDS")
-#m.fullmodroadscomb15step <- readRDS("m.fullmodroadscomb15step.RDS")
+#m.fullmodroadscomb10step <- readRDS("m.fullmodroadscomb10step.RDS")
 
 
 m.fullmodroadscomb15step.indiv <- coef(m.fullmodroadscomb15step)$cond$id %>% rownames_to_column("id") %>%
@@ -4977,8 +4977,8 @@ m.simple15step <- glmmTMB(case_ ~ -1 +
 
 summary(m.simple15step)
 # save model output
-saveRDS(m.simple20step, "m.simple15step.RDS")
-#m.fullmodwinterroadscomb20step <- readRDS("m.fullmodwinterroadscomb20step.RDS")
+saveRDS(m.simple15step, "m.simple15step.RDS")
+#m.simple15step <- readRDS("m.simple15step.RDS")
 
 
 m.simple.indiv <- coef(m.simple)$cond$id %>% rownames_to_column("id") %>%
@@ -5059,7 +5059,7 @@ m.simplesum20step <- glmmTMB(case_ ~ -1 +
 summary(m.simplesum20step)
 # save model output
 saveRDS(m.simplesum20step, "m.simplesum20step.RDS")
-#m.fullmodwinterroadscomb20step <- readRDS("m.fullmodwinterroadscomb20step.RDS")
+#m.simplesum20step <- readRDS("m.simplesum20step.RDS")
 
 
 m.simplesum.indiv <- coef(m.simplesum)$cond$id %>% rownames_to_column("id") %>%
@@ -5140,7 +5140,7 @@ m.simplewin15step <- glmmTMB(case_ ~ -1 +
 summary(m.simplewin15step)
 # save model output
 saveRDS(m.simplewin15step, "m.simplewin15step.RDS")
-#m.fullmodwinterroadscomb20step <- readRDS("m.fullmodwinterroadscomb20step.RDS")
+#m.simplewin15step <- readRDS("m.simplewin15step.RDS")
 
 
 m.simplewin.indiv <- coef(m.simplewin)$cond$id %>% rownames_to_column("id") %>%

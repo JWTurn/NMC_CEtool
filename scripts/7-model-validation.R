@@ -25,6 +25,8 @@ finedat.10 <- finedat[,.SD[1:11], by = .(indiv_step_id)]
 coarsedat <- readRDS(file.path(derived, 'dat_iSSA_coarse.RDS'))
 coarsedat.20 <- coarsedat[,.SD[1:21], by = .(indiv_step_id)]
 
+rsf.dat <- readRDS(file.path(derived, 'rsf_data_upper95.RDS'))
+
 int.yr <- 2015
 set.seed(53)
 
@@ -54,7 +56,13 @@ coarsemod.train[,year:=as.factor(year)]
 coarsemod.train[,area := as.factor(area)]
 coarsemod.train[,id := as.factor(id)]
 
-
+rsfmod.train <- rsf.dat[!(year %in% c(2022, 2023, 2024, 2025))]
+rsfmod.train[,prov := as.factor(prov)]
+rsfmod.train[,year:=as.factor(year)]
+rsfmod.train[,area := as.factor(area)]
+rsfmod.train[,id := as.factor(id)]
+rsfmod.train[, case_ := detection == 1L]
+data.table::setnames(rsfmod.train, old = c("x", "y"), new = c("x1_", "y1_"))
 
 ### Functions -----
 make_study_area <- function(dat, crs, buff){
@@ -89,9 +97,9 @@ pts_in_bins <- function(dat, bin.ud){
   DT <- dat[id!='' & case_ == TRUE]
   DT[, use.bin:= terra::extract(bin.ud, cbind(.SD))[,-1],
      .SDcols = c('x1_','y1_')]
-  npts <- DT[,.(npts = .N), by= .(id)]
-  mrg <- merge(DT, npts, by = 'id')
-  propptsbin <- mrg[,.(prop.pts = .N/npts), by = .(use.bin, id)]
+  npts_bins <- DT[,.(npts_bins = .N), by= .(id)]
+  mrg <- merge(DT, npts_bins, by = 'id')
+  propptsbin <- mrg[,.(prop.pts = .N/npts_bins), by = .(use.bin, id)]
   return(propptsbin)
 }
 
@@ -100,8 +108,8 @@ pts_in_bins_tot <- function(dat, bin.ud){
   DT <- dat[id!='' & case_ == TRUE]
   DT[, use.bin:= terra::extract(bin.ud, cbind(.SD))[,-1],
      .SDcols = c('x1_','y1_')]
-  npts <- DT[,.(npts = .N)][[1]]
-  propptsbin.tot <- DT[,.(prop.pts = .N/npts), by = .(use.bin)]
+  npts_bins <- DT[,.(npts_bins = .N)][[1]]
+  propptsbin.tot <- DT[,.(prop.pts = .N/npts_bins), by = .(use.bin)]
   return(propptsbin.tot)
 }
 
@@ -530,15 +538,171 @@ coarsemod.train.simplefire60 <- file.path("coarsemod.train.simplefire60.RDS")
 #make_betas_tab(coarsemod.train.simplefire60)
 
 
+
+### Coarse mod, simple, fire2 ----
+gc()
+coarsemod.train.simplefire2 <- glmmTMB(case_ ~ -1 +
+                                          I(log((sl_+1)/1000)) +
+                                          I(cos(ta_)) +
+                                          I(log((sl_+1)/1000)):I(cos(ta_)) +
+                                          prop_forest_1000_end + 
+                                          prop_veg_1000_end + 
+                                          fire_2perc1000_end + 
+                                          dens_lf_1000_end + 
+                                          dens_poly_1000_end + 
+                                          
+                                          (1|indiv_step_id) +
+                                          (0 + I(log((sl_ +1)/1000))|id) +
+                                          (0 + I(cos(ta_))|id) +
+                                          (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                                          (0 + prop_forest_1000_end|id) +
+                                          (0 + prop_veg_1000_end|id) +
+                                          (0 + fire_2perc1000_end|id) +
+                                          (0 + dens_lf_1000_end|id) + 
+                                          (0 + dens_poly_1000_end|id) + 
+                                          
+                                          (1|year),
+                                        family = poisson(), data = coarsemod.train[,`:=`(year = as.factor(year), 
+                                                                                         indiv_step_id = as.factor(indiv_step_id),
+                                                                                         id = as.factor(id))],
+                                        map= list(theta = factor(c(NA,1:9))),
+                                        start = list(theta =c(log(1000), seq(0,0, length.out = 9))), 
+                                        verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+)
+
+
+summary(coarsemod.train.simplefire2)
+# save model output
+saveRDS(coarsemod.train.simplefire2, "coarsemod.train.simplefire2.RDS")
+#coarsemod.train.simplefire2 <- readRDS("coarsemod.train.simplefire2.RDS")
+coarsemod.train.simplefire2 <- file.path("coarsemod.train.simplefire2.RDS")
+
+
+
+#RSFs
+### RSF mod, simple ----
+RSFmod.train.simple <- glmmTMB(
+  detection ~ -1 +
+    prop_forest_z +
+    prop_veg_z +
+    prop_barren_z +
+    dens_lf_z +
+    dens_poly_z +
+    
+    (1 | indiv_clusterID) +
+    (0 + prop_forest_z | id) +
+    (0 + prop_veg_z | id) +
+    (0 + prop_barren_z | id) +
+    (0 + dens_lf_z | id) +
+    (0 + dens_poly_z | id) +
+    (1 | year),
+  
+  data = rsfmod.train,
+  family = binomial(),
+  weights = npts,
+  map = list(theta = factor(c(NA, 1:6))), 
+  start = list(theta = c(log(1000), rep(0, 6))),
+  verbose = TRUE
+)
+
+summary(RSFmod.train.simple)
+# save model output
+saveRDS(RSFmod.train.simple, "RSFmod.train.simple.RDS")
+#RSFmod.train.simple <- readRDS("RSFmod.train.simple.RDS")
+RSFmod.train.simple <- file.path("RSFmod.train.simple.RDS")
+
+
+### RSF mod, mines int ----
+gc()
+RSFmod.train.minesint <- glmmTMB(
+  detection ~ -1 +
+    prop_forest_z +
+    prop_veg_z +
+    prop_barren_z +
+    dens_lf_z +
+    dens_poly_z +
+    pa_quartz_z:dens_poly_z +
+    pa_placer_z:dens_poly_z +
+    
+    (1 | indiv_clusterID) +
+    (0 + prop_forest_z | id) +
+    (0 + prop_veg_z | id) +
+    (0 + prop_barren_z | id) +
+    (0 + dens_lf_z | id) +
+    (0 + dens_poly_z | id) +
+    (0 + pa_quartz_z:dens_poly_z | id) +
+    (0 + pa_placer_z:dens_poly_z | id) +
+    
+    (1 | year),
+  
+  data = rsfmod.train,
+  family = binomial(),
+  weights = npts,
+  map = list(theta = factor(c(NA, 1:8))), 
+  start = list(theta = c(log(1000), rep(0, 8))),
+  verbose = TRUE
+)
+
+
+summary(RSFmod.train.minesint)
+# save model output
+saveRDS(RSFmod.train.minesint, "RSFmod.train.minesint.RDS")
+#RSFmod.train.minesint <- readRDS("RSFmod.train.minesint.RDS")
+RSFmod.train.minesint <- file.path("RSFmod.train.minesint.RDS")
+
+### RSF mod, mines pa ----
+gc()
+RSFmod.train.minespa <- glmmTMB(
+  detection ~ -1 +
+    prop_forest_z +
+    prop_veg_z +
+    prop_barren_z +
+    dens_lf_z +
+    pa_quartz_z +
+    pa_placer_z +
+    
+    (1 | indiv_clusterID) +
+    (0 + prop_forest_z | id) +
+    (0 + prop_veg_z | id) +
+    (0 + prop_barren_z | id) +
+    (0 + dens_lf_z | id) +
+    (0 + pa_quartz_z | id) +
+    (0 + pa_placer_z | id) +
+    
+    (1 | year),
+  
+  data = rsfmod.train,
+  family = binomial(),
+  weights = npts,
+  map = list(theta = factor(c(NA, 1:7))), 
+  start = list(theta = c(log(1000), rep(0, 7))),
+  verbose = TRUE
+)
+
+
+summary(RSFmod.train.minespa)
+# save model output
+saveRDS(RSFmod.train.minespa, "RSFmod.train.minespa.RDS")
+#RSFmod.train.minespa <- readRDS("RSFmod.train.minespa.RDS")
+RSFmod.train.minespa <- file.path("RSFmod.train.minespa.RDS")
+
+
+
 ## Create Test Data ---- 
 finemod.test_full <- finedat.10[year %in% c(2022, 2023, 2024, 2025) & case_ == TRUE]
 finemod.test_simple <- finedat.15[year %in% c(2022, 2023, 2024, 2025) & case_ == TRUE]
 finemod.test_fullroadscomb <- finedat.10[year %in% c(2022, 2023, 2024, 2025) & case_ == TRUE]
 coarsemod.test <- coarsedat.20[year %in% c(2022, 2023, 2024, 2025) & case_ == TRUE]
 
+rsfmod.test <- rsf.dat[year %in% c(2022, 2023, 2024, 2025) & detection == 1]
+setnames(rsfmod.test, old = c("x", "y"), new = c("x1_", "y1_"))
+rsfmod.test[, case_ := TRUE] #Making case_ column to match the issa name
+
 #Make study area
 sArea.finemod <- make_study_area(finemod.test_full, crs, buff = buffer)
 sArea.coarsemod <- make_study_area(coarsemod.test_pafire60, crs, buff = buffer)
+sArea.rsfmod <- make_study_area(rsfmod.test %>% rename(x2_ = x, y2_ = y), crs = crs, buff = buffer)
+
 
 ## Validation -----
 ### Creating fine raster stacks ----
@@ -663,12 +827,62 @@ plot(tsfire_1000)
 plot(issaArea, add = TRUE, border = "red", lwd = 2)
 
 
+# Landcover for 5000m resolution
+prop_barren_5000      <- rast(file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_barrenland_5000_2020.tif'))
+prop_bryoids_5000      <- rast(file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_bryoids_5000_2020.tif'))
+prop_shrub_5000        <- rast(file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_shrub_5000_2020.tif'))
+prop_wetland_5000      <- rast(file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_wetland_5000_2020.tif'))
+prop_wettreed_5000     <- rast(file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_wet_treed_5000_2020.tif'))
+prop_herbs_5000        <- rast(file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_herbs_5000_2020.tif'))
+prop_needleleaf_5000   <- rast(file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_needleleaf_5000_2020.tif'))
+prop_deciduous_5000    <- rast(file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_deciduous_5000_2020.tif'))
+prop_mixed_5000        <- rast(file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_mixed_5000_2020.tif'))
+
+# Fires 5000
+fire_60perc5000        <- rast(file.path('data', 'derived', 'perc_burned_5000', 'burned60_5000m_2020.tif'))
+fire_2perc5000         <- rast(file.path('data', 'derived', 'perc_burned_5000', 'burned2_5000m_2020.tif'))
+
+# Harvest 5000
+harv_dist_5000         <- rast(file.path('data', 'derived', 'harv_dist_5000m', 'harvdist_5000m_2020.tif'))
+harv_pa_5000           <- rast(file.path('data', 'derived', 'harv_pa_5000m', 'harvpres_5000m_2020.tif'))
+harv_dens_5000         <- rast(file.path('data', 'derived', 'harv_dens_5000m', 'harvdens_5000m_2020.tif'))
+
+
+# Anthropogenic disturbance 5000
+denslfother_5000      <- rast(file.path('data', 'derived', 'dens_disturb_5000m', 'otherlf_dens_5000m_2020.tif'))
+denspaved_5000        <- rast(file.path('data', 'derived', 'dens_disturb_5000m', 'paved_dens_5000m_2020.tif'))
+densunpaved_5000      <- rast(file.path('data', 'derived', 'dens_disturb_5000m', 'unpaved_dens_5000m_2020.tif'))
+densplacer_5000       <- rast(file.path('data', 'derived', 'dens_disturb_5000m', 'placer_dens_5000m_2020.tif'))
+densquartz_5000       <- rast(file.path('data', 'derived', 'dens_disturb_5000m', 'quartz_dens_5000m_2020.tif'))
+densothermines_5000   <- rast(file.path('data', 'derived', 'dens_disturb_5000m', 'othermines_dens_5000m_2020.tif'))
+densotherpoly_5000    <- rast(file.path('data', 'derived', 'dens_disturb_5000m', 'otherpoly_dens_5000m_2020.tif'))
+
+papaved_5000          <- rast(file.path('data', 'derived', 'pa_disturb_5000m', 'paved_pa_5000m_2020.tif'))
+paunpaved_5000        <- rast(file.path('data', 'derived', 'pa_disturb_5000m', 'unpaved_pa_5000m_2020.tif'))
+palfother_5000        <- rast(file.path('data', 'derived', 'pa_disturb_5000m', 'otherlf_pa_5000m_2020.tif'))
+paplacer_5000         <- rast(file.path('data', 'derived', 'pa_disturb_5000m', 'placer_pa_5000m_2020.tif'))
+paquartz_5000         <- rast(file.path('data', 'derived', 'pa_disturb_5000m', 'quartz_pa_5000m_2020.tif'))
+paothermines_5000     <- rast(file.path('data', 'derived', 'pa_disturb_5000m', 'othermines_pa_5000m_2020.tif'))
+paotherpoly_5000      <- rast(file.path('data', 'derived', 'pa_disturb_5000m', 'otherpoly_pa_5000m_2020.tif'))
+
+
+# prop_forest = sum of 4 layers
+prop_forest_5000 <- prop_wettreed_5000 + prop_needleleaf_5000 + prop_deciduous_5000 + prop_mixed_5000
+
+# prop_veg = sum of 3 layers
+prop_veg_5000 <- prop_bryoids_5000 + prop_herbs_5000 + prop_shrub_5000
+
+dens_lf_5000  <- denspaved_5000  + densunpaved_5000  + denslfother_5000 
+dens_poly_5000  <- densotherpoly_5000  + densplacer_5000  + densquartz_5000  + densothermines_5000 + harv_dens_5000
+
 
 
 #Disaggrigating so I can stack w fine scale
 distpaved_1000_disagg <- disagg(distpaved_1000, fact = 4, method = "near")
 distunpaved_1000_disagg <- disagg(distunpaved_1000, fact = 4, method = "near")
 distlfother_1000_disagg <- disagg(distlfother_1000, fact = 4, method = "near")
+
+dist_road_1000_disagg <- disagg(dist_road_1000, fact = 4, method = "near")
 
 distotherpoly_1000_disagg <- disagg(distotherpoly_1000, fact = 4, method = "near")
 distplacer_1000_disagg <- disagg(distplacer_1000, fact = 4, method = "near")
@@ -721,6 +935,52 @@ land2020_coarse <- c(
   paharv_1000, propfire60, propfire2, denspaved_1000, densunpaved_1000, denslfother_1000, dens_lf_1000, dens_poly_1000
 )
 
+
+
+#Scaling 5000m rasters for RSF to match the model
+# dens_lf
+dens_lf_mean <- global(dens_lf_5000, mean, na.rm = TRUE)[[1]]
+dens_lf_sd   <- global(dens_lf_5000, sd,   na.rm = TRUE)[[1]]
+dens_lf_z <- (dens_lf_5000 - dens_lf_mean) / dens_lf_sd
+
+# dens_poly
+dens_poly_mean <- global(dens_poly_5000, mean, na.rm = TRUE)[[1]]
+dens_poly_sd   <- global(dens_poly_5000, sd,   na.rm = TRUE)[[1]]
+dens_poly_z <- (dens_poly_5000 - dens_poly_mean) / dens_poly_sd
+
+# prop_forest
+prop_forest_mean <- global(prop_forest_5000, mean, na.rm = TRUE)[[1]]
+prop_forest_sd   <- global(prop_forest_5000, sd,   na.rm = TRUE)[[1]]
+prop_forest_z <- (prop_forest_5000 - prop_forest_mean) / prop_forest_sd
+
+# prop_veg
+prop_veg_mean <- global(prop_veg_5000, mean, na.rm = TRUE)[[1]]
+prop_veg_sd   <- global(prop_veg_5000, sd,   na.rm = TRUE)[[1]]
+prop_veg_z <- (prop_veg_5000 - prop_veg_mean) / prop_veg_sd
+
+# pa_quartz
+pa_quartz_mean <- global(pa_quartz_5000, mean, na.rm = TRUE)[[1]]
+pa_quartz_sd   <- global(pa_quartz_5000, sd,   na.rm = TRUE)[[1]]
+pa_quartz_z <- (pa_quartz_5000 - pa_quartz_mean) / pa_quartz_sd
+
+# pa_placer
+pa_placer_mean <- global(pa_placer_5000, mean, na.rm = TRUE)[[1]]
+pa_placer_sd   <- global(pa_placer_5000, sd,   na.rm = TRUE)[[1]]
+pa_placer_z <- (pa_placer_5000 - pa_placer_mean) / pa_placer_sd
+
+# prop_barren
+prop_barren_mean <- global(prop_barren_5000, mean, na.rm = TRUE)[[1]]
+prop_barren_sd   <- global(prop_barren_5000, sd,   na.rm = TRUE)[[1]]
+prop_barren_z <- (prop_barren_5000 - prop_barren_mean) / prop_barren_sd
+
+land2020_RSF <- c(
+  prop_forest_z, prop_veg_z, prop_barren_z,
+  pa_placer_z,
+  pa_quartz_z,
+  dens_lf_z, dens_poly_z
+  
+)
+
 gc()
 # Rename layers
 names(land2020) <- c(
@@ -737,6 +997,14 @@ names(land2020_coarse) <- c(
   "papaved_1000", "paunpaved_1000", "palfother_1000", "paotherpoly_1000", "paplacer_1000",
   "paquartz_1000", "paothermines_1000",
   "paharv_1000", "propfire60", "propfire2", "denspaved_1000", "densunpaved_1000", "denslfother_1000", "dens_lf_1000", "dens_poly_1000"
+)
+
+names(land2020_RSF) <- c(
+  "prop_forest_z", "prop_veg_z", "prop_barren_z",
+  "pa_placer_z",
+  "pa_quartz_z",
+  "dens_lf_z", "dens_poly_z"
+  
 )
 
 # Apply transformations (log and log+1 as needed)
@@ -779,13 +1047,16 @@ land2020 <- terra::project(land2020, crs_string)
 
 land2020_coarse <- terra::project(land2020_coarse, crs_string)
 
-
+land2020_RSF <- terra::project(land2020_RSF, crs_string)
 
 #Full mod
 gc()
 testmyearsfinefull.ud <- mod2UD(modpath = finemod.train_full, envlayers = land2020, 
                         studyArea = vect(sArea.finemod))
 plot(testmyearsfinefull.ud)
+
+#saveRDS(testmyearsfinefull.ud, "testmyearsfinefull.ud.rds")
+#testmyearsfinefull.ud <- readRDS("testmyearsfinefull.ud.rds")
 
 gc()
 testmyearsfinefull.prop <- make_prop_use(finemod.test_full, crs, testmyearsfinefull.ud)
@@ -814,9 +1085,9 @@ cor(propptsbin.myearsfinefull.tot$use.bin, propptsbin.myearsfinefull.tot$prop.pt
 make_pde <- function(mod.tab, land, saveName = NULL) {
   # Paved roads
   lf.main <- mod.tab[term == 'I(log((dist_lf_250_end + 1)/1000))' & !grepl(":", term), estimate]
-  lf.int <- mod.tab[grepl('dist_paved_lf_end', term) & grepl(":", term), estimate]
-  lf.cov <- 2 * paved.main * land$log_dist_lf
-  lf.cov.int <- 2 * paved.int * land$log_dist_lf * land$log_dist_lf_1000
+  lf.int <- mod.tab[grepl('dist_lf_250_end', term) & grepl(":", term), estimate]
+  lf.cov <- 2 * lf.main * land$log_dist_lf
+  lf.cov.int <- 2 * lf.int * land$log_dist_lf * land$log_dist_lf_1000
   
   # Unpaved roads
   poly.main <- mod.tab[term == 'I(log((dist_poly_250_end + 1)/1000))' & !grepl(":", term), estimate]
@@ -872,6 +1143,9 @@ gc()
 testmyearsfinesimple.ud <- mod2UD(modpath = finemod.train_simple, envlayers = land2020, 
                                 studyArea = vect(sArea.finemod))
 plot(testmyearsfinesimple.ud)
+
+#saveRDS(testmyearsfinesimple.ud, "testmyearsfinesimple.ud.rds")
+#testmyearsfinesimple.ud <- readRDS("testmyearsfinesimple.ud.rds")
 
 gc()
 testmyearsfinesimple.prop <- make_prop_use(finemod.test_simple, crs, testmyearsfinesimple.ud)
@@ -990,6 +1264,9 @@ testmyearsfinefullroads.ud <- mod2UD(modpath = finemod.train_fullroadscomb, envl
                                   studyArea = vect(sArea.finemod))
 plot(testmyearsfinefullroads.ud)
 
+#saveRDS(testmyearsfinefullroads.ud, "testmyearsfinefullroads.ud.rds")
+#testmyearsfinefullroads.ud <- readRDS("testmyearsfinefullroads.ud.rds")
+
 gc()
 testmyearsfinefullroads.prop <- make_prop_use(finemod.test_fullroadscomb, crs, testmyearsfinefullroads.ud)
 
@@ -1085,6 +1362,9 @@ gc()
 testmyearscoarsepafire60.ud <- mod2UD(modpath = coarsemod.train.pafire60, envlayers = land2020_coarse, 
                                 studyArea = vect(sArea.coarsemod))
 plot(testmyearscoarsepafire60.ud)
+
+#saveRDS(testmyearscoarsepafire60.ud, "testmyearscoarsepafire60.ud.rds")
+#testmyearscoarsepafire60.ud <- readRDS("testmyearscoarsepafire60.ud.rds")
 
 gc()
 testmyearscoarsepafire60.prop <- make_prop_use(coarsemod.test_pafire60, "EPSG:3154", testmyearscoarsepafire60.ud)
@@ -1182,6 +1462,9 @@ testmyearscoarsepafire2.ud <- mod2UD(modpath = coarsemod.train.pafire2, envlayer
                                       studyArea = vect(sArea.coarsemod))
 plot(testmyearscoarsepafire2.ud)
 
+#saveRDS(testmyearscoarsepafire2.ud, "testmyearscoarsepafire2.ud.rds")
+#testmyearscoarsepafire2.ud <- readRDS("testmyearscoarsepafire2.ud.rds")
+
 gc()
 testmyearscoarsepafire2.prop <- make_prop_use(coarsemod.test, "EPSG:3154", testmyearscoarsepafire2.ud)
 
@@ -1277,6 +1560,10 @@ gc()
 testmyearscoarsedensfire60.ud <- mod2UD(modpath = coarsemod.train.lfdensfire60, envlayers = land2020_coarse, 
                                      studyArea = vect(sArea.coarsemod))
 plot(testmyearscoarsedensfire60.ud)
+
+
+#saveRDS(testmyearscoarsedensfire60.ud, "testmyearscoarsedensfire60.ud.rds")
+#testmyearscoarsedensfire60.ud.ud <- readRDS("testmyearscoarsedensfire60.ud.rds")
 
 gc()
 testmyearscoarsedensfire60.prop <- make_prop_use(coarsemod.test, "EPSG:3154", testmyearscoarsedensfire60.ud)
@@ -1374,6 +1661,9 @@ testmyearscoarsedensfire2.ud <- mod2UD(modpath = coarsemod.train.lfdensfire2, en
                                         studyArea = vect(sArea.coarsemod))
 plot(testmyearscoarsedensfire2.ud)
 
+#saveRDS(testmyearscoarsedensfire2.ud, "testmyearscoarsedensfire2.ud.rds")
+#testmyearscoarsedensfire2.ud <- readRDS("testmyearscoarsedensfire2.ud.rds")
+
 gc()
 testmyearscoarsedensfire2.prop <- make_prop_use(coarsemod.test, "EPSG:3154", testmyearscoarsedensfire2.ud)
 
@@ -1441,28 +1731,391 @@ make_pde <- function(mod.tab, land, saveName = NULL) {
 gc()
 testmyearscoarsesimpfire60.ud <- mod2UD(modpath = coarsemod.train.simplefire60, envlayers = land2020_coarse, 
                                        studyArea = vect(sArea.coarsemod))
-plot(testmyearscoarsedensfire2.ud)
+plot(testmyearscoarsesimpfire60.ud)
+
+#saveRDS(testmyearscoarsesimpfire60.ud, "testmyearscoarsesimpfire60.ud.rds")
+#testmyearscoarsesimpfire60.ud <- readRDS("testmyearscoarsesimpfire60.ud.rds")
 
 gc()
-testmyearscoarsedensfire2.prop <- make_prop_use(coarsemod.test, "EPSG:3154", testmyearscoarsedensfire2.ud)
+testmyearscoarsesimpfire60.prop <- make_prop_use(coarsemod.test, "EPSG:3154", testmyearscoarsesimpfire60.ud)
 
 gc()
-used.bin.myearscoarsedensfire2 <- make_map_bins(testmyearscoarsedensfire2.prop)
+used.bin.myearscoarsesimpfire60 <- make_map_bins(testmyearscoarsesimpfire60.prop)
 
 colnames(coarsemod.test) <- make.unique(colnames(coarsemod.test))
 gc()
-propptsbin.myearscoarsedensfire2 <- pts_in_bins(coarsemod.test, testmyearscoarsedensfire2.ud)
-plot(propptsbin.myearscoarsedensfire2$use.bin, propptsbin.myearscoarsedensfire2$prop.pts)
-cor(propptsbin.myearscoarsedensfire2$use.bin, propptsbin.myearscoarsedensfire2$prop.pts, method = 'spearman', use = 'complete.obs')
-#0.4464689
+propptsbin.myearscoarsesimpfire60 <- pts_in_bins(coarsemod.test, testmyearscoarsesimpfire60.ud)
+plot(propptsbin.myearscoarsesimpfire60$use.bin, propptsbin.myearscoarsesimpfire60$prop.pts)
+cor(propptsbin.myearscoarsesimpfire60$use.bin, propptsbin.myearscoarsesimpfire60$prop.pts, method = 'spearman', use = 'complete.obs')
+#0.5093211
 
-layerCor(c(testmyearscoarsedensfire2.ud, used.bin.myearscoarsedensfire2), fun = 'pearson', na.rm = T)
+layerCor(c(testmyearscoarsesimpfire60.ud, used.bin.myearscoarsesimpfire60), fun = 'pearson', na.rm = T)
 
-propptsbin.myearscoarsedensfire2.tot <- pts_in_bins_tot(coarsemod.test, testmyearscoarsedensfire2.ud)
+propptsbin.myearscoarsesimpfire60.tot <- pts_in_bins_tot(coarsemod.test, testmyearscoarsesimpfire60.ud)
 
-plot(propptsbin.myearscoarsedensfire2.tot$use.bin, propptsbin.myearscoarsedensfire2.tot$prop.pts)
-cor(propptsbin.myearscoarsedensfire2.tot$use.bin, propptsbin.myearscoarsedensfire2.tot$prop.pts, method = 'spearman', use = 'complete.obs')
-#0.6606061
+plot(propptsbin.myearscoarsesimpfire60.tot$use.bin, propptsbin.myearscoarsesimpfire60.tot$prop.pts)
+cor(propptsbin.myearscoarsesimpfire60.tot$use.bin, propptsbin.myearscoarsesimpfire60.tot$prop.pts, method = 'spearman', use = 'complete.obs')
+#0.8666667
+
+
+### Coarse mod simple, fire 2 ----
+make_pde <- function(mod.tab, land, saveName = NULL) {
+  # Lf
+  lf.main <- mod.tab[term == 'dens_lf_1000_end' & !grepl(":", term), estimate]
+  lf.cov <- 2 * lf.main * land$dens_lf_1000
+  
+  # Poly
+  poly.main <- mod.tab[term == 'dens_poly_1000_end' & !grepl(":", term), estimate]
+  poly.cov <- 2 * poly.main * land$dens_poly_1000
+  
+  # Prop forest
+  prop_forest.main <- mod.tab[term == 'prop_forest_1000_end' & !grepl(":", term), estimate]
+  prop_forest.cov <- 2 * prop_forest.main * land$prop_forest_1000
+  
+  # Prop veg
+  prop_veg.main <- mod.tab[term == 'prop_veg_1000_end' & !grepl(":", term), estimate]
+  prop_veg.cov <- 2 * prop_veg.main * land$prop_veg_1000
+  
+  # Fire
+  fire.main <- mod.tab[term == 'fire_2perc1000_end' & !grepl(":", term), estimate]
+  fire.cov <- 2 * fire.main * land$propfire2
+  
+  # Combine all terms in numerator
+  numerator <- exp(
+    lf.cov  + poly.cov +
+      prop_forest.cov + prop_veg.cov  + fire.cov 
+  )
+  
+  # Normalize
+  C <- global(numerator, sum, na.rm = TRUE)
+  pde <- numerator / C[[1]]
+  
+  # Save if requested
+  if (!is.null(saveName)) {
+    writeRaster(pde, file.path(derived, saveName), overwrite = TRUE)
+  }
+  
+  return(pde)
+}
+
+gc()
+testmyearscoarsesimpfire2.ud <- mod2UD(modpath = coarsemod.train.simplefire2, envlayers = land2020_coarse, 
+                                        studyArea = vect(sArea.coarsemod))
+plot(testmyearscoarsesimpfire2.ud)
+
+#saveRDS(testmyearscoarsesimpfire2.ud, "testmyearscoarsesimpfire2.ud.rds")
+#testmyearscoarsesimpfire2.ud <- readRDS("testmyearscoarsesimpfire2.ud.rds")
+
+gc()
+testmyearscoarsesimpfire2.prop <- make_prop_use(coarsemod.test, "EPSG:3154", testmyearscoarsesimpfire2.ud)
+
+gc()
+used.bin.myearscoarsesimpfire2 <- make_map_bins(testmyearscoarsesimpfire2.prop)
+
+colnames(coarsemod.test) <- make.unique(colnames(coarsemod.test))
+gc()
+propptsbin.myearscoarsesimpfire2 <- pts_in_bins(coarsemod.test, testmyearscoarsesimpfire2.ud)
+plot(propptsbin.myearscoarsesimpfire2$use.bin, propptsbin.myearscoarsesimpfire2$prop.pts)
+cor(propptsbin.myearscoarsesimpfire2$use.bin, propptsbin.myearscoarsesimpfire2$prop.pts, method = 'spearman', use = 'complete.obs')
+#0.4559997
+
+layerCor(c(testmyearscoarsesimpfire2.ud, used.bin.myearscoarsesimpfire2), fun = 'pearson', na.rm = T)
+
+propptsbin.myearscoarsesimpfire2.tot <- pts_in_bins_tot(coarsemod.test, testmyearscoarsesimpfire2.ud)
+
+plot(propptsbin.myearscoarsesimpfire2.tot$use.bin, propptsbin.myearscoarsesimpfire2.tot$prop.pts)
+cor(propptsbin.myearscoarsesimpfire2.tot$use.bin, propptsbin.myearscoarsesimpfire2.tot$prop.pts, method = 'spearman', use = 'complete.obs')
+#0.7212121
+
+
+
+### RSF Mod, Simple ----
+make_pde <- function(mod.tab, land, saveName = NULL) {
+  # Lf
+  lf.main <- mod.tab[term == 'dens_lf_z' & !grepl(":", term), estimate]
+  lf.cov <- lf.main * land$dens_lf_z
+  
+  # Poly
+  poly.main <- mod.tab[term == 'dens_poly_z' & !grepl(":", term), estimate]
+  poly.cov <- poly.main * land$dens_poly_z
+  
+  # Prop forest
+  prop_forest.main <- mod.tab[term == 'prop_forest_z' & !grepl(":", term), estimate]
+  prop_forest.cov <- prop_forest.main * land$prop_forest_z
+  
+  # Prop veg
+  prop_veg.main <- mod.tab[term == 'prop_veg_z' & !grepl(":", term), estimate]
+  prop_veg.cov <- prop_veg.main * land$prop_veg_z
+  
+  # Prop veg
+  prop_barren.main <- mod.tab[term == 'prop_barren_z' & !grepl(":", term), estimate]
+  prop_barren.cov <- prop_barren.main * land$prop_barren_z
+  
+  # Combine all terms in numerator
+  numerator <- exp(
+    lf.cov  + poly.cov +
+      prop_forest.cov + prop_veg.cov  + prop_barren.cov
+  )
+  
+  pde <- numerator
+  
+  # Save if requested
+  if (!is.null(saveName)) {
+    writeRaster(pde, file.path(derived, saveName), overwrite = TRUE)
+  }
+  
+  return(pde)
+}
+
+
+
+gc()
+testmyearsrsfsimp.ud <- mod2UD(modpath = RSFmod.train.simple, envlayers = land2020_RSF, 
+                                       studyArea = vect(sArea.rsfmod))
+plot(testmyearsrsfsimp.ud)
+
+#saveRDS(testmyearsrsfsimp.ud, "testmyearsrsfsimp.ud.rds")
+#testmyearsrsfsimp.ud <- readRDS("testmyearsrsfsimp.ud.rds")
+
+gc()
+testmyearsrsfsimp.prop <- make_prop_use(rsfmod.test, "EPSG:3154", testmyearsrsfsimp.ud)
+
+
+gc()
+used.bin.myearsrsfsimp <- make_map_bins(testmyearsrsfsimp.prop)
+
+colnames(rsfmod.test) <- make.unique(colnames(rsfmod.test))
+gc()
+propptsbin.myearsrsfsimp <- pts_in_bins(rsfmod.test, testmyearsrsfsimp.ud)
+plot(propptsbin.myearsrsfsimp$use.bin, propptsbin.myearsrsfsimp$prop.pts)
+cor(propptsbin.myearsrsfsimp$use.bin, propptsbin.myearsrsfsimp$prop.pts, method = 'spearman', use = 'complete.obs')
+#-0.004992593
+
+layerCor(c(testmyearsrsfsimp.ud, used.bin.myearsrsfsimp), fun = 'pearson', na.rm = T)
+
+propptsbin.myearsrsfsimp.tot <- pts_in_bins_tot(rsfmod.test, testmyearsrsfsimp.ud)
+
+plot(propptsbin.myearsrsfsimp.tot$use.bin, propptsbin.myearsrsfsimp.tot$prop.pts)
+cor(propptsbin.myearsrsfsimp.tot$use.bin, propptsbin.myearsrsfsimp.tot$prop.pts, method = 'spearman', use = 'complete.obs')
+#-0.2606061????
+
+#Really bad model....
+
+
+
+### RSF Mod, mines int ----
+make_pde <- function(mod.tab, land, saveName = NULL) {
+  # Lf
+  lf.main <- mod.tab[term == 'dens_lf_z' & !grepl(":", term), estimate]
+  lf.cov <- lf.main * land$dens_lf_z
+  
+  # Poly
+  poly.main <- mod.tab[term == 'dens_poly_z' & !grepl(":", term), estimate]
+  poly.cov <- poly.main * land$dens_poly_z
+  
+  # Prop forest
+  prop_forest.main <- mod.tab[term == 'prop_forest_z' & !grepl(":", term), estimate]
+  prop_forest.cov <- prop_forest.main * land$prop_forest_z
+  
+  # Prop veg
+  prop_veg.main <- mod.tab[term == 'prop_veg_z' & !grepl(":", term), estimate]
+  prop_veg.cov <- prop_veg.main * land$prop_veg_z
+  
+  # Prop veg
+  prop_barren.main <- mod.tab[term == 'prop_barren_z' & !grepl(":", term), estimate]
+  prop_barren.cov <- prop_barren.main * land$prop_barren_z
+  
+  #Quartz int
+  quartz_int.main <- mod.tab[term == 'dens_poly_z:pa_quartz_z', estimate]
+  quartz_int.cov <- quartz_int.main * land$dens_poly_z * land$pa_quartz_z
+  
+  #Placer int
+  placer_int.main <- mod.tab[term == 'dens_poly_z:pa_placer_z', estimate]
+  placer_int.cov <- placer_int.main * land$dens_poly_z * land$pa_placer_z
+  
+  # Combine all terms in numerator
+  numerator <- exp(
+    lf.cov  + poly.cov +
+      prop_forest.cov + prop_veg.cov  + prop_barren.cov +
+      placer_int.cov + quartz_int.cov
+  )
+  
+  pde <- numerator
+  
+  # Save if requested
+  if (!is.null(saveName)) {
+    writeRaster(pde, file.path(derived, saveName), overwrite = TRUE)
+  }
+  
+  return(pde)
+}
+
+
+gc()
+testmyearsrsfminesint.ud <- mod2UD(modpath = RSFmod.train.minesint, envlayers = land2020_RSF, 
+                               studyArea = vect(sArea.rsfmod))
+plot(testmyearsrsfminesint.ud)
+
+#saveRDS(testmyearsrsfminesint.ud, "testmyearsrsfminesint.ud.rds")
+#testmyearsrsfminesint.ud <- readRDS("testmyearsrsfminesint.ud.rds")
+
+gc()
+testmyearsrsfminesint.prop <- make_prop_use(rsfmod.test, "EPSG:3154", testmyearsrsfminesint.ud)
+
+gc()
+used.bin.myearsrsfminesint <- make_map_bins(testmyearsrsfminesint.prop)
+
+colnames(rsfmod.test) <- make.unique(colnames(rsfmod.test))
+gc()
+propptsbin.myearsrsfminesint <- pts_in_bins(rsfmod.test, testmyearsrsfminesint.ud)
+plot(propptsbin.myearsrsfminesint$use.bin, propptsbin.myearsrsfsimp$prop.pts)
+cor(propptsbin.myearsrsfminesint$use.bin, propptsbin.myearsrsfsimp$prop.pts, method = 'spearman', use = 'complete.obs')
+#-0.02711126
+
+layerCor(c(testmyearsrsfminesint.ud, used.bin.myearsrsfminesint), fun = 'pearson', na.rm = T)
+
+propptsbin.myearsrsfminesint.tot <- pts_in_bins_tot(rsfmod.test, testmyearsrsfminesint.ud)
+
+plot(propptsbin.myearsrsfminesint.tot$use.bin, propptsbin.myearsrsfminesint.tot$prop.pts)
+cor(propptsbin.myearsrsfminesint.tot$use.bin, propptsbin.myearsrsfminesint.tot$prop.pts, method = 'spearman', use = 'complete.obs')
+#-0.07878788
+
+#Really bad model, again....
+
+
+
+
+### RSF Mod, mines pa ----
+make_pde <- function(mod.tab, land, saveName = NULL) {
+  # Lf
+  lf.main <- mod.tab[term == 'dens_lf_z' & !grepl(":", term), estimate]
+  lf.cov <- lf.main * land$dens_lf_z
+  
+  # Prop forest
+  prop_forest.main <- mod.tab[term == 'prop_forest_z' & !grepl(":", term), estimate]
+  prop_forest.cov <- prop_forest.main * land$prop_forest_z
+  
+  # Prop veg
+  prop_veg.main <- mod.tab[term == 'prop_veg_z' & !grepl(":", term), estimate]
+  prop_veg.cov <- prop_veg.main * land$prop_veg_z
+  
+  # Prop veg
+  prop_barren.main <- mod.tab[term == 'prop_barren_z' & !grepl(":", term), estimate]
+  prop_barren.cov <- prop_barren.main * land$prop_barren_z
+  
+  #Quartz pa
+  quartz.main <- mod.tab[term == 'pa_quartz_z', estimate]
+  quartz.cov <- quartz.main * land$pa_quartz_z
+  
+  #Placer pa
+  placer.main <- mod.tab[term == 'pa_placer_z', estimate]
+  placer.cov <- placer.main * land$pa_placer_z
+  
+  # Combine all terms in numerator
+  numerator <- exp(
+    lf.cov +
+      prop_forest.cov + prop_veg.cov  + prop_barren.cov +
+      placer.cov + quartz.cov
+  )
+  
+  pde <- numerator
+  
+  # Save if requested
+  if (!is.null(saveName)) {
+    writeRaster(pde, file.path(derived, saveName), overwrite = TRUE)
+  }
+  
+  return(pde)
+}
+
+
+gc()
+testmyearsrsfminespa.ud <- mod2UD(modpath = RSFmod.train.minespa, envlayers = land2020_RSF, 
+                                   studyArea = vect(sArea.rsfmod))
+plot(testmyearsrsfminespa.ud)
+
+#saveRDS(testmyearsrsfminespa.ud, "testmyearsrsfminespa.ud.rds")
+#testmyearsrsfminespa.ud <- readRDS("testmyearsrsfminespa.ud.rds")
+
+gc()
+testmyearsrsfminespa.prop <- make_prop_use(rsfmod.test, "EPSG:3154", testmyearsrsfminespa.ud)
+
+gc()
+used.bin.myearsrsfminespa <- make_map_bins(testmyearsrsfminespa.prop)
+
+colnames(rsfmod.test) <- make.unique(colnames(rsfmod.test))
+gc()
+propptsbin.myearsrsfminespa <- pts_in_bins(rsfmod.test, testmyearsrsfminespa.ud)
+plot(propptsbin.myearsrsfminespa$use.bin, propptsbin.myearsrsfminespa$prop.pts)
+cor(propptsbin.myearsrsfminespa$use.bin, propptsbin.myearsrsfminespa$prop.pts, method = 'spearman', use = 'complete.obs')
+#0.32
+
+layerCor(c(testmyearsrsfminespa.ud, used.bin.myearsrsfminespa), fun = 'pearson', na.rm = T)
+
+propptsbin.myearsrsfminespa.tot <- pts_in_bins_tot(rsfmod.test, testmyearsrsfminespa.ud)
+
+plot(propptsbin.myearsrsfminespa.tot$use.bin, propptsbin.myearsrsfminespa.tot$prop.pts)
+cor(propptsbin.myearsrsfminespa.tot$use.bin, propptsbin.myearsrsfminespa.tot$prop.pts, method = 'spearman', use = 'complete.obs')
+#0.52
+
+#Not bad!
+
+
+
+
+### Plotting ----
+prop_list <- list(
+  "Coarse Simple Fire 2"  = propptsbin.myearscoarsesimpfire2.tot,
+  "Coarse Simple Fire 60" = propptsbin.myearscoarsesimpfire60.tot,
+  "Coarse Lf Dens Fire 2"   = propptsbin.myearscoarsedensfire2.tot,
+  "Coarse Lf Dens Fire 60"  = propptsbin.myearscoarsedensfire60.tot,
+  "Coarse PA Fire 2"      = propptsbin.myearscoarsepafire2.tot,
+  "Coarse PA Fire 60"     = propptsbin.myearscoarsepafire60.tot,
+  "Fine Full Roads Comb"       = propptsbin.myearsfinefullroads.tot,
+  "Fine Simple"           = propptsbin.myearsfinesimple.tot,
+  "Fine Full"             = propptsbin.myearsfinefull.tot
+)
+
+combined_df <- bind_rows(
+  lapply(names(prop_list), function(name) {
+    df <- prop_list[[name]]
+    df$Variation <- name
+    return(df)
+  })
+)
+
+soft_colors <- c(
+  "#66c2a5",  
+  "#fc8d62",  
+  "#8da0cb",  
+  "#e78ac3",  
+  "#a6d854",  
+  "#ffd92f",  
+  "#e5c494", 
+  "#b3b3b3",  
+  "#a6cee3"   
+)
+
+# Plot
+ggplot(combined_df, aes(x = use.bin, y = prop.pts, color = Variation)) +
+  geom_line(linewidth = 0.9) +
+  geom_point(size = 2) +
+  scale_color_manual(values = soft_colors) +
+  scale_x_continuous(breaks = 0:9) +
+  labs(
+    x = "Use bin",
+    y = "Area adjusted proportion of used points",
+    color = "Model"
+  ) +
+  theme_classic(base_size = 13) +
+  theme(
+    legend.position = "right",
+    legend.title = element_text(face = "bold"),
+    axis.title = element_text(face = "bold"),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black")
+  )
+
 
 
 #######################################################################################
@@ -1634,686 +2287,4 @@ plot(propptsbin.mherds.tot$use.bin, propptsbin.mherds.tot$prop.pts)
 cor(propptsbin.mherds.tot$use.bin, propptsbin.mherds.tot$prop.pts, method = 'spearman')
 
 #0.8424242
-
-
-
-### global2010 predicting 2015 ----
-land2010 <- load_map_layers(landyr = 2015, disturbyr = 2010, ts_else = 40)
-
-modtrain2010 <- file.path(derived, 'mods_hpc', 'mod_selmove_2010-2015_HPC_noTA.RDS')
-
-gc()
-test2010.ud <- mod2UD(modpath = modtrain2010, envlayers = land2015, 
-                      studyArea = vect(sArea.2015))
-plot(test2010.ud)
-
-
-gc()
-test2010.prop <- make_prop_use(dat.sub, crs, test2010.ud)
-
-
-gc()
-used.bin.2010 <- make_map_bins(test2010.prop)
-
-
-gc()
-propptsbin.2010 <- pts_in_bins(dat.sub, test2010.ud)
-plot(propptsbin.2010$use.bin, propptsbin.2010$prop.pts)
-cor(propptsbin.2010$use.bin, propptsbin.2010$prop.pts, method = 'spearman')
-
-layerCor(c(test2010.ud, used.bin.2010), fun = 'pearson', na.rm = T)
-
-propptsbin.2010.tot <- pts_in_bins_tot(dat.sub, test2010.ud)
-
-plot(propptsbin.2010.tot$use.bin, propptsbin.2010.tot$prop.pts)
-cor.test(propptsbin.2010.tot$use.bin, propptsbin.2010.tot$prop.pts, 
-         method = 'spearman', na.rm = T)
-
-
-### BC ----
-modtrainbc <- file.path(derived, 'mods_train', 'mod_bc_train_selmove_2015-2020_HPC.RDS')
-
-gc()
-testbc.ud <- mod2UD(modpath = modtrainbc, envlayers = land2015, 
-                    studyArea = vect(test.sArea.bc))
-plot(testbc.ud)
-
-gc()
-testbc.prop <- make_prop_use(bc.test, crs, testbc.ud)
-
-gc()
-used.bin.bc <- make_map_bins(testbc.prop)
-
-gc()
-propptsbin.bc <- pts_in_bins(bc.test, testbc.ud)
-plot(propptsbin.bc$use.bin, propptsbin.bc$prop.pts)
-cor(propptsbin.bc$use.bin, propptsbin.bc$prop.pts, method = 'spearman')
-
-layerCor(c(test2015.ud, used.bin.2015), fun = 'pearson', na.rm = T)
-
-propptsbin.bc.tot <- pts_in_bins_tot(bc.test, testbc.ud)
-
-plot(propptsbin.bc.tot$use.bin, propptsbin.bc.tot$prop.pts)
-cor(propptsbin.bc.tot$use.bin, propptsbin.bc.tot$prop.pts, method = 'spearman')
-
-
-### MB ----
-modtrainmb <- file.path(derived, 'mods_train', 'mod_mb_train_selmove_2015-2020_HPC.RDS')
-
-gc()
-testmb.ud <- mod2UD(modpath = modtrainmb, envlayers = land2015, 
-                    studyArea = vect(test.sArea.mb))
-plot(testmb.ud)
-
-gc()
-testmb.prop <- make_prop_use(mb.test, crs, testmb.ud)
-
-gc()
-used.bin.mb <- make_map_bins(testmb.prop)
-
-gc()
-propptsbin.mb <- pts_in_bins(mb.test, testmb.ud)
-plot(propptsbin.mb$use.bin, propptsbin.mb$prop.pts)
-cor(propptsbin.mb$use.bin, propptsbin.mb$prop.pts, method = 'spearman')
-
-layerCor(c(test2015.ud, used.bin.2015), fun = 'pearson', na.rm = T)
-
-propptsbin.mb.tot <- pts_in_bins_tot(mb.test, testmb.ud)
-
-plot(propptsbin.mb.tot$use.bin, propptsbin.mb.tot$prop.pts)
-cor(propptsbin.mb.tot$use.bin, propptsbin.mb.tot$prop.pts, method = 'spearman')
-
-
-### NWT ----
-modtrainnwt <- file.path(derived, 'mods_train', 'mod_nwt_train_selmove_2015-2020_HPC.RDS')
-
-gc()
-testnwt.ud <- mod2UD(modpath = modtrainnwt, envlayers = land2015, 
-                     studyArea = vect(test.sArea.nwt))
-plot(testnwt.ud)
-
-gc()
-testnwt.prop <- make_prop_use(nwt.test, crs, testnwt.ud)
-
-gc()
-used.bin.nwt <- make_map_bins(testnwt.prop)
-
-gc()
-propptsbin.nwt <- pts_in_bins(nwt.test, testnwt.ud)
-plot(propptsbin.nwt$use.bin, propptsbin.nwt$prop.pts)
-cor(propptsbin.nwt$use.bin, propptsbin.nwt$prop.pts, method = 'spearman')
-
-layerCor(c(test2015.ud, used.bin.2015), fun = 'pearson', na.rm = T)
-
-propptsbin.nwt.tot <- pts_in_bins_tot(nwt.test, testnwt.ud)
-
-plot(propptsbin.nwt.tot$use.bin, propptsbin.nwt.tot$prop.pts)
-cor(propptsbin.nwt.tot$use.bin, propptsbin.nwt.tot$prop.pts, method = 'spearman')
-
-
-### SK ----
-modtrainsk <- file.path(derived, 'mods_train', 'mod_sk_train_selmove_2015-2020_HPC.RDS')
-
-gc()
-testsk.ud <- mod2UD(modpath = modtrainsk, envlayers = land2015, 
-                    studyArea = vect(test.sArea.sk))
-plot(testsk.ud)
-
-gc()
-testsk.prop <- make_prop_use(sk.test, crs, testsk.ud)
-
-gc()
-used.bin.sk <- make_map_bins(testsk.prop)
-
-gc()
-propptsbin.sk <- pts_in_bins(sk.test, testsk.ud)
-plot(propptsbin.sk$use.bin, propptsbin.sk$prop.pts)
-cor(propptsbin.sk$use.bin, propptsbin.sk$prop.pts, method = 'spearman')
-
-layerCor(c(test2015.ud, used.bin.2015), fun = 'pearson', na.rm = T)
-
-propptsbin.sk.tot <- pts_in_bins_tot(sk.test, testsk.ud)
-
-plot(propptsbin.sk.tot$use.bin, propptsbin.sk.tot$prop.pts)
-cor(propptsbin.sk.tot$use.bin, propptsbin.sk.tot$prop.pts, method = 'spearman')
-
-
-
-
-
-
-### global consolidated ----
-global.proppts <- rbind(propptsbin.2010.tot[,fold:= '2010-2015'], propptsbin.2015.tot[,fold:= '2015_internal'], 
-                        propptsbin.bc.tot[,fold:= 'bc'], propptsbin.mb.tot[,fold:= 'mb'],
-                        propptsbin.nwt.tot[,fold:= 'nwt'], propptsbin.sk.tot[,fold:= 'sk'])
-saveRDS(global.proppts, file.path(derived, 'validations', 'global_ud_overlap.RDS'))
-
-ggplot(global.proppts, aes(use.bin, prop.pts, color = fold)) +
-  geom_point() +
-  geom_line() + 
-  theme_bw() +
-  xlab('Use bin') + ylab('Area adjusted proportion of used points') +
-  scale_x_continuous(breaks = seq(0,9, by = 1)) +
-  scale_color_viridis_d()
-
-cor.test(global.proppts$use.bin, global.proppts$prop.pts, 
-         method = 'spearman', na.rm = T)
-
-global.cor <- global.proppts[,.(rho = cor.test(use.bin, prop.pts, method = 'spearman', na.rm = T)$estimate[[1]]),
-                             by = .(fold)]
-global.cor.sum <- global.cor[,.(mean.rho = mean(rho), sd = sd(rho))]
-
-## Jurisdictional models ----
-
-dat.sub.juris <- dat[year>=2014 & year<=2019]
-
-# models
-modbc <- file.path(derived, 'mod_selmove_bc.RDS')
-modmb <- file.path(derived, 'mod_selmove_mb_2015_50.RDS')
-modnwt <- file.path(derived, 'mod_selmove_nwt.RDS')
-modsk <- file.path(derived, 'mod_selmove_sk.RDS')
-
-### nwt ----
-nwt <- dat.sub.juris[jurisdiction %in% c('nwt', 'yt')]
-nwt[,id:=as.factor(id)]
-nwt[,indiv_step_id := as.factor(indiv_step_id)]
-nwt[,jurisdiction := as.factor(jurisdiction)]
-nwt[,year:=as.factor(year)]
-nwt[,pop := as.factor(pop)]
-
-gc()
-test.sArea.nwt.juris <- make_study_area(nwt, crs, buff = buffer)
-
-# predict NWT based on other juris mods
-#### BC mod ----
-gc()
-nwt.modbc.ud <- mod2UD(modpath = modbc, envlayers = land2015, 
-                       studyArea = vect(test.sArea.nwt.juris))
-plot(nwt.modbc.ud)
-
-
-gc()
-nwt.modbc.prop <- make_prop_use(nwt, crs, nwt.modbc.ud)
-
-
-gc()
-used.bin.nwt.modbc <- make_map_bins(nwt.modbc.prop)
-
-
-gc()
-propptsbin.nwt.modbc <- pts_in_bins(nwt, nwt.modbc.ud)
-plot(propptsbin.nwt.modbc$use.bin, propptsbin.nwt.modbc$prop.pts)
-cor.test(propptsbin.nwt.modbc$use.bin, propptsbin.nwt.modbc$prop.pts, method = 'spearman', na.rm =T)
-
-layerCor(c(nwt.modbc.ud, used.bin.nwt.modbc), fun = 'pearson', na.rm = T)
-
-propptsbin.nwt.modbc.tot <- pts_in_bins_tot(nwt, nwt.modbc.ud)
-
-plot(propptsbin.nwt.modbc.tot$use.bin, propptsbin.nwt.modbc.tot$prop.pts)
-cor.test(propptsbin.nwt.modbc.tot$use.bin, propptsbin.nwt.modbc.tot$prop.pts, 
-         method = 'spearman', na.rm = T)
-
-
-#### MB mod ----
-gc()
-nwt.modmb.ud <- mod2UD(modpath = modmb, envlayers = land2015, 
-                       studyArea = vect(test.sArea.nwt.juris))
-plot(nwt.modmb.ud)
-
-
-gc()
-nwt.modmb.prop <- make_prop_use(nwt, crs, nwt.modmb.ud)
-
-
-gc()
-used.bin.nwt.modmb <- make_map_bins(nwt.modmb.prop)
-
-
-gc()
-propptsbin.nwt.modmb <- pts_in_bins(nwt, nwt.modmb.ud)
-plot(propptsbin.nwt.modmb$use.bin, propptsbin.nwt.modmb$prop.pts)
-cor.test(propptsbin.nwt.modmb$use.bin, propptsbin.nwt.modmb$prop.pts, method = 'spearman', na.rm =T)
-
-layerCor(c(nwt.modmb.ud, used.bin.nwt.modmb), fun = 'pearson', na.rm = T)
-
-propptsbin.nwt.modmb.tot <- pts_in_bins_tot(nwt, nwt.modmb.ud)
-
-plot(propptsbin.nwt.modmb.tot$use.bin, propptsbin.nwt.modmb.tot$prop.pts)
-cor.test(propptsbin.nwt.modmb.tot$use.bin, propptsbin.nwt.modmb.tot$prop.pts, 
-         method = 'spearman', na.rm = T)
-
-
-#### SK mod ----
-gc()
-nwt.modsk.ud <- mod2UD(modpath = modsk, envlayers = land2015, 
-                       studyArea = vect(test.sArea.nwt.juris))
-plot(nwt.modsk.ud)
-
-
-gc()
-nwt.modsk.prop <- make_prop_use(nwt, crs, nwt.modsk.ud)
-
-
-gc()
-used.bin.nwt.modsk <- make_map_bins(nwt.modsk.prop)
-
-
-gc()
-propptsbin.nwt.modsk <- pts_in_bins(nwt, nwt.modsk.ud)
-plot(propptsbin.nwt.modsk$use.bin, propptsbin.nwt.modsk$prop.pts)
-cor.test(propptsbin.nwt.modsk$use.bin, propptsbin.nwt.modsk$prop.pts, method = 'spearman', na.rm =T)
-
-layerCor(c(nwt.modsk.ud, used.bin.nwt.modsk), fun = 'pearson', na.rm = T)
-
-propptsbin.nwt.modsk.tot <- pts_in_bins_tot(nwt, nwt.modsk.ud)
-
-plot(propptsbin.nwt.modsk.tot$use.bin, propptsbin.nwt.modsk.tot$prop.pts)
-cor.test(propptsbin.nwt.modsk.tot$use.bin, propptsbin.nwt.modsk.tot$prop.pts, 
-         method = 'spearman', na.rm = T)
-
-
-
-### mb ----
-mb.2015 <- dat[jurisdiction == 'mb' & int.year ==2015]
-length(unique(mb.2015$id))*.5
-# worked when sampled 150 indivs
-mb.sub.id <- sample(unique(mb.2015$id), floor(length(unique(mb.2015$id))*.50))
-mb <- mb.2015[id %in% mb.sub.id]
-mb[,id:=as.factor(id)]
-mb[,indiv_step_id := as.factor(indiv_step_id)]
-mb[,jurisdiction := as.factor(jurisdiction)]
-mb[,year:=as.factor(year)]
-mb[,pop := as.factor(pop)]
-
-
-gc()
-test.sArea.mb.juris <- make_study_area(mb.2015.sub, crs, buff = buffer)
-
-# predict MB based on other juris mods
-#### BC mod ----
-gc()
-mb.modbc.ud <- mod2UD(modpath = modbc, envlayers = land2015, 
-                      studyArea = vect(test.sArea.mb.juris))
-plot(mb.modbc.ud)
-
-
-gc()
-mb.modbc.prop <- make_prop_use(mb, crs, mb.modbc.ud)
-
-
-gc()
-used.bin.mb.modbc <- make_map_bins(mb.modbc.prop)
-
-
-gc()
-propptsbin.mb.modbc <- pts_in_bins(mb, mb.modbc.ud)
-plot(propptsbin.mb.modbc$use.bin, propptsbin.mb.modbc$prop.pts)
-cor.test(propptsbin.mb.modbc$use.bin, propptsbin.mb.modbc$prop.pts, method = 'spearman', na.rm =T)
-
-layerCor(c(mb.modbc.ud, used.bin.mb.modbc), fun = 'pearson', na.rm = T)
-
-propptsbin.mb.modbc.tot <- pts_in_bins_tot(mb, mb.modbc.ud)
-
-plot(propptsbin.mb.modbc.tot$use.bin, propptsbin.mb.modbc.tot$prop.pts)
-cor.test(propptsbin.mb.modbc.tot$use.bin, propptsbin.mb.modbc.tot$prop.pts, 
-         method = 'spearman', na.rm = T)
-
-
-#### NWT mod ----
-gc()
-mb.modnwt.ud <- mod2UD(modpath = modnwt, envlayers = land2015, 
-                       studyArea = vect(test.sArea.mb.juris))
-plot(mb.modnwt.ud)
-
-
-gc()
-mb.modnwt.prop <- make_prop_use(mb, crs, mb.modnwt.ud)
-
-
-gc()
-used.bin.mb.modnwt <- make_map_bins(mb.modnwt.prop)
-
-
-gc()
-propptsbin.mb.modnwt <- pts_in_bins(mb, mb.modnwt.ud)
-plot(propptsbin.mb.modnwt$use.bin, propptsbin.mb.modnwt$prop.pts)
-cor.test(propptsbin.mb.modnwt$use.bin, propptsbin.mb.modnwt$prop.pts, method = 'spearman', na.rm =T)
-
-layerCor(c(mb.modnwt.ud, used.bin.mb.modnwt), fun = 'pearson', na.rm = T)
-
-propptsbin.mb.modnwt.tot <- pts_in_bins_tot(mb, mb.modnwt.ud)
-
-plot(propptsbin.mb.modnwt.tot$use.bin, propptsbin.mb.modnwt.tot$prop.pts)
-cor.test(propptsbin.mb.modnwt.tot$use.bin, propptsbin.mb.modnwt.tot$prop.pts, 
-         method = 'spearman', na.rm = T)
-
-
-#### SK mod ----
-gc()
-mb.modsk.ud <- mod2UD(modpath = modsk, envlayers = land2015, 
-                      studyArea = vect(test.sArea.mb.juris))
-plot(mb.modsk.ud)
-
-
-gc()
-mb.modsk.prop <- make_prop_use(mb, crs, mb.modsk.ud)
-
-
-gc()
-used.bin.mb.modsk <- make_map_bins(mb.modsk.prop)
-
-
-gc()
-propptsbin.mb.modsk <- pts_in_bins(mb, mb.modsk.ud)
-plot(propptsbin.mb.modsk$use.bin, propptsbin.mb.modsk$prop.pts)
-cor.test(propptsbin.mb.modsk$use.bin, propptsbin.mb.modsk$prop.pts, method = 'spearman', na.rm =T)
-
-layerCor(c(mb.modsk.ud, used.bin.mb.modsk), fun = 'pearson', na.rm = T)
-
-propptsbin.mb.modsk.tot <- pts_in_bins_tot(mb, mb.modsk.ud)
-
-plot(propptsbin.mb.modsk.tot$use.bin, propptsbin.mb.modsk.tot$prop.pts)
-cor.test(propptsbin.mb.modsk.tot$use.bin, propptsbin.mb.modsk.tot$prop.pts, 
-         method = 'spearman', na.rm = T)
-
-
-
-### sk ----
-sk <- dat.sub[jurisdiction == 'sk']
-sk[,id:=as.factor(id)]
-sk[,indiv_step_id := as.factor(indiv_step_id)]
-sk[,jurisdiction := as.factor(jurisdiction)]
-sk[,year:=as.factor(year)]
-sk[,pop := as.factor(pop)]
-
-gc()
-test.sArea.sk.juris <- make_study_area(sk, crs, buff = buffer)
-
-# predict SK based on other juris mods
-#### BC mod ----
-gc()
-sk.modbc.ud <- mod2UD(modpath = modbc, envlayers = land2015, 
-                      studyArea = vect(test.sArea.sk.juris))
-plot(sk.modbc.ud)
-
-
-gc()
-sk.modbc.prop <- make_prop_use(sk, crs, sk.modbc.ud)
-
-
-gc()
-used.bin.sk.modbc <- make_map_bins(sk.modbc.prop)
-
-
-gc()
-propptsbin.sk.modbc <- pts_in_bins(sk, sk.modbc.ud)
-plot(propptsbin.sk.modbc$use.bin, propptsbin.sk.modbc$prop.pts)
-cor.test(propptsbin.sk.modbc$use.bin, propptsbin.sk.modbc$prop.pts, method = 'spearman', na.rm =T)
-
-layerCor(c(sk.modbc.ud, used.bin.sk.modbc), fun = 'pearson', na.rm = T)
-
-propptsbin.sk.modbc.tot <- pts_in_bins_tot(sk, sk.modbc.ud)
-
-plot(propptsbin.sk.modbc.tot$use.bin, propptsbin.sk.modbc.tot$prop.pts)
-cor.test(propptsbin.sk.modbc.tot$use.bin, propptsbin.sk.modbc.tot$prop.pts, 
-         method = 'spearman', na.rm = T)
-
-
-#### MB mod ----
-gc()
-sk.modmb.ud <- mod2UD(modpath = modmb, envlayers = land2015, 
-                      studyArea = vect(test.sArea.sk.juris))
-plot(sk.modmb.ud)
-
-
-gc()
-sk.modmb.prop <- make_prop_use(sk, crs, sk.modmb.ud)
-
-
-gc()
-used.bin.sk.modmb <- make_map_bins(sk.modmb.prop)
-
-
-gc()
-propptsbin.sk.modmb <- pts_in_bins(sk, sk.modmb.ud)
-plot(propptsbin.sk.modmb$use.bin, propptsbin.sk.modmb$prop.pts)
-cor.test(propptsbin.sk.modmb$use.bin, propptsbin.sk.modmb$prop.pts, method = 'spearman', na.rm =T)
-
-layerCor(c(sk.modmb.ud, used.bin.sk.modmb), fun = 'pearson', na.rm = T)
-
-propptsbin.sk.modmb.tot <- pts_in_bins_tot(sk, sk.modmb.ud)
-
-plot(propptsbin.sk.modmb.tot$use.bin, propptsbin.sk.modmb.tot$prop.pts)
-cor.test(propptsbin.sk.modmb.tot$use.bin, propptsbin.sk.modmb.tot$prop.pts, 
-         method = 'spearman', na.rm = T)
-
-
-#### NWT mod ----
-gc()
-sk.modnwt.ud <- mod2UD(modpath = modnwt, envlayers = land2015, 
-                       studyArea = vect(test.sArea.sk.juris))
-plot(sk.modnwt.ud)
-
-
-gc()
-sk.modnwt.prop <- make_prop_use(sk, crs, sk.modnwt.ud)
-
-
-gc()
-used.bin.sk.modnwt <- make_map_bins(sk.modnwt.prop)
-
-
-gc()
-propptsbin.sk.modnwt <- pts_in_bins(sk, sk.modnwt.ud)
-plot(propptsbin.sk.modnwt$use.bin, propptsbin.sk.modnwt$prop.pts)
-cor.test(propptsbin.sk.modnwt$use.bin, propptsbin.sk.modnwt$prop.pts, method = 'spearman', na.rm =T)
-
-layerCor(c(sk.modnwt.ud, used.bin.sk.modnwt), fun = 'pearson', na.rm = T)
-
-propptsbin.sk.modnwt.tot <- pts_in_bins_tot(sk, sk.modnwt.ud)
-
-plot(propptsbin.sk.modnwt.tot$use.bin, propptsbin.sk.modnwt.tot$prop.pts)
-cor.test(propptsbin.sk.modnwt.tot$use.bin, propptsbin.sk.modnwt.tot$prop.pts, 
-         method = 'spearman', na.rm = T)
-
-
-### bc ----
-bc <- dat.sub[jurisdiction == 'bc']
-bc[,id:=as.factor(id)]
-bc[,indiv_step_id := as.factor(indiv_step_id)]
-bc[,jurisdiction := as.factor(jurisdiction)]
-bc[,year:=as.factor(year)]
-bc[,pop := as.factor(pop)]
-
-gc()
-test.sArea.bc.juris <- make_study_area(bc, crs, buff = buffer)
-
-#### MB mod ----
-gc()
-bc.modmb.ud <- mod2UD(modpath = modmb, envlayers = land2015, 
-                      studyArea = vect(test.sArea.bc.juris))
-plot(bc.modmb.ud)
-
-
-gc()
-bc.modmb.prop <- make_prop_use(bc, crs, bc.modmb.ud)
-
-
-gc()
-used.bin.bc.modmb <- make_map_bins(bc.modmb.prop)
-
-
-gc()
-propptsbin.bc.modmb <- pts_in_bins(bc, bc.modmb.ud)
-plot(propptsbin.bc.modmb$use.bin, propptsbin.bc.modmb$prop.pts)
-cor.test(propptsbin.bc.modmb$use.bin, propptsbin.bc.modmb$prop.pts, method = 'spearman', na.rm =T)
-
-layerCor(c(bc.modmb.ud, used.bin.bc.modmb), fun = 'pearson', na.rm = T)
-
-propptsbin.bc.modmb.tot <- pts_in_bins_tot(bc, bc.modmb.ud)
-
-plot(propptsbin.bc.modmb.tot$use.bin, propptsbin.bc.modmb.tot$prop.pts)
-cor.test(propptsbin.bc.modmb.tot$use.bin, propptsbin.bc.modmb.tot$prop.pts, 
-         method = 'spearman', na.rm = T)
-
-
-#### NWT mod ----
-gc()
-bc.modnwt.ud <- mod2UD(modpath = modnwt, envlayers = land2015, 
-                       studyArea = vect(test.sArea.bc.juris))
-plot(bc.modnwt.ud)
-
-
-gc()
-bc.modnwt.prop <- make_prop_use(bc, crs, bc.modnwt.ud)
-
-
-gc()
-used.bin.bc.modnwt <- make_map_bins(bc.modnwt.prop)
-
-
-gc()
-propptsbin.bc.modnwt <- pts_in_bins(bc, bc.modnwt.ud)
-plot(propptsbin.bc.modnwt$use.bin, propptsbin.bc.modnwt$prop.pts)
-cor.test(propptsbin.bc.modnwt$use.bin, propptsbin.bc.modnwt$prop.pts, method = 'spearman', na.rm =T)
-
-layerCor(c(bc.modnwt.ud, used.bin.bc.modnwt), fun = 'pearson', na.rm = T)
-
-propptsbin.bc.modnwt.tot <- pts_in_bins_tot(bc, bc.modnwt.ud)
-
-plot(propptsbin.bc.modnwt.tot$use.bin, propptsbin.bc.modnwt.tot$prop.pts)
-cor.test(propptsbin.bc.modnwt.tot$use.bin, propptsbin.bc.modnwt.tot$prop.pts, 
-         method = 'spearman', na.rm = T)
-
-
-#### SK mod ----
-gc()
-bc.modsk.ud <- mod2UD(modpath = modsk, envlayers = land2015, 
-                      studyArea = vect(test.sArea.bc.juris))
-plot(bc.modsk.ud)
-
-
-gc()
-bc.modsk.prop <- make_prop_use(bc, crs, bc.modsk.ud)
-
-
-gc()
-used.bin.bc.modsk <- make_map_bins(bc.modsk.prop)
-
-
-gc()
-propptsbin.bc.modsk <- pts_in_bins(bc, bc.modsk.ud)
-plot(propptsbin.bc.modsk$use.bin, propptsbin.bc.modsk$prop.pts)
-cor.test(propptsbin.bc.modsk$use.bin, propptsbin.bc.modsk$prop.pts, method = 'spearman', na.rm =T)
-
-layerCor(c(bc.modsk.ud, used.bin.bc.modsk), fun = 'pearson', na.rm = T)
-
-propptsbin.bc.modsk.tot <- pts_in_bins_tot(bc, bc.modsk.ud)
-
-plot(propptsbin.bc.modsk.tot$use.bin, propptsbin.bc.modsk.tot$prop.pts)
-cor.test(propptsbin.bc.modsk.tot$use.bin, propptsbin.bc.modsk.tot$prop.pts, 
-         method = 'spearman', na.rm = T)
-
-
-## Juris consolidated ----
-juris.proppts <- rbind(propptsbin.mb.modbc.tot[,`:=`(dat = 'mb', model = 'bc')], 
-                       propptsbin.mb.modnwt.tot[,`:=`(dat = 'mb', model = 'nwt')],
-                       propptsbin.mb.modsk.tot[,`:=`(dat = 'mb', model = 'sk')],
-                       propptsbin.nwt.modbc.tot[,`:=`(dat = 'nwt', model = 'bc')], 
-                       propptsbin.nwt.modmb.tot[,`:=`(dat = 'nwt', model = 'mb')],
-                       propptsbin.nwt.modsk.tot[,`:=`(dat = 'nwt', model = 'sk')],
-                       propptsbin.sk.modbc.tot[,`:=`(dat = 'sk', model = 'bc')], 
-                       propptsbin.sk.modnwt.tot[,`:=`(dat = 'sk', model = 'nwt')],
-                       propptsbin.sk.modmb.tot[,`:=`(dat = 'sk', model = 'mb')],
-                       propptsbin.bc.modmb.tot[,`:=`(dat = 'bc', model = 'mb')], 
-                       propptsbin.bc.modnwt.tot[,`:=`(dat = 'bc', model = 'nwt')],
-                       propptsbin.bc.modsk.tot[,`:=`(dat = 'bc', model = 'sk')])
-
-saveRDS(juris.proppts, file.path(derived, 'validations', 'juris_ud_overlap.RDS'))
-
-juris.proppts <- readRDS(file.path(derived, 'validations', 'juris_ud_overlap.RDS'))
-juris.proppts[,mod.labs:= paste0(toupper(model), ' model')]
-ggplot(juris.proppts, aes(use.bin, prop.pts, color = toupper(dat))) +
-  geom_point() +
-  geom_line() + 
-  theme_bw() +
-  xlab('Use bin') + ylab('Area adjusted proportion of used points') +
-  scale_x_continuous(breaks = seq(0,9, by = 1)) +
-  scale_color_viridis_d(name='fold') +
-  facet_wrap(~mod.labs) 
-
-cor.test(juris.proppts$use.bin, juris.proppts$prop.pts, 
-         method = 'spearman', na.rm = T)
-
-juris.cor <- juris.proppts[,.(rho = cor.test(use.bin, prop.pts, method = 'spearman', na.rm = T)$estimate[[1]]),
-                           by = .(model, dat)]
-juris.cor.sum <- juris.cor[,.(mean.rho = mean(rho), sd = sd(rho)), by = .(model)]
-
-######
-
-pde.2010 <- rast(file.path(derived, 'pde2010_re.tif'))
-
-pde.2015 <- as.numeric(rast(file.path(derived, 'pde2015_re.tif')))
-
-
-crs <- st_crs(pde.2015)$wkt
-
-temp <- pde.2015
-temp[!is.na(temp)]<-0
-
-
-
-# used.2015 <- rast.2015
-# used.2015[is.na(used.2015)] <- temp
-
-breaks <- global(rast.2015, quantile, na.rm = T, probs = seq(0,1,.1))
-v.breaks <- unname(breaks)
-t.breaks <- as.vector(t(v.breaks))
-used.bin.2015 <- as.numeric(classify(rast.2015, t.breaks, include.lowest=TRUE, brackets=TRUE))
-freq(used.bin.2015)
-used.bin.0.2015 <- used.bin.2015
-used.bin.0.2015[used.bin.0.2015==0]<-1
-used.bin.0.2015[is.na(used.bin.0.2015)] <- temp
-
-ptsbin.2015 <- dat.obs[int.year==2015]
-ptsbin.2015[, use.bin:= terra::extract(pde.2015, cbind(.SD))[,-1],
-            .SDcols = c('x1_','y1_')]
-freq(pde.2015)
-npts.2015 <- ptsbin.2015[,.(npts = .N), by= .(id)]
-propptsbin.2015 <- merge(ptsbin.2015[id!=''], npts.2015, by = 'id')
-propptsbin.2015 <- propptsbin.2015[,prop.pts := .N/npts, by = .(use.bin, id)]
-plot(propptsbin.2015$use.bin, propptsbin.2015$prop.pts)
-cor(propptsbin.2015$use.bin, propptsbin.2015$prop.pts, method = 'spearman')
-
-global((sqrt(raster01(pde.2015))*sqrt(raster01(used.2015))), fun = 'sum', na.rm = T)
-
-layerCor(c(as.numeric(pde.2015), used.bin.0.2015), fun = 'pearson', na.rm = T)
-cor.2015 <- focalPairs(c(as.numeric(pde.2015), used.bin.0.2015), fun = 'pearson')
-
-pde.use.2015 <- mask(as.numeric(pde.2015), rast.2015)
-layerCor(c(pde.use.2015, rast.2015), fun = 'pearson', na.rm = T)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
