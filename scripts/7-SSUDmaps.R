@@ -15,7 +15,7 @@ yr =2020
 
 ### 250m ----
 # make list of all paths Landcover
-
+# the names need to match the names of variables in the model 
 pathLand250 <- list(prop_water_250 = file.path(dataDrive, 'derived', 'prop_land', 'prop_land_split', "prop_water_250"),
                     prop_snow_250 = file.path(dataDrive, 'derived', 'prop_land', 'prop_land_split', "prop_snow_250"),
                     prop_rock_250 = file.path(dataDrive, 'derived', 'prop_land', 'prop_land_split', 'prop_rock_250'),
