@@ -1283,7 +1283,7 @@ for (cat in poly_categories) {
 
 
 
-
+#Re-pull for 2024 data
 ## FIRES ----
 
 #NBACURL <- "https://cwfis.cfs.nrcan.gc.ca/downloads/nbac/nbac_1972_2023_20240530_shp.zip"

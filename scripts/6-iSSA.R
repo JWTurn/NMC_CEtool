@@ -814,7 +814,7 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
   coord_flip()  
 
 
-
+#NEED TO ADD SEASNON TO RANDOM EFFECTS FOR FULL MODELS 
 ## --- Full Models (using) ----
 #Re-trying full dataset, close and far combined, seasons combined - it worked! Sticking with these for now as the main ones
 
