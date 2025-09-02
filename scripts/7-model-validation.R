@@ -9,6 +9,8 @@ library(terra)
 library(sf)
 library(dplyr)
 library(ggplot2)
+require(reproducible)
+
 
 # my functions
 lapply(dir('R', '*.R', full.names = TRUE), source)
@@ -199,17 +201,69 @@ pts_in_bins_tot <- function(dat, bin.ud){
   return(propptsbin.tot)
 }
 
-mod2UD <- function(modpath, envlayers, studyArea, pde.saveName = NULL, map.saveName = NULL){
-  mod <- readRDS(modpath)
-  mod.tab <- make_betas_tab(mod)
-  pde <- make_pde(mod.tab, envlayers, saveName = pde.saveName)
-  map.pde <- as.numeric(make_pde_map(pde, studyArea, saveName = map.saveName))
-  return(map.pde)}
+mod2UD <- function(mod, envlayers, studyArea, pde.saveName = NULL, map.saveName = NULL){
+  if(is.character(mod))
+  {mod <- readRDS(mod)}
+  
+  pde <- make_pde(mod, lsRasters = envlayers, studyArea = studyArea, saveName = pde.saveName)
+  map.pde <- as.numeric(make_pde_map(pde, saveName = map.saveName))
+  return(map.pde)
+}
+
+#' prepares pde and feeds into `make_pde_map()`
+make_pde <- function(mod, lsRasters, studyArea, saveName = NULL) {
+  fixEff <- data.table(var = names(fixef(mod)[['cond']]), estimate = fixef(mod)[['cond']])
+  selectionCoefs <- fixEff[var %like% '_end']
+  selectionCoefs[,expr:=gsub('_end|I', '', var)]
+  selectionCoefs[,expr:=gsub(':', '*', expr)]
+  
+  
+  numerator <- lapply(1:nrow(selectionCoefs), 
+                      FUN = function(x, dat = selectionCoefs, rasterEnviron = lsRasters){
+                        2*as.double(selectionCoefs$estimate[[x]])*eval(parse(text = selectionCoefs$expr[[x]]), envir = rasterEnviron)}
+  )
+  
+  numeratorRast <- mask(rast(numerator), studyArea)
+  names(numeratorRast) <- selectionCoefs$expr
+  numeratorSum <- exp(app(numeratorRast, fun = 'sum', na.rm = T))
+  
+  C <- terra::global(numeratorSum, sum, na.rm = T)
+  pde <- numeratorSum/C[[1]]
+  
+  if(!is.null(saveName)){
+    writeRaster(pde, 
+                file.path(saveName), overwrite = T)
+  }
+  
+  return(pde)
+}
+
+
+
+
+#' crops `make_pde()` to study area and descretizes to 10 bins
+make_pde_map <- function(pde, saveName = NULL){
+  # pde.sa <- crop(pde, sArea, mask = T)
+  
+  
+  breaks <- terra::global(pde, quantile, na.rm = T, probs = seq(0,1,.1))
+  v.breaks <- unname(breaks)
+  t.breaks <- as.vector(t(v.breaks))
+  pde.discrete <- terra::classify(pde, t.breaks, include.lowest=TRUE, brackets=TRUE)
+  
+  if(!is.null(saveName)){
+    writeRaster(pde.discrete, 
+                file.path(derived, saveName), overwrite = T)
+  }
+  
+  return(pde.discrete)
+}
 
 make_betas_tab <- function(mod){
   sum <- broom.mixed::tidy(mod, effect = 'fixed')
   as.data.table(sum)[,.(term, estimate)]
 }
+
 
 
 crs <- st_crs(3154)
@@ -271,7 +325,7 @@ finemod.train_full <- glmmTMB(case_ ~ -1 +
 summary(finemod.train_full)
 # save model output
 saveRDS(finemod.train_full, "finemod.train_full.RDS")
-finemod.train_full <- file.path("finemod.train_full.RDS")
+#finemod.train_full <- readRDS("finemod.train_full.RDS")
 
 
 #### Full Model Summer ----
@@ -427,7 +481,7 @@ finemod.train_simple <- glmmTMB(case_ ~ -1 +
 summary(finemod.train_simple)
 # save model output
 saveRDS(finemod.train_simple, "finemod.train_simple.RDS")
-finemod.train_simple <- file.path("finemod.train_simple.RDS")
+finemod.train_simple <- readRDS("finemod.train_simple.RDS")
 
 
 
@@ -564,7 +618,7 @@ finemod.train_fullroadscomb <- glmmTMB(case_ ~ -1 +
 summary(finemod.train_fullroadscomb)
 # save model output
 saveRDS(finemod.train_fullroadscomb, "finemod.train_fullroadscomb.RDS")
-finemod.train_fullroadscomb <- file.path("finemod.train_fullroadscomb.RDS")
+finemod.train_fullroadscomb <- readRDS("finemod.train_fullroadscomb.RDS")
 
 
 #### Full mod roads comb summer ----
@@ -716,10 +770,8 @@ coarsemod.train.pafire60 <- glmmTMB(case_ ~ -1 +
 summary(coarsemod.train.pafire60)
 # save model output
 saveRDS(coarsemod.train.pafire60, "coarsemod.train.pafire60.RDS")
-#coarsemod.train.pafire60 <- readRDS("coarsemod.train.pafire60.RDS")
-coarsemod.train.pafire60 <- file.path("coarsemod.train.pafire60.RDS")
+coarsemod.train.pafire60 <- readRDS("coarsemod.train.pafire60.RDS")
 
-#make_betas_tab(coarsemod.train.pafire60)
 
 
 #### Coarse mod, pa, fire60 Summer ----
@@ -878,7 +930,6 @@ summary(coarsemod.train.pafire2)
 # save model output
 saveRDS(coarsemod.train.pafire2, "coarsemod.train.pafire2.RDS")
 #coarsemod.train.pafire2 <- readRDS("coarsemod.train.pafire2.RDS")
-coarsemod.train.pafire2 <- file.path("coarsemod.train.pafire2.RDS")
 
 
 #### Coarse mod, pa, fire2 Summer ----
@@ -1038,9 +1089,7 @@ summary(coarsemod.train.lfdensfire60)
 # save model output
 saveRDS(coarsemod.train.lfdensfire60, "coarsemod.train.lfdensfire60.RDS")
 #coarsemod.train.lfdensfire60 <- readRDS("coarsemod.train.lfdensfire60.RDS")
-coarsemod.train.lfdensfire60 <- file.path("coarsemod.train.lfdensfire60.RDS")
 
-#make_betas_tab(coarsemod.train.lfdensfire60)
 
 #### Coarse mod, lf dens, fire60 Summer ----
 gc()
@@ -1092,9 +1141,6 @@ summary(coarsemod.train.lfdensfire60.summer)
 # save model output
 saveRDS(coarsemod.train.lfdensfire60.summer, "coarsemod.train.lfdensfire60.summer.RDS")
 #coarsemod.train.lfdensfire60.summer <- readRDS("coarsemod.train.lfdensfire60.summer.RDS")
-coarsemod.train.lfdensfire60.summer <- file.path("coarsemod.train.lfdensfire60.summer.RDS")
-
-
 
 #### Coarse mod, lf dens, fire60 Winter ----
 gc()
@@ -1199,7 +1245,6 @@ summary(coarsemod.train.lfdensfire2)
 # save model output
 saveRDS(coarsemod.train.lfdensfire2, "coarsemod.train.lfdensfire2.RDS")
 #coarsemod.train.lfdensfire2 <- readRDS("coarsemod.train.lfdensfire2.RDS")
-coarsemod.train.lfdensfire2 <- file.path("coarsemod.train.lfdensfire2.RDS")
 
 
 
@@ -1347,8 +1392,6 @@ summary(coarsemod.train.simplefire60)
 # save model output
 saveRDS(coarsemod.train.simplefire60, "coarsemod.train.simplefire60.RDS")
 #coarsemod.train.simplefire60 <- readRDS("coarsemod.train.simplefire60.RDS")
-coarsemod.train.simplefire60 <- file.path("coarsemod.train.simplefire60.RDS")
-#make_betas_tab(coarsemod.train.simplefire60)
 
 
 #### Coarse mod, simple, fire60 Summer ----
@@ -1468,7 +1511,6 @@ summary(coarsemod.train.simplefire2)
 # save model output
 saveRDS(coarsemod.train.simplefire2, "coarsemod.train.simplefire2.RDS")
 #coarsemod.train.simplefire2 <- readRDS("coarsemod.train.simplefire2.RDS")
-coarsemod.train.simplefire2 <- file.path("coarsemod.train.simplefire2.RDS")
 
 
 #### Coarse mod, simple, fire2 Summer ----
@@ -1661,9 +1703,15 @@ RSFmod.train.minespa <- file.path("RSFmod.train.minespa.RDS")
 
 ## Create Test Data ---- 
 finemod.test_full <- finedat.10[year %in% c(2022, 2023, 2024, 2025) & case_ == TRUE]
+finemod.test.summer15 <- finedat.15.summer[year %in% c(2022, 2023, 2024, 2025) & case_ == TRUE]
+finemod.test_winter15 <- finedat.15.winter[year %in% c(2022, 2023, 2024, 2025) & case_ == TRUE]
+finemod.test.summer20 <- finedat.20.summer[year %in% c(2022, 2023, 2024, 2025) & case_ == TRUE]
+finemod.test_winter20 <- finedat.20.winter[year %in% c(2022, 2023, 2024, 2025) & case_ == TRUE]
 finemod.test_simple <- finedat.15[year %in% c(2022, 2023, 2024, 2025) & case_ == TRUE]
-finemod.test_fullroadscomb <- finedat.10[year %in% c(2022, 2023, 2024, 2025) & case_ == TRUE]
+
 coarsemod.test <- coarsedat.20[year %in% c(2022, 2023, 2024, 2025) & case_ == TRUE]
+coarsemod.test.summer <- coarsedat.20.summer[year %in% c(2022, 2023, 2024, 2025) & case_ == TRUE]
+coarsemod.test.winter <- coarsedat.20.winter[year %in% c(2022, 2023, 2024, 2025) & case_ == TRUE]
 
 rsfmod.test <- rsf.dat[year %in% c(2022, 2023, 2024, 2025) & detection == 1]
 setnames(rsfmod.test, old = c("x", "y"), new = c("x1_", "y1_"))
@@ -1671,358 +1719,280 @@ rsfmod.test[, case_ := TRUE] #Making case_ column to match the issa name
 
 #Make study area
 sArea.finemod <- make_study_area(finemod.test_full, crs, buff = buffer)
-sArea.coarsemod <- make_study_area(coarsemod.test_pafire60, crs, buff = buffer)
+sArea.coarsemod <- make_study_area(coarsemod.test, crs, buff = buffer)
 sArea.rsfmod <- make_study_area(rsfmod.test %>% rename(x2_ = x, y2_ = y), crs = crs, buff = buffer)
 
 
 ## Validation -----
 ### Creating fine raster stacks ----
 #Loading layers to stack, starting with prop_land
-prop_wettreed <- rast(file.path(derived, 'prop_land', 'prop_land_split', 'prop_wet_treed_250_2020.tif'))
-prop_needleleaf <- rast(file.path(derived, 'prop_land', 'prop_land_split', 'prop_needleleaf_250_2020.tif'))
-prop_deciduous <- rast(file.path(derived, 'prop_land', 'prop_land_split', 'prop_deciduous_250_2020.tif'))
-prop_mixed <- rast(file.path(derived, 'prop_land', 'prop_land_split', 'prop_mixed_250_2020.tif'))
-
-prop_bryoids <- rast(file.path(derived, 'prop_land', 'prop_land_split', 'prop_bryoids_250_2020.tif'))
-prop_herbs <- rast(file.path(derived, 'prop_land', 'prop_land_split', 'prop_herbs_250_2020.tif'))
-prop_shrub  <- rast(file.path(derived, 'prop_land', 'prop_land_split', 'prop_shrub_250_2020.tif'))
-
-
-# prop_forest = sum of 4 layers
-prop_forest <- prop_wettreed + prop_needleleaf + prop_deciduous + prop_mixed
-
-# prop_veg = sum of 3 layers
-prop_veg <- prop_bryoids + prop_herbs + prop_shrub
-
-
-#Harvest
-harv <- rast(file.path(derived, 'harv250', 'harv250_2020.tif'))
-
-#Fires
-fire <- rast(file.path(derived, 'fireRasters250m', 'fires_2020.tif'))
-
-# Load rasters
-harv_year <- rast(file.path(derived, 'harv250', 'harv250_2020.tif'))
-fire_year <- rast(file.path(derived, 'fireRasters250m', 'fires_2020.tif'))
-
-reference_year <- 2020
-
-harv_ts <- reference_year - harv_year
-fire_ts <- reference_year - fire_year
-harv_ts <- ifel(is.na(harv_ts), 100, harv_ts)
-fire_ts <- ifel(is.na(fire_ts), 200, fire_ts)
-
-distpaved <- rast(file.path(derived, 'dist_disturb_250m', 'paved_distance_250m_2020.tif'))
-distunpaved <- rast(file.path(derived, 'dist_disturb_250m', 'unpaved_distance_250m_2020.tif'))
-distlfother <- rast(file.path(derived, 'dist_disturb_250m', 'otherlf_distance_250m_2020.tif'))
-
-distotherpoly <- rast(file.path(derived, 'dist_disturb_250m', 'otherpoly_distance_250m_2020.tif'))
-distplacer <- rast(file.path(derived, 'dist_disturb_250m', 'placer_distance_250m_2020.tif'))
-distquartz <- rast(file.path(derived, 'dist_disturb_250m', 'quartz_distance_250m_2020.tif'))
-distothermines <- rast(file.path(derived, 'dist_disturb_250m', 'othermines_distance_250m_2020.tif'))
-
-dist_lf <- distpaved + distunpaved + distlfother
-dist_poly <- distotherpoly + distplacer + distquartz + distothermines
-dist_road <- distpaved + distunpaved
-
-
-# Load 1000m linear feature distance rasters
-#Loading layers to stack, starting with prop_land
-prop_wettreed_1000 <- rast(file.path(derived, 'prop_land', 'prop_land_split', 'prop_wet_treed_1000_2020.tif'))
-prop_needleleaf_1000 <- rast(file.path(derived, 'prop_land', 'prop_land_split', 'prop_needleleaf_1000_2020.tif'))
-prop_deciduous_1000 <- rast(file.path(derived, 'prop_land', 'prop_land_split', 'prop_deciduous_1000_2020.tif'))
-prop_mixed_1000 <- rast(file.path(derived, 'prop_land', 'prop_land_split', 'prop_mixed_1000_2020.tif'))
-
-prop_bryoids_1000 <- rast(file.path(derived, 'prop_land', 'prop_land_split', 'prop_bryoids_1000_2020.tif'))
-prop_herbs_1000 <- rast(file.path(derived, 'prop_land', 'prop_land_split', 'prop_herbs_1000_2020.tif'))
-prop_shrub_1000  <- rast(file.path(derived, 'prop_land', 'prop_land_split', 'prop_shrub_1000_2020.tif'))
-
-
-# prop_forest = sum of 4 layers
-prop_forest_1000 <- prop_wettreed_1000 + prop_needleleaf_1000 + prop_deciduous_1000 + prop_mixed_1000
-
-# prop_veg = sum of 3 layers
-prop_veg_1000 <- prop_bryoids_1000 + prop_herbs_1000 + prop_shrub_1000
-
-
-distpaved_1000 <- rast(file.path(derived, 'dist_disturb_1000m', 'paved_distance_1000m_2020.tif'))
-distunpaved_1000 <- rast(file.path(derived, 'dist_disturb_1000m', 'unpaved_distance_1000m_2020.tif'))
-distlfother_1000 <- rast(file.path(derived, 'dist_disturb_1000m', 'otherlf_distance_1000m_2020.tif'))
-
-# Load 1000m PA feature distance rasters
-distotherpoly_1000 <- rast(file.path(derived, 'dist_disturb_1000m', 'otherpoly_distance_1000m_2020.tif'))
-distplacer_1000 <- rast(file.path(derived, 'dist_disturb_1000m', 'placer_distance_1000m_2020.tif'))
-distquartz_1000 <- rast(file.path(derived, 'dist_disturb_1000m', 'quartz_distance_1000m_2020.tif'))
-distothermines_1000 <- rast(file.path(derived, 'dist_disturb_1000m', 'othermines_distance_1000m_2020.tif'))
-
-papaved_1000 <- rast(file.path(derived, 'pa_disturb_1000m', 'paved_pa_1000m_2020.tif'))
-paunpaved_1000 <- rast(file.path(derived, 'pa_disturb_1000m', 'unpaved_pa_1000m_2020.tif'))
-palfother_1000 <- rast(file.path(derived, 'pa_disturb_1000m', 'otherlf_pa_1000m_2020.tif'))
-denspaved_1000 <- rast(file.path(derived, 'dens_disturb_1000m', 'paved_dens_1000m_2020.tif'))
-densunpaved_1000 <- rast(file.path(derived, 'dens_disturb_1000m', 'unpaved_dens_1000m_2020.tif'))
-denslfother_1000 <- rast(file.path(derived, 'dens_disturb_1000m', 'otherlf_dens_1000m_2020.tif'))
-
-paotherpoly_1000 <- rast(file.path(derived, 'pa_disturb_1000m', 'otherpoly_pa_1000m_2020.tif'))
-paplacer_1000 <- rast(file.path(derived, 'pa_disturb_1000m', 'placer_pa_1000m_2020.tif'))
-paquartz_1000 <- rast(file.path(derived, 'pa_disturb_1000m', 'quartz_pa_1000m_2020.tif'))
-paothermines_1000 <- rast(file.path(derived, 'pa_disturb_1000m', 'othermines_pa_1000m_2020.tif'))
-densotherpoly_1000 <- rast(file.path(derived, 'dens_disturb_1000m', 'otherpoly_dens_1000m_2020.tif'))
-densplacer_1000 <- rast(file.path(derived, 'dens_disturb_1000m', 'placer_dens_1000m_2020.tif'))
-densquartz_1000 <- rast(file.path(derived, 'dens_disturb_1000m', 'quartz_dens_1000m_2020.tif'))
-densothermines_1000 <- rast(file.path(derived, 'dens_disturb_1000m', 'othermines_dens_1000m_2020.tif'))
-densharv_1000 <- rast(file.path(derived, 'harv_dens_1000m', 'harvdens_1000m_2020.tif'))
-
-
-dist_lf_1000  <- distpaved_1000  + distunpaved_1000  + distlfother_1000 
-dist_poly_1000  <- distotherpoly_1000  + distplacer_1000  + distquartz_1000  + distothermines_1000 
-dist_road_1000 <- distpaved_1000 + distunpaved_1000
-
-dens_lf_1000  <- denspaved_1000  + densunpaved_1000  + denslfother_1000 
-dens_poly_1000  <- densotherpoly_1000  + densplacer_1000  + densquartz_1000  + densothermines_1000 + densharv_1000
-
-
-# Load 1000m harvest and fire year rasters
-harv_year_1000 <- rast(file.path(derived, 'harv1000', 'harv1000_2020.tif'))
-fire_year_1000 <- rast(file.path(derived, 'fireRasters1000m', 'fires_2020.tif'))
-
-# Compute time-since rasters, replacing NAs with large default values
-reference_year <- 2020
-tsharv_1000 <- ifel(is.na(reference_year - harv_year_1000), 100, reference_year - harv_year_1000)
-tsfire_1000 <- ifel(is.na(reference_year - fire_year_1000), 200, reference_year - fire_year_1000)
-
-paharv_1000 <- rast(file.path(derived, 'harv_pa_1000m', 'harvpres_1000m_2020.tif'))
-propfire60 <- rast(file.path(derived, 'perc_burned_1000', 'burned60_1000m_2020.tif'))
-propfire2 <- rast(file.path(derived, 'perc_burned_1000', 'burned2_1000m_2020.tif'))
-
-plot(tsfire_1000)
-plot(issaArea, add = TRUE, border = "red", lwd = 2)
-
-
-# Landcover for 5000m resolution
-prop_barren_5000      <- rast(file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_barrenland_5000_2020.tif'))
-prop_bryoids_5000      <- rast(file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_bryoids_5000_2020.tif'))
-prop_shrub_5000        <- rast(file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_shrub_5000_2020.tif'))
-prop_wetland_5000      <- rast(file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_wetland_5000_2020.tif'))
-prop_wettreed_5000     <- rast(file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_wet_treed_5000_2020.tif'))
-prop_herbs_5000        <- rast(file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_herbs_5000_2020.tif'))
-prop_needleleaf_5000   <- rast(file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_needleleaf_5000_2020.tif'))
-prop_deciduous_5000    <- rast(file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_deciduous_5000_2020.tif'))
-prop_mixed_5000        <- rast(file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_mixed_5000_2020.tif'))
-
-# Fires 5000
-fire_60perc5000        <- rast(file.path('data', 'derived', 'perc_burned_5000', 'burned60_5000m_2020.tif'))
-fire_2perc5000         <- rast(file.path('data', 'derived', 'perc_burned_5000', 'burned2_5000m_2020.tif'))
-
-# Harvest 5000
-harv_dist_5000         <- rast(file.path('data', 'derived', 'harv_dist_5000m', 'harvdist_5000m_2020.tif'))
-harv_pa_5000           <- rast(file.path('data', 'derived', 'harv_pa_5000m', 'harvpres_5000m_2020.tif'))
-harv_dens_5000         <- rast(file.path('data', 'derived', 'harv_dens_5000m', 'harvdens_5000m_2020.tif'))
-
-
-# Anthropogenic disturbance 5000
-denslfother_5000      <- rast(file.path('data', 'derived', 'dens_disturb_5000m', 'otherlf_dens_5000m_2020.tif'))
-denspaved_5000        <- rast(file.path('data', 'derived', 'dens_disturb_5000m', 'paved_dens_5000m_2020.tif'))
-densunpaved_5000      <- rast(file.path('data', 'derived', 'dens_disturb_5000m', 'unpaved_dens_5000m_2020.tif'))
-densplacer_5000       <- rast(file.path('data', 'derived', 'dens_disturb_5000m', 'placer_dens_5000m_2020.tif'))
-densquartz_5000       <- rast(file.path('data', 'derived', 'dens_disturb_5000m', 'quartz_dens_5000m_2020.tif'))
-densothermines_5000   <- rast(file.path('data', 'derived', 'dens_disturb_5000m', 'othermines_dens_5000m_2020.tif'))
-densotherpoly_5000    <- rast(file.path('data', 'derived', 'dens_disturb_5000m', 'otherpoly_dens_5000m_2020.tif'))
-
-papaved_5000          <- rast(file.path('data', 'derived', 'pa_disturb_5000m', 'paved_pa_5000m_2020.tif'))
-paunpaved_5000        <- rast(file.path('data', 'derived', 'pa_disturb_5000m', 'unpaved_pa_5000m_2020.tif'))
-palfother_5000        <- rast(file.path('data', 'derived', 'pa_disturb_5000m', 'otherlf_pa_5000m_2020.tif'))
-paplacer_5000         <- rast(file.path('data', 'derived', 'pa_disturb_5000m', 'placer_pa_5000m_2020.tif'))
-paquartz_5000         <- rast(file.path('data', 'derived', 'pa_disturb_5000m', 'quartz_pa_5000m_2020.tif'))
-paothermines_5000     <- rast(file.path('data', 'derived', 'pa_disturb_5000m', 'othermines_pa_5000m_2020.tif'))
-paotherpoly_5000      <- rast(file.path('data', 'derived', 'pa_disturb_5000m', 'otherpoly_pa_5000m_2020.tif'))
-
-
-# prop_forest = sum of 4 layers
-prop_forest_5000 <- prop_wettreed_5000 + prop_needleleaf_5000 + prop_deciduous_5000 + prop_mixed_5000
-
-# prop_veg = sum of 3 layers
-prop_veg_5000 <- prop_bryoids_5000 + prop_herbs_5000 + prop_shrub_5000
-
-dens_lf_5000  <- denspaved_5000  + densunpaved_5000  + denslfother_5000 
-dens_poly_5000  <- densotherpoly_5000  + densplacer_5000  + densquartz_5000  + densothermines_5000 + harv_dens_5000
-
-
-
-#Disaggrigating so I can stack w fine scale
-distpaved_1000_disagg <- disagg(distpaved_1000, fact = 4, method = "near")
-distunpaved_1000_disagg <- disagg(distunpaved_1000, fact = 4, method = "near")
-distlfother_1000_disagg <- disagg(distlfother_1000, fact = 4, method = "near")
-
-dist_road_1000_disagg <- disagg(dist_road_1000, fact = 4, method = "near")
-
-distotherpoly_1000_disagg <- disagg(distotherpoly_1000, fact = 4, method = "near")
-distplacer_1000_disagg <- disagg(distplacer_1000, fact = 4, method = "near")
-distquartz_1000_disagg <- disagg(distquartz_1000, fact = 4, method = "near")
-distothermines_1000_disagg <- disagg(distothermines_1000, fact = 4, method = "near")
-
-dist_lf_1000_disagg <- disagg(dist_lf_1000, fact = 4, method = "near")
-dist_poly_1000_disagg <- disagg(dist_poly_1000, fact = 4, method = "near")
-
-tsharv_1000_disagg <- disagg(tsharv_1000, fact = 4, method = "near")
-tsfire_1000_disagg <- disagg(tsfire_1000, fact = 4, method = "near")
-
-prop_forest_1000_disagg <- disagg(prop_forest_1000, fact = 4, method = "near")
-prop_veg_1000_disagg <- disagg(prop_veg_1000, fact = 4, method = "near")
-
-#Stacking
-# Get the extent of a 250m raster to use for cropping 1000m rasters, they were slightly off
-crop_extent <- ext(prop_forest) 
-
-prop_forest_1000_disagg   <- crop(prop_forest_1000_disagg, crop_extent)
-prop_veg_1000_disagg      <- crop(prop_veg_1000_disagg, crop_extent)
-distpaved_1000_disagg     <- crop(distpaved_1000_disagg, crop_extent)
-distunpaved_1000_disagg   <- crop(distunpaved_1000_disagg, crop_extent)
-distlfother_1000_disagg   <- crop(distlfother_1000_disagg, crop_extent)
-distotherpoly_1000_disagg <- crop(distotherpoly_1000_disagg, crop_extent)
-distplacer_1000_disagg    <- crop(distplacer_1000_disagg, crop_extent)
-distquartz_1000_disagg    <- crop(distquartz_1000_disagg, crop_extent)
-distothermines_1000_disagg<- crop(distothermines_1000_disagg, crop_extent)
-tsharv_1000_disagg        <- crop(tsharv_1000_disagg, crop_extent)
-tsfire_1000_disagg        <- crop(tsfire_1000_disagg, crop_extent)
-
-dist_lf_1000_disagg       <- crop(dist_lf_1000_disagg, crop_extent)
-dist_poly_1000_disagg     <- crop(dist_poly_1000_disagg, crop_extent)
-dist_road_1000_disagg     <- crop(dist_road_1000_disagg, crop_extent)
-
-land2020 <- c(
-  prop_forest, prop_veg, harv_ts, fire_ts,
-  distpaved, distunpaved, distlfother, distotherpoly, distplacer, distquartz, distothermines,
-  prop_forest_1000_disagg, prop_veg_1000_disagg,
-  distpaved_1000_disagg, distunpaved_1000_disagg, distlfother_1000_disagg, distotherpoly_1000_disagg, distplacer_1000_disagg,
-  distquartz_1000_disagg, distothermines_1000_disagg,
-  tsharv_1000_disagg, tsfire_1000_disagg, dist_lf, dist_lf_1000_disagg, dist_poly, dist_poly_1000_disagg, dist_road, dist_road_1000_disagg
-)
-
-
-land2020_coarse <- c( 
-  prop_forest_1000, prop_veg_1000,
-  papaved_1000, paunpaved_1000, palfother_1000, paotherpoly_1000, paplacer_1000,
-  paquartz_1000, paothermines_1000,
-  paharv_1000, propfire60, propfire2, denspaved_1000, densunpaved_1000, denslfother_1000, dens_lf_1000, dens_poly_1000
-)
-
-
-
-#Scaling 5000m rasters for RSF to match the model
-# dens_lf
-dens_lf_mean <- global(dens_lf_5000, mean, na.rm = TRUE)[[1]]
-dens_lf_sd   <- global(dens_lf_5000, sd,   na.rm = TRUE)[[1]]
-dens_lf_z <- (dens_lf_5000 - dens_lf_mean) / dens_lf_sd
-
-# dens_poly
-dens_poly_mean <- global(dens_poly_5000, mean, na.rm = TRUE)[[1]]
-dens_poly_sd   <- global(dens_poly_5000, sd,   na.rm = TRUE)[[1]]
-dens_poly_z <- (dens_poly_5000 - dens_poly_mean) / dens_poly_sd
-
-# prop_forest
-prop_forest_mean <- global(prop_forest_5000, mean, na.rm = TRUE)[[1]]
-prop_forest_sd   <- global(prop_forest_5000, sd,   na.rm = TRUE)[[1]]
-prop_forest_z <- (prop_forest_5000 - prop_forest_mean) / prop_forest_sd
-
-# prop_veg
-prop_veg_mean <- global(prop_veg_5000, mean, na.rm = TRUE)[[1]]
-prop_veg_sd   <- global(prop_veg_5000, sd,   na.rm = TRUE)[[1]]
-prop_veg_z <- (prop_veg_5000 - prop_veg_mean) / prop_veg_sd
-
-# pa_quartz
-pa_quartz_mean <- global(pa_quartz_5000, mean, na.rm = TRUE)[[1]]
-pa_quartz_sd   <- global(pa_quartz_5000, sd,   na.rm = TRUE)[[1]]
-pa_quartz_z <- (pa_quartz_5000 - pa_quartz_mean) / pa_quartz_sd
-
-# pa_placer
-pa_placer_mean <- global(pa_placer_5000, mean, na.rm = TRUE)[[1]]
-pa_placer_sd   <- global(pa_placer_5000, sd,   na.rm = TRUE)[[1]]
-pa_placer_z <- (pa_placer_5000 - pa_placer_mean) / pa_placer_sd
-
-# prop_barren
-prop_barren_mean <- global(prop_barren_5000, mean, na.rm = TRUE)[[1]]
-prop_barren_sd   <- global(prop_barren_5000, sd,   na.rm = TRUE)[[1]]
-prop_barren_z <- (prop_barren_5000 - prop_barren_mean) / prop_barren_sd
-
-land2020_RSF <- c(
-  prop_forest_z, prop_veg_z, prop_barren_z,
-  pa_placer_z,
-  pa_quartz_z,
-  dens_lf_z, dens_poly_z
+yr = 2020
+
+pathLand250 <- list(prop_water_250 = file.path(derived, 'prop_land', 'prop_land_split', "prop_water_250"),
+                    prop_snow_250 = file.path(derived, 'prop_land', 'prop_land_split', "prop_snow_250"),
+                    prop_rock_250 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_rock_250'),
+                    prop_barren_250 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_barrenland_250'),
+                    prop_bryoids_250 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_bryoids_250'),
+                    prop_shrub_250 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_shrub_250'),
+                    prop_wetland_250 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_wetland_250'),
+                    prop_wettreed_250 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_wet_treed_250'),
+                    prop_herbs_250 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_herbs_250'),
+                    prop_needleleaf_250 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_needleleaf_250'),
+                    prop_deciduous_250 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_deciduous_250'),
+                    prop_mixed_250 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_mixed_250'),
+                    
+                    
+                    #Fires 250
+                    fires_250 = file.path(derived, 'fireRasters250m', 'fires'),
+                    
+                    #Harvest 250
+                    harv250 = file.path(derived, 'harv250', 'harv250'),
+                    harv_dist_250 = file.path(derived, 'harv_dist_250m', 'harvdist_250m'),
+                    harv_pa_250 = file.path(derived, 'harv_pa_250m', 'harvpres_250m'),
+                    harv_dens_250 = file.path(derived, 'harv_dens_250m', 'harvdens_250m'),
+                    
+                    #Forest age 250
+                    for_age_250 = file.path(raw, 'age250', 'forest_age'),
+                    
+                    #Anthro-disturbance 250
+                    dens_lfother_250 = file.path(derived, 'dens_disturb_250m', 'otherlf_dens_250m'),
+                    dens_paved_250 = file.path(derived, 'dens_disturb_250m', 'paved_dens_250m'),
+                    dens_unpaved_250 = file.path(derived, 'dens_disturb_250m', 'unpaved_dens_250m'),
+                    dens_placer_250 = file.path(derived, 'dens_disturb_250m', 'placer_dens_250m'),
+                    dens_quartz_250 = file.path(derived, 'dens_disturb_250m', 'quartz_dens_250m'),
+                    dens_otherpoly_250 = file.path(derived, 'dens_disturb_250m', 'otherpoly_dens_250m'),
+                    dens_othermines_250 = file.path(derived, 'dens_disturb_250m', 'othermines_dens_250m'),
+                    dist_paved_250 = file.path(derived, 'dist_disturb_250m', 'paved_distance_250m'),
+                    dist_unpaved_250 = file.path(derived, 'dist_disturb_250m', 'unpaved_distance_250m'),
+                    dist_lfother_250 = file.path(derived, 'dist_disturb_250m', 'otherlf_distance_250m'),
+                    dist_placer_250 = file.path(derived, 'dist_disturb_250m', 'placer_distance_250m'),
+                    dist_quartz_250 = file.path(derived, 'dist_disturb_250m', 'quartz_distance_250m'),
+                    dist_othermines_250 = file.path(derived, 'dist_disturb_250m', 'othermines_distance_250m'),
+                    dist_otherpoly_250 = file.path(derived, 'dist_disturb_250m', 'otherpoly_distance_250m'),
+                    pa_paved_250 = file.path(derived, 'pa_disturb_250m', 'paved_pa_250m'),
+                    pa_unpaved_250 = file.path(derived, 'pa_disturb_250m', 'unpaved_pa_250m'),
+                    pa_lfother_250 = file.path(derived, 'pa_disturb_250m', 'otherlf_pa_250m'),
+                    pa_placer_250 = file.path(derived, 'pa_disturb_250m', 'placer_pa_250m'),
+                    pa_quartz_250 = file.path(derived, 'pa_disturb_250m', 'quartz_pa_250m'),
+                    pa_othermines_250 = file.path(derived, 'pa_disturb_250m', 'othermines_pa_250m'),
+                    pa_otherpoly_250 = file.path(derived, 'pa_disturb_250m', 'otherpoly_pa_250m'))
+
+# read in all the paths to make a list of rasters
+rastLand250 <- list()
+for(i in names(pathLand250)){
+  rastLand250 <- c(rastLand250, rast(paste0(pathLand250[[i]], '_', yr, '.tif')))
+}
+names(rastLand250) <- names(pathLand250)
+
+# add rasters we created to improve availability and test models
+rastLand250 <- append(rastLand250, list(ts_harv250 = (yr - rastLand250$harv250)))
+rastLand250[['ts_harv250']][is.na(rastLand250[['ts_harv250']])] <- 100
+rastLand250[['ts_harv250']] <- mask(rastLand250[['ts_harv250']], rastLand250[[1]])
+
+rastLand250 <- append(rastLand250, list(ts_fires_250 = (yr - rastLand250$fires_250)))
+rastLand250[['ts_fires_250']][is.na(rastLand250[['ts_fires_250']])] <- 200
+rastLand250[['ts_fires_250']] <- mask(rastLand250[['ts_fires_250']], rastLand250[[1]])
+
+rastLand250 <- append(rastLand250, list(prop_forest_250 = rastLand250$prop_wettreed_250 + rastLand250$prop_needleleaf_250 + 
+                                          rastLand250$prop_deciduous_250 + rastLand250$prop_mixed_250))
+
+rastLand250 <- append(rastLand250, list(prop_veg_250 = rastLand250$prop_bryoids_250 + rastLand250$prop_herbs_250 + rastLand250$prop_shrub_250))
+
+rastLand250 <- append(rastLand250, list(dist_lf_250 = min(c(rastLand250$dist_lfother_250, rastLand250$dist_paved_250, rastLand250$dist_unpaved_250), na.rm = T)))
+
+rastLand250 <- append(rastLand250, list(dist_road_250 = min(c(rastLand250$dist_paved_250, rastLand250$dist_unpaved_250), na.rm = T)))
+
+rastLand250 <- append(rastLand250, list(dist_poly_250 = min(c(rastLand250$dist_placer_250, rastLand250$dist_quartz_250, rastLand250$harv_dist_250, rastLand250$dist_othermines_250, rastLand250$dist_otherpoly), na.rm = T)))
+
+
+#1000
+pathLand1000 <- list(
+  prop_water_1000 = file.path(derived, 'prop_land', 'prop_land_split', "prop_water_1000"),
+  prop_snow_1000 = file.path(derived, 'prop_land', 'prop_land_split', "prop_snow_1000"),
+  prop_rock_1000 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_rock_1000'),
+  prop_barren_1000 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_barrenland_1000'),
+  prop_bryoids_1000 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_bryoids_1000'),
+  prop_shrub_1000 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_shrub_1000'),
+  prop_wetland_1000 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_wetland_1000'),
+  prop_wettreed_1000 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_wet_treed_1000'),
+  prop_herbs_1000 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_herbs_1000'),
+  prop_needleleaf_1000 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_needleleaf_1000'),
+  prop_deciduous_1000 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_deciduous_1000'),
+  prop_mixed_1000 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_mixed_1000'),
   
-)
-
-gc()
-# Rename layers
-names(land2020) <- c(
-  "prop_forest", "prop_veg", "harv_ts", "fire_ts",
-  "distpaved", "distunpaved", "distlfother", "distotherpoly", "distplacer", "distquartz", "distothermines",
-  "prop_forest_1000", "prop_veg_1000",
-  "distpaved_1000", "distunpaved_1000", "distlfother_1000", "distotherpoly_1000", "distplacer_1000",
-  "distquartz_1000", "distothermines_1000",
-  "tsharv_1000", "tsfire_1000", "dist_lf", "dist_lf_1000", "dist_poly", "dist_poly_1000", "dist_road", "dist_road_1000"
-)
-
-names(land2020_coarse) <- c( 
-  "prop_forest_1000", "prop_veg_1000",
-  "papaved_1000", "paunpaved_1000", "palfother_1000", "paotherpoly_1000", "paplacer_1000",
-  "paquartz_1000", "paothermines_1000",
-  "paharv_1000", "propfire60", "propfire2", "denspaved_1000", "densunpaved_1000", "denslfother_1000", "dens_lf_1000", "dens_poly_1000"
-)
-
-names(land2020_RSF) <- c(
-  "prop_forest_z", "prop_veg_z", "prop_barren_z",
-  "pa_placer_z",
-  "pa_quartz_z",
-  "dens_lf_z", "dens_poly_z"
+  # Fires 1000
+  fires_1000 = file.path(derived, 'fireRasters1000m', 'fires'),
+  fire_60perc1000 = file.path(derived, 'perc_burned_1000', 'burned60_1000m'),
+  fire_2perc1000 = file.path(derived, 'perc_burned_1000', 'burned2_1000m'),
   
+  # Harvest 1000
+  harv1000 = file.path(derived, 'harv1000', 'harv1000'),
+  harv_dist_1000 = file.path(derived, 'harv_dist_1000m', 'harvdist_1000m'),
+  harv_pa_1000 = file.path(derived, 'harv_pa_1000m', 'harvpres_1000m'),
+  harv_dens_1000 = file.path(derived, 'harv_dens_1000m', 'harvdens_1000m'),
+  
+  # Forest age 1000
+  for_age_1000 = file.path(raw, 'age1000', 'forest_age'),
+  
+  # Anthro-disturbance 1000
+  dens_lfother_1000 = file.path(derived, 'dens_disturb_1000m', 'otherlf_dens_1000m'),
+  dens_paved_1000 = file.path(derived, 'dens_disturb_1000m', 'paved_dens_1000m'),
+  dens_unpaved_1000 = file.path(derived, 'dens_disturb_1000m', 'unpaved_dens_1000m'),
+  dens_placer_1000 = file.path(derived, 'dens_disturb_1000m', 'placer_dens_1000m'),
+  dens_quartz_1000 = file.path(derived, 'dens_disturb_1000m', 'quartz_dens_1000m'),
+  dens_otherpoly_1000 = file.path(derived, 'dens_disturb_1000m', 'otherpoly_dens_1000m'),
+  dens_othermines_1000 = file.path(derived, 'dens_disturb_1000m', 'othermines_dens_1000m'),
+  
+  dist_paved_1000 = file.path(derived, 'dist_disturb_1000m', 'paved_distance_1000m'),
+  dist_unpaved_1000 = file.path(derived, 'dist_disturb_1000m', 'unpaved_distance_1000m'),
+  dist_lfother_1000 = file.path(derived, 'dist_disturb_1000m', 'otherlf_distance_1000m'),
+  dist_placer_1000 = file.path(derived, 'dist_disturb_1000m', 'placer_distance_1000m'),
+  dist_quartz_1000 = file.path(derived, 'dist_disturb_1000m', 'quartz_distance_1000m'),
+  dist_othermines_1000 = file.path(derived, 'dist_disturb_1000m', 'othermines_distance_1000m'),
+  dist_otherpoly_1000 = file.path(derived, 'dist_disturb_1000m', 'otherpoly_distance_1000m'),
+  
+  pa_paved_1000 = file.path(derived, 'pa_disturb_1000m', 'paved_pa_1000m'),
+  pa_unpaved_1000 = file.path(derived, 'pa_disturb_1000m', 'unpaved_pa_1000m'),
+  pa_lfother_1000 = file.path(derived, 'pa_disturb_1000m', 'otherlf_pa_1000m'),
+  pa_placer_1000 = file.path(derived, 'pa_disturb_1000m', 'placer_pa_1000m'),
+  pa_quartz_1000 = file.path(derived, 'pa_disturb_1000m', 'quartz_pa_1000m'),
+  pa_othermines_1000 = file.path(derived, 'pa_disturb_1000m', 'othermines_pa_1000m'),
+  pa_otherpoly_1000 = file.path(derived, 'pa_disturb_1000m', 'otherpoly_pa_1000m')
 )
 
-# Apply transformations (log and log+1 as needed)
+# make a list of rasters
+rastLand1000 <- list()
+for(i in names(pathLand1000)){
+  rastLand1000 <- c(rastLand1000, rast(paste0(pathLand1000[[i]], '_', yr, '.tif')))
+}
+names(rastLand1000) <- names(pathLand1000)
+
+# calc the other rasters
+rastLand1000 <- append(rastLand1000, list(ts_harv1000 = (yr - rastLand1000$harv1000)))
+rastLand1000[['ts_harv1000']][is.na(rastLand1000[['ts_harv1000']])] <- 100
+rastLand1000[['ts_harv1000']] <- mask(rastLand1000[['ts_harv1000']], rastLand1000[[1]])
+
+rastLand1000 <- append(rastLand1000, list(ts_fires_1000 = (yr - rastLand1000$fires_1000)))
+rastLand1000[['ts_fires_1000']][is.na(rastLand1000[['ts_fires_1000']])] <- 200
+rastLand1000[['ts_fires_1000']] <- mask(rastLand1000[['ts_fires_1000']], rastLand1000[[1]])
+
+rastLand1000 <- append(rastLand1000, list(prop_forest_1000 = rastLand1000$prop_wettreed_1000 + rastLand1000$prop_needleleaf_1000 + 
+                                            rastLand1000$prop_deciduous_1000 + rastLand1000$prop_mixed_1000))
+
+rastLand1000 <- append(rastLand1000, list(prop_veg_1000 = rastLand1000$prop_bryoids_1000 + rastLand1000$prop_herbs_1000 + rastLand1000$prop_shrub_1000))
+
+rastLand1000 <- append(rastLand1000, list(dist_lf_1000 = min(c(rastLand1000$dist_lfother_1000, rastLand1000$dist_paved_1000, rastLand1000$dist_unpaved_1000), na.rm = T)))
+
+rastLand1000 <- append(rastLand1000, list(dens_lf_1000 = min(c(rastLand1000$dens_lfother_1000, rastLand1000$dens_paved_1000, rastLand1000$dens_unpaved_1000), na.rm = T)))
+
+rastLand1000 <- append(rastLand1000, list(dist_road_1000 = min(c(rastLand1000$dist_paved_1000, rastLand1000$dist_unpaved_1000), na.rm = T)))
+
+rastLand1000 <- append(rastLand1000, list(dist_poly_1000 = min(c(rastLand1000$dist_placer_1000, rastLand1000$dist_quartz_1000, rastLand1000$harv_dist_1000, rastLand1000$dist_othermines_1000, rastLand1000$dist_otherpoly), na.rm = T)))
+
+rastLand1000 <- append(rastLand1000, list(dens_poly_1000 = min(c(rastLand1000$dens_placer_1000, rastLand1000$dens_quartz_1000, rastLand1000$harv_dens_1000, rastLand1000$dens_othermines_1000, rastLand1000$dens_otherpoly), na.rm = T)))
+
+
+# rasterize coarse rasters to matching resolution as fine for math
+rastLand1000 <- lapply(rastLand1000, function(x){
+  postProcess(x, to = rastLand250[[1]])
+})
+
+
+#5000
+pathLand5000 <- list(
+  prop_water_5000 = file.path(derived, 'prop_land', 'prop_land_split', "prop_water_5000"),
+  prop_snow_5000 = file.path(derived, 'prop_land', 'prop_land_split', "prop_snow_5000"),
+  prop_rock_5000 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_rock_5000'),
+  prop_barren_5000 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_barrenland_5000'),
+  prop_bryoids_5000 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_bryoids_5000'),
+  prop_shrub_5000 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_shrub_5000'),
+  prop_wetland_5000 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_wetland_5000'),
+  prop_wettreed_5000 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_wet_treed_5000'),
+  prop_herbs_5000 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_herbs_5000'),
+  prop_needleleaf_5000 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_needleleaf_5000'),
+  prop_deciduous_5000 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_deciduous_5000'),
+  prop_mixed_5000 = file.path(derived, 'prop_land', 'prop_land_split', 'prop_mixed_5000'),
+  
+  # Fires 5000
+  fires_5000 = file.path(derived, 'fireRasters5000m', 'fires'),
+  
+  # Harvest 5000
+  harv5000 = file.path(derived, 'harv5000', 'harv5000'),
+  harv_dist_5000 = file.path(derived, 'harv_dist_5000m', 'harvdist_5000m'),
+  harv_pa_5000 = file.path(derived, 'harv_pa_5000m', 'harvpres_5000m'),
+  harv_dens_5000 = file.path(derived, 'harv_dens_5000m', 'harvdens_5000m'),
+  
+  # Forest age 5000
+  for_age_5000 = file.path(raw, 'age5000', 'forest_age'),
+  
+  # Anthro-disturbance 5000
+  dens_lfother_5000 = file.path(derived, 'dens_disturb_5000m', 'otherlf_dens_5000m'),
+  dens_paved_5000 = file.path(derived, 'dens_disturb_5000m', 'paved_dens_5000m'),
+  dens_unpaved_5000 = file.path(derived, 'dens_disturb_5000m', 'unpaved_dens_5000m'),
+  dens_placer_5000 = file.path(derived, 'dens_disturb_5000m', 'placer_dens_5000m'),
+  dens_quartz_5000 = file.path(derived, 'dens_disturb_5000m', 'quartz_dens_5000m'),
+  dens_otherpoly_5000 = file.path(derived, 'dens_disturb_5000m', 'otherpoly_dens_5000m'),
+  dens_othermines_5000 = file.path(derived, 'dens_disturb_5000m', 'othermines_dens_5000m'),
+  
+  dist_paved_5000 = file.path(derived, 'dist_disturb_5000m', 'paved_distance_5000m'),
+  dist_unpaved_5000 = file.path(derived, 'dist_disturb_5000m', 'unpaved_distance_5000m'),
+  dist_lfother_5000 = file.path(derived, 'dist_disturb_5000m', 'otherlf_distance_5000m'),
+  dist_placer_5000 = file.path(derived, 'dist_disturb_5000m', 'placer_distance_5000m'),
+  dist_quartz_5000 = file.path(derived, 'dist_disturb_5000m', 'quartz_distance_5000m'),
+  dist_othermines_5000 = file.path(derived, 'dist_disturb_5000m', 'othermines_distance_5000m'),
+  dist_otherpoly_5000 = file.path(derived, 'dist_disturb_5000m', 'otherpoly_distance_5000m'),
+  
+  pa_paved_5000 = file.path(derived, 'pa_disturb_5000m', 'paved_pa_5000m'),
+  pa_unpaved_5000 = file.path(derived, 'pa_disturb_5000m', 'unpaved_pa_5000m'),
+  pa_lfother_5000 = file.path(derived, 'pa_disturb_5000m', 'otherlf_pa_5000m'),
+  pa_placer_5000 = file.path(derived, 'pa_disturb_5000m', 'placer_pa_5000m'),
+  pa_quartz_5000 = file.path(derived, 'pa_disturb_5000m', 'quartz_pa_5000m'),
+  pa_othermines_5000 = file.path(derived, 'pa_disturb_5000m', 'othermines_pa_5000m'),
+  pa_otherpoly_5000 = file.path(derived, 'pa_disturb_5000m', 'otherpoly_pa_5000m')
+)
+
+# make a list of rasters
+rastLand5000 <- list()
+for(i in names(pathLand5000)){
+  rastLand5000 <- c(rastLand5000, rast(paste0(pathLand5000[[i]], '_', yr, '.tif')))
+}
+names(rastLand5000) <- names(pathLand5000)
+
+# calc the other rasters
+rastLand5000 <- append(rastLand5000, list(ts_harv5000 = (yr - rastLand5000$harv5000)))
+rastLand5000[['ts_harv5000']][is.na(rastLand5000[['ts_harv5000']])] <- 100
+rastLand5000[['ts_harv5000']] <- mask(rastLand5000[['ts_harv5000']], rastLand5000[[1]])
+
+rastLand5000 <- append(rastLand5000, list(ts_fires_5000 = (yr - rastLand5000$fires_5000)))
+rastLand5000[['ts_fires_5000']][is.na(rastLand5000[['ts_fires_5000']])] <- 200
+rastLand5000[['ts_fires_5000']] <- mask(rastLand5000[['ts_fires_5000']], rastLand5000[[1]])
+
+rastLand5000 <- append(rastLand5000, list(prop_forest_5000 = rastLand5000$prop_wettreed_5000 + rastLand5000$prop_needleleaf_5000 + 
+                                            rastLand5000$prop_deciduous_5000 + rastLand5000$prop_mixed_5000))
+
+rastLand5000 <- append(rastLand5000, list(prop_veg_5000 = rastLand5000$prop_bryoids_5000 + rastLand5000$prop_herbs_5000 + rastLand5000$prop_shrub_5000))
+
+rastLand5000 <- append(rastLand5000, list(dist_lf_5000 = min(c(rastLand5000$dist_lfother_5000, rastLand5000$dist_paved_5000, rastLand5000$dist_unpaved_5000), na.rm = TRUE)))
+
+rastLand5000 <- append(rastLand5000, list(dist_road_5000 = min(c(rastLand5000$dist_paved_5000, rastLand5000$dist_unpaved_5000), na.rm = TRUE)))
+
+rastLand5000 <- append(rastLand5000, list(dist_poly_5000 = min(c(rastLand5000$dist_placer_5000, rastLand5000$dist_quartz_5000, rastLand5000$harv_dist_5000, rastLand5000$dist_othermines_5000, rastLand5000$dist_otherpoly_5000), na.rm = TRUE)))
+
+# rasterize coarse rasters to matching resolution as fine for math
+rastLand5000 <- lapply(rastLand5000, function(x){
+  postProcess(x, to = rastLand250[[1]])
+})
+
+
+# combine coarse and fine lists
+rastLand2020.fine <- append(rastLand250, rastLand1000)
+
+rastLand2020.coarse <- append(rastLand1000, rastLand5000)
+
+### Full mod ------
+crs <- "EPSG:3154"
 gc()
-land2020$log_distpaved        <- log((land2020$distpaved + 1) / 1000)
-land2020$log_distunpaved      <- log((land2020$distunpaved + 1) / 1000)
-land2020$log_distlfother      <- log((land2020$distlfother + 1) / 1000)
-land2020$log_distotherpoly    <- log((land2020$distotherpoly + 1) / 1000)
-land2020$log_distplacer       <- log((land2020$distplacer + 1) / 1000)
-land2020$log_distquartz       <- log((land2020$distquartz + 1) / 1000)
-land2020$log_distothermines   <- log((land2020$distothermines + 1) / 1000)
-
-gc()
-land2020$log_distpaved_1000       <- log((land2020$distpaved_1000 + 1) / 1000)
-land2020$log_distunpaved_1000     <- log((land2020$distunpaved_1000 + 1) / 1000)
-land2020$log_distlfother_1000     <- log((land2020$distlfother_1000 + 1) / 1000)
-land2020$log_distotherpoly_1000   <- log((land2020$distotherpoly_1000 + 1) / 1000)
-land2020$log_distplacer_1000      <- log((land2020$distplacer_1000 + 1) / 1000)
-land2020$log_distquartz_1000      <- log((land2020$distquartz_1000 + 1) / 1000)
-land2020$log_distothermines_1000  <- log((land2020$distothermines_1000 + 1) / 1000)
-
-gc()
-land2020$log_tsharv         <- log(land2020$harv_ts + 1)
-land2020$log_tsfire         <- log(land2020$fire_ts + 1)
-land2020$log_tsharv_1000    <- log(land2020$tsharv_1000 + 1)
-land2020$log_tsfire_1000    <- log(land2020$tsfire_1000 + 1)
-
-gc()
-land2020$log_dist_lf  <- log((land2020$dist_lf + 1) / 1000)
-land2020$log_dist_poly  <- log((land2020$dist_poly + 1) / 1000)
-land2020$log_dist_lf_1000  <- log((land2020$dist_lf_1000 + 1) / 1000)
-land2020$log_dist_poly_1000  <- log((land2020$dist_poly_1000 + 1) / 1000)
-land2020$log_dist_road  <- log((land2020$dist_road + 1) / 1000)
-land2020$log_dist_road_1000  <- log((land2020$dist_road_1000 + 1) / 1000)
-
-# Reproject final stack
-gc()
-crs_string <- st_crs(3154)$wkt
-land2020 <- terra::project(land2020, crs_string)
-
-land2020_coarse <- terra::project(land2020_coarse, crs_string)
-
-land2020_RSF <- terra::project(land2020_RSF, crs_string)
-
-#Full mod
-gc()
-testmyearsfinefull.ud <- mod2UD(modpath = finemod.train_full, envlayers = land2020, 
+testmyearsfinefull.ud <- mod2UD(mod = finemod.train_full, envlayers = rastLand2020.fine, 
                         studyArea = vect(sArea.finemod))
 plot(testmyearsfinefull.ud)
 
@@ -2051,67 +2021,9 @@ cor(propptsbin.myearsfinefull.tot$use.bin, propptsbin.myearsfinefull.tot$prop.pt
 #0.7212121
 
 
-#Simple model
-#Updated PDE functions to match
-make_pde <- function(mod.tab, land, saveName = NULL) {
-  # Paved roads
-  lf.main <- mod.tab[term == 'I(log((dist_lf_250_end + 1)/1000))' & !grepl(":", term), estimate]
-  lf.int <- mod.tab[grepl('dist_lf_250_end', term) & grepl(":", term), estimate]
-  lf.cov <- 2 * lf.main * land$log_dist_lf
-  lf.cov.int <- 2 * lf.int * land$log_dist_lf * land$log_dist_lf_1000
-  
-  # Unpaved roads
-  poly.main <- mod.tab[term == 'I(log((dist_poly_250_end + 1)/1000))' & !grepl(":", term), estimate]
-  poly.int <- mod.tab[grepl('dist_poly_250_end', term) & grepl(":", term), estimate]
-  poly.cov <- 2 * poly.main * land$log_dist_poly
-  poly.cov.int <- 2 * poly.int * land$log_dist_poly * land$log_dist_poly_1000
-  
-  # Prop forest
-  prop_forest.main <- mod.tab[term == 'prop_forest_250_end' & !grepl(":", term), estimate]
-  prop_forest.int <- mod.tab[grepl('prop_forest_250_end', term) & grepl(":", term), estimate]
-  prop_forest.cov <- 2 * prop_forest.main * land$prop_forest
-  prop_forest.cov.int <- 2 * prop_forest.int * land$prop_forest * land$prop_forest_1000
-  
-  # Prop veg
-  prop_veg.main <- mod.tab[term == 'prop_veg_250_end' & !grepl(":", term), estimate]
-  prop_veg.int <- mod.tab[grepl('prop_veg_250_end', term) & grepl(":", term), estimate]
-  prop_veg.cov <- 2 * prop_veg.main * land$prop_veg
-  prop_veg.cov.int <- 2 * prop_veg.int * land$prop_veg * land$prop_veg_1000
-  
-  # Harvest
-  harv.main <- mod.tab[term == 'I(log(ts_harv250_end + 1))' & !grepl(":", term), estimate]
-  harv.int <- mod.tab[grepl('ts_harv250_end', term) & grepl(":", term), estimate]
-  harv.cov <- 2 * harv.main * land$log_tsharv
-  harv.cov.int <- 2 * harv.int * land$log_tsharv * land$log_tsharv_1000
-  
-  # Fire
-  fire.main <- mod.tab[term == 'I(log(ts_fires_250_end + 1))' & !grepl(":", term), estimate]
-  fire.int <- mod.tab[grepl('ts_fires_250_end', term) & grepl(":", term), estimate]
-  fire.cov <- 2 * fire.main * land$log_tsfire
-  fire.cov.int <- 2 * fire.int * land$log_tsfire * land$log_tsfire_1000
-  
-  # Combine all terms in numerator
-  numerator <- exp(
-    lf.cov + lf.cov.int + poly.cov + poly.cov.int +
-      prop_forest.cov + prop_forest.cov.int + prop_veg.cov + prop_veg.cov.int +
-      harv.cov + harv.cov.int + fire.cov + fire.cov.int
-  )
-  
-  # Normalize
-  C <- global(numerator, sum, na.rm = TRUE)
-  pde <- numerator / C[[1]]
-  
-  # Save if requested
-  if (!is.null(saveName)) {
-    writeRaster(pde, file.path(derived, saveName), overwrite = TRUE)
-  }
-  
-  return(pde)
-}
-
-
+### Simple model ----
 gc()
-testmyearsfinesimple.ud <- mod2UD(modpath = finemod.train_simple, envlayers = land2020, 
+testmyearsfinesimple.ud <- mod2UD(mod = finemod.train_simple, envlayers = rastLand2020.fine, 
                                 studyArea = vect(sArea.finemod))
 plot(testmyearsfinesimple.ud)
 
@@ -2138,100 +2050,12 @@ propptsbin.myearsfinesimple.tot <- pts_in_bins_tot(finemod.test_simple, testmyea
 plot(propptsbin.myearsfinesimple.tot$use.bin, propptsbin.myearsfinesimple.tot$prop.pts)
 cor(propptsbin.myearsfinesimple.tot$use.bin, propptsbin.myearsfinesimple.tot$prop.pts, method = 'spearman')
 
-#1?
-
-
+#1
 
 
 ###Full model roads combined ----
-
-#Updated PDE functions to match
-make_pde <- function(mod.tab, land, saveName = NULL) {
-  # Paved roads
-  road.main <- mod.tab[term == 'I(log((dist_road_250_end + 1)/1000))' & !grepl(":", term), estimate]
-  road.int <- mod.tab[grepl('dist_road_250_end', term) & grepl(":", term), estimate]
-  road.cov <- 2 * road.main * land$log_dist_road
-  road.cov.int <- 2 * road.int * land$log_dist_road * land$log_dist_road_1000
-  
-  # Linear features - other
-  lfother.main <- mod.tab[term == 'I(log((dist_lfother_250_end + 1)/1000))' & !grepl(":", term), estimate]
-  lfother.int <- mod.tab[grepl('dist_lfother_250_end', term) & grepl(":", term), estimate]
-  lfother.cov <- 2 * lfother.main * land$log_distlfother
-  lfother.cov.int <- 2 * lfother.int * land$log_distlfother * land$log_distlfother_1000
-  
-  # Other polygon
-  otherpoly.main <- mod.tab[term == 'I(log((dist_otherpoly_250_end + 1)/1000))' & !grepl(":", term), estimate]
-  otherpoly.int <- mod.tab[grepl('dist_otherpoly_250_end', term) & grepl(":", term), estimate]
-  otherpoly.cov <- 2 * otherpoly.main * land$log_distotherpoly
-  otherpoly.cov.int <- 2 * otherpoly.int * land$log_distotherpoly * land$log_distotherpoly_1000
-  
-  # Placer
-  placer.main <- mod.tab[term == 'I(log((dist_placer_250_end + 1)/1000))' & !grepl(":", term), estimate]
-  placer.int <- mod.tab[grepl('dist_placer_250_end', term) & grepl(":", term), estimate]
-  placer.cov <- 2 * placer.main * land$log_distplacer
-  placer.cov.int <- 2 * placer.int * land$log_distplacer * land$log_distplacer_1000
-  
-  # Quartz
-  quartz.main <- mod.tab[term == 'I(log((dist_quartz_250_end + 1)/1000))' & !grepl(":", term), estimate]
-  quartz.int <- mod.tab[grepl('dist_quartz_250_end', term) & grepl(":", term), estimate]
-  quartz.cov <- 2 * quartz.main * land$log_distquartz
-  quartz.cov.int <- 2 * quartz.int * land$log_distquartz * land$log_distquartz_1000
-  
-  # Other mines
-  othermines.main <- mod.tab[term == 'I(log((dist_othermines_250_end + 1)/1000))' & !grepl(":", term), estimate]
-  othermines.int <- mod.tab[grepl('dist_othermines_250_end', term) & grepl(":", term), estimate]
-  othermines.cov <- 2 * othermines.main * land$log_distothermines
-  othermines.cov.int <- 2 * othermines.int * land$log_distothermines * land$log_distothermines_1000
-  
-  # Prop forest
-  prop_forest.main <- mod.tab[term == 'prop_forest_250_end' & !grepl(":", term), estimate]
-  prop_forest.int <- mod.tab[grepl('prop_forest_250_end', term) & grepl(":", term), estimate]
-  prop_forest.cov <- 2 * prop_forest.main * land$prop_forest
-  prop_forest.cov.int <- 2 * prop_forest.int * land$prop_forest * land$prop_forest_1000
-  
-  # Prop veg
-  prop_veg.main <- mod.tab[term == 'prop_veg_250_end' & !grepl(":", term), estimate]
-  prop_veg.int <- mod.tab[grepl('prop_veg_250_end', term) & grepl(":", term), estimate]
-  prop_veg.cov <- 2 * prop_veg.main * land$prop_veg
-  prop_veg.cov.int <- 2 * prop_veg.int * land$prop_veg * land$prop_veg_1000
-  
-  # Harvest
-  harv.main <- mod.tab[term == 'I(log(ts_harv250_end + 1))' & !grepl(":", term), estimate]
-  harv.int <- mod.tab[grepl('ts_harv250_end', term) & grepl(":", term), estimate]
-  harv.cov <- 2 * harv.main * land$log_tsharv
-  harv.cov.int <- 2 * harv.int * land$log_tsharv * land$log_tsharv_1000
-  
-  # Fire
-  fire.main <- mod.tab[term == 'I(log(ts_fires_250_end + 1))' & !grepl(":", term), estimate]
-  fire.int <- mod.tab[grepl('ts_fires_250_end', term) & grepl(":", term), estimate]
-  fire.cov <- 2 * fire.main * land$log_tsfire
-  fire.cov.int <- 2 * fire.int * land$log_tsfire * land$log_tsfire_1000
-  
-  # Combine all terms in numerator
-  numerator <- exp(
-    road.cov + road.cov.int +
-      lfother.cov + lfother.cov.int + otherpoly.cov + otherpoly.cov.int +
-      placer.cov + placer.cov.int + quartz.cov + quartz.cov.int +
-      othermines.cov + othermines.cov.int +
-      prop_forest.cov + prop_forest.cov.int + prop_veg.cov + prop_veg.cov.int +
-      harv.cov + harv.cov.int + fire.cov + fire.cov.int
-  )
-  
-  # Normalize
-  C <- global(numerator, sum, na.rm = TRUE)
-  pde <- numerator / C[[1]]
-  
-  # Save if requested
-  if (!is.null(saveName)) {
-    writeRaster(pde, file.path(derived, saveName), overwrite = TRUE)
-  }
-  
-  return(pde)
-}
-
-
 gc()
-testmyearsfinefullroads.ud <- mod2UD(modpath = finemod.train_fullroadscomb, envlayers = land2020, 
+testmyearsfinefullroads.ud <- mod2UD(mod = finemod.train_fullroadscomb, envlayers = rastLand2020.fine, 
                                   studyArea = vect(sArea.finemod))
 plot(testmyearsfinefullroads.ud)
 
@@ -2239,21 +2063,21 @@ plot(testmyearsfinefullroads.ud)
 #testmyearsfinefullroads.ud <- readRDS("testmyearsfinefullroads.ud.rds")
 
 gc()
-testmyearsfinefullroads.prop <- make_prop_use(finemod.test_fullroadscomb, crs, testmyearsfinefullroads.ud)
+testmyearsfinefullroads.prop <- make_prop_use(finemod.test_full, crs, testmyearsfinefullroads.ud)
 
 gc()
 used.bin.myearsfinefullroads <- make_map_bins(testmyearsfinefullroads.prop)
 
-colnames(finemod.test_fullroadscomb) <- make.unique(colnames(finemod.test_fullroadscomb))
+colnames(finemod.test_full) <- make.unique(colnames(finemod.test_full))
 gc()
-propptsbin.myearsfinefullroads <- pts_in_bins(finemod.test_fullroadscomb, testmyearsfinefullroads.ud)
+propptsbin.myearsfinefullroads <- pts_in_bins(finemod.test_full, testmyearsfinefullroads.ud)
 plot(propptsbin.myearsfinefullroads$use.bin, propptsbin.myearsfinefullroads$prop.pts)
 cor(propptsbin.myearsfinefullroads$use.bin, propptsbin.myearsfinefullroads$prop.pts, method = 'spearman')
 #0.3726375
 
 layerCor(c(testmyearsfinefullroads.ud, used.bin.myearsfinefullroads), fun = 'pearson', na.rm = T)
 
-propptsbin.myearsfinefullroads.tot <- pts_in_bins_tot(finemod.test_fullroadscomb, testmyearsfinefullroads.ud)
+propptsbin.myearsfinefullroads.tot <- pts_in_bins_tot(finemod.test_full, testmyearsfinefullroads.ud)
 
 plot(propptsbin.myearsfinefullroads.tot$use.bin, propptsbin.myearsfinefullroads.tot$prop.pts)
 cor(propptsbin.myearsfinefullroads.tot$use.bin, propptsbin.myearsfinefullroads.tot$prop.pts, method = 'spearman')
@@ -2261,76 +2085,8 @@ cor(propptsbin.myearsfinefullroads.tot$use.bin, propptsbin.myearsfinefullroads.t
 
 
 ### Coarse mod pa, fire 60 ----
-make_pde <- function(mod.tab, land, saveName = NULL) {
-  # Paved roads
-  paved.main <- mod.tab[term == 'pa_paved_1000_end' & !grepl(":", term), estimate]
-  paved.cov <- 2 * paved.main * land$papaved_1000
-  
-  # Unpaved roads
-  unpaved.main <- mod.tab[term == 'pa_unpaved_1000_end' & !grepl(":", term), estimate]
-  unpaved.cov <- 2 * unpaved.main * land$paunpaved_1000
-  
-  # Linear features - other
-  lfother.main <- mod.tab[term == 'pa_lfother_1000_end' & !grepl(":", term), estimate]
-  lfother.cov <- 2 * lfother.main * land$palfother_1000
-  
-  # Other polygon
-  otherpoly.main <- mod.tab[term == 'pa_otherpoly_1000_end' & !grepl(":", term), estimate]
-  otherpoly.cov <- 2 * otherpoly.main * land$paotherpoly_1000
-  
-  # Placer
-  placer.main <- mod.tab[term == 'pa_placer_1000_end' & !grepl(":", term), estimate]
-  placer.cov <- 2 * placer.main * land$paplacer_1000
-  
-  # Quartz
-  quartz.main <- mod.tab[term == 'pa_quartz_1000_end' & !grepl(":", term), estimate]
-  quartz.cov <- 2 * quartz.main * land$paquartz_1000
-  
-  # Other mines
-  othermines.main <- mod.tab[term == 'pa_othermines_1000_end' & !grepl(":", term), estimate]
-  othermines.cov <- 2 * othermines.main * land$paothermines_1000
-  
-  # Prop forest
-  prop_forest.main <- mod.tab[term == 'prop_forest_1000_end' & !grepl(":", term), estimate]
-  prop_forest.cov <- 2 * prop_forest.main * land$prop_forest_1000
-  
-  # Prop veg
-  prop_veg.main <- mod.tab[term == 'prop_veg_1000_end' & !grepl(":", term), estimate]
-  prop_veg.cov <- 2 * prop_veg.main * land$prop_veg_1000
-  
-  # Harvest
-  harv.main <- mod.tab[term == 'harv_pa_1000_end' & !grepl(":", term), estimate]
-  harv.cov <- 2 * harv.main * land$paharv_1000
-  
-  # Fire
-  fire.main <- mod.tab[term == 'fire_60perc1000_end' & !grepl(":", term), estimate]
-  fire.cov <- 2 * fire.main * land$propfire60
-  
-  # Combine all terms in numerator
-  numerator <- exp(
-    paved.cov  + unpaved.cov +
-      lfother.cov + otherpoly.cov +
-      placer.cov +  quartz.cov + 
-      othermines.cov + 
-      prop_forest.cov + prop_veg.cov  +
-      harv.cov + fire.cov 
-  )
-  
-  # Normalize
-  C <- global(numerator, sum, na.rm = TRUE)
-  pde <- numerator / C[[1]]
-  
-  # Save if requested
-  if (!is.null(saveName)) {
-    writeRaster(pde, file.path(derived, saveName), overwrite = TRUE)
-  }
-  
-  return(pde)
-}
-
-
 gc()
-testmyearscoarsepafire60.ud <- mod2UD(modpath = coarsemod.train.pafire60, envlayers = land2020_coarse, 
+testmyearscoarsepafire60.ud <- mod2UD(mod = coarsemod.train.pafire60, envlayers = rastLand2020.coarse, 
                                 studyArea = vect(sArea.coarsemod))
 plot(testmyearscoarsepafire60.ud)
 
@@ -2338,21 +2094,21 @@ plot(testmyearscoarsepafire60.ud)
 #testmyearscoarsepafire60.ud <- readRDS("testmyearscoarsepafire60.ud.rds")
 
 gc()
-testmyearscoarsepafire60.prop <- make_prop_use(coarsemod.test_pafire60, "EPSG:3154", testmyearscoarsepafire60.ud)
+testmyearscoarsepafire60.prop <- make_prop_use(coarsemod.test, crs, testmyearscoarsepafire60.ud)
 
 gc()
 used.bin.myearscoarsepafire60 <- make_map_bins(testmyearscoarsepafire60.prop)
 
-colnames(coarsemod.test_pafire60) <- make.unique(colnames(coarsemod.test_pafire60))
+colnames(coarsemod.test) <- make.unique(colnames(coarsemod.test))
 gc()
-propptsbin.myearscoarsepafire60 <- pts_in_bins(coarsemod.test_pafire60, testmyearscoarsepafire60.ud)
+propptsbin.myearscoarsepafire60 <- pts_in_bins(coarsemod.test, testmyearscoarsepafire60.ud)
 plot(propptsbin.myearscoarsepafire60$use.bin, propptsbin.myearscoarsepafire60$prop.pts)
 cor(propptsbin.myearscoarsepafire60$use.bin, propptsbin.myearscoarsepafire60$prop.pts, method = 'spearman', use = 'complete.obs')
 #0.522947
 
 layerCor(c(testmyearscoarsepafire60.ud, used.bin.myearscoarsepafire60), fun = 'pearson', na.rm = T)
 
-propptsbin.myearscoarsepafire60.tot <- pts_in_bins_tot(coarsemod.test_pafire60, testmyearscoarsepafire60.ud)
+propptsbin.myearscoarsepafire60.tot <- pts_in_bins_tot(coarsemod.test, testmyearscoarsepafire60.ud)
 
 plot(propptsbin.myearscoarsepafire60.tot$use.bin, propptsbin.myearscoarsepafire60.tot$prop.pts)
 cor(propptsbin.myearscoarsepafire60.tot$use.bin, propptsbin.myearscoarsepafire60.tot$prop.pts, method = 'spearman', use = 'complete.obs')
@@ -2360,76 +2116,8 @@ cor(propptsbin.myearscoarsepafire60.tot$use.bin, propptsbin.myearscoarsepafire60
 
 
 ### Coarse mod pa, fire 2 ----
-make_pde <- function(mod.tab, land, saveName = NULL) {
-  # Paved roads
-  paved.main <- mod.tab[term == 'pa_paved_1000_end' & !grepl(":", term), estimate]
-  paved.cov <- 2 * paved.main * land$papaved_1000
-  
-  # Unpaved roads
-  unpaved.main <- mod.tab[term == 'pa_unpaved_1000_end' & !grepl(":", term), estimate]
-  unpaved.cov <- 2 * unpaved.main * land$paunpaved_1000
-  
-  # Linear features - other
-  lfother.main <- mod.tab[term == 'pa_lfother_1000_end' & !grepl(":", term), estimate]
-  lfother.cov <- 2 * lfother.main * land$palfother_1000
-  
-  # Other polygon
-  otherpoly.main <- mod.tab[term == 'pa_otherpoly_1000_end' & !grepl(":", term), estimate]
-  otherpoly.cov <- 2 * otherpoly.main * land$paotherpoly_1000
-  
-  # Placer
-  placer.main <- mod.tab[term == 'pa_placer_1000_end' & !grepl(":", term), estimate]
-  placer.cov <- 2 * placer.main * land$paplacer_1000
-  
-  # Quartz
-  quartz.main <- mod.tab[term == 'pa_quartz_1000_end' & !grepl(":", term), estimate]
-  quartz.cov <- 2 * quartz.main * land$paquartz_1000
-  
-  # Other mines
-  othermines.main <- mod.tab[term == 'pa_othermines_1000_end' & !grepl(":", term), estimate]
-  othermines.cov <- 2 * othermines.main * land$paothermines_1000
-  
-  # Prop forest
-  prop_forest.main <- mod.tab[term == 'prop_forest_1000_end' & !grepl(":", term), estimate]
-  prop_forest.cov <- 2 * prop_forest.main * land$prop_forest_1000
-  
-  # Prop veg
-  prop_veg.main <- mod.tab[term == 'prop_veg_1000_end' & !grepl(":", term), estimate]
-  prop_veg.cov <- 2 * prop_veg.main * land$prop_veg_1000
-  
-  # Harvest
-  harv.main <- mod.tab[term == 'harv_pa_1000_end' & !grepl(":", term), estimate]
-  harv.cov <- 2 * harv.main * land$paharv_1000
-  
-  # Fire
-  fire.main <- mod.tab[term == 'fire_2perc1000_end' & !grepl(":", term), estimate]
-  fire.cov <- 2 * fire.main * land$propfire2
-  
-  # Combine all terms in numerator
-  numerator <- exp(
-    paved.cov  + unpaved.cov +
-      lfother.cov + otherpoly.cov +
-      placer.cov +  quartz.cov + 
-      othermines.cov + 
-      prop_forest.cov + prop_veg.cov  +
-      harv.cov + fire.cov 
-  )
-  
-  # Normalize
-  C <- global(numerator, sum, na.rm = TRUE)
-  pde <- numerator / C[[1]]
-  
-  # Save if requested
-  if (!is.null(saveName)) {
-    writeRaster(pde, file.path(derived, saveName), overwrite = TRUE)
-  }
-  
-  return(pde)
-}
-
-
 gc()
-testmyearscoarsepafire2.ud <- mod2UD(modpath = coarsemod.train.pafire2, envlayers = land2020_coarse, 
+testmyearscoarsepafire2.ud <- mod2UD(mod = coarsemod.train.pafire2, envlayers = rastLand2020.coarse, 
                                       studyArea = vect(sArea.coarsemod))
 plot(testmyearscoarsepafire2.ud)
 
@@ -2459,76 +2147,8 @@ cor(propptsbin.myearscoarsepafire2.tot$use.bin, propptsbin.myearscoarsepafire2.t
 
 
 ### Coarse mod lf dens, fire 60 ----
-make_pde <- function(mod.tab, land, saveName = NULL) {
-  # Paved roads
-  paved.main <- mod.tab[term == 'dens_paved_1000_end' & !grepl(":", term), estimate]
-  paved.cov <- 2 * paved.main * land$denspaved_1000
-  
-  # Unpaved roads
-  unpaved.main <- mod.tab[term == 'dens_unpaved_1000_end' & !grepl(":", term), estimate]
-  unpaved.cov <- 2 * unpaved.main * land$densunpaved_1000
-  
-  # Linear features - other
-  lfother.main <- mod.tab[term == 'dens_lfother_1000_end' & !grepl(":", term), estimate]
-  lfother.cov <- 2 * lfother.main * land$denslfother_1000
-  
-  # Other polygon
-  otherpoly.main <- mod.tab[term == 'pa_otherpoly_1000_end' & !grepl(":", term), estimate]
-  otherpoly.cov <- 2 * otherpoly.main * land$paotherpoly_1000
-  
-  # Placer
-  placer.main <- mod.tab[term == 'pa_placer_1000_end' & !grepl(":", term), estimate]
-  placer.cov <- 2 * placer.main * land$paplacer_1000
-  
-  # Quartz
-  quartz.main <- mod.tab[term == 'pa_quartz_1000_end' & !grepl(":", term), estimate]
-  quartz.cov <- 2 * quartz.main * land$paquartz_1000
-  
-  # Other mines
-  othermines.main <- mod.tab[term == 'pa_othermines_1000_end' & !grepl(":", term), estimate]
-  othermines.cov <- 2 * othermines.main * land$paothermines_1000
-  
-  # Prop forest
-  prop_forest.main <- mod.tab[term == 'prop_forest_1000_end' & !grepl(":", term), estimate]
-  prop_forest.cov <- 2 * prop_forest.main * land$prop_forest_1000
-  
-  # Prop veg
-  prop_veg.main <- mod.tab[term == 'prop_veg_1000_end' & !grepl(":", term), estimate]
-  prop_veg.cov <- 2 * prop_veg.main * land$prop_veg_1000
-  
-  # Harvest
-  harv.main <- mod.tab[term == 'harv_pa_1000_end' & !grepl(":", term), estimate]
-  harv.cov <- 2 * harv.main * land$paharv_1000
-  
-  # Fire
-  fire.main <- mod.tab[term == 'fire_60perc1000_end' & !grepl(":", term), estimate]
-  fire.cov <- 2 * fire.main * land$propfire60
-  
-  # Combine all terms in numerator
-  numerator <- exp(
-    paved.cov  + unpaved.cov +
-      lfother.cov + otherpoly.cov +
-      placer.cov +  quartz.cov + 
-      othermines.cov + 
-      prop_forest.cov + prop_veg.cov  +
-      harv.cov + fire.cov 
-  )
-  
-  # Normalize
-  C <- global(numerator, sum, na.rm = TRUE)
-  pde <- numerator / C[[1]]
-  
-  # Save if requested
-  if (!is.null(saveName)) {
-    writeRaster(pde, file.path(derived, saveName), overwrite = TRUE)
-  }
-  
-  return(pde)
-}
-
-
 gc()
-testmyearscoarsedensfire60.ud <- mod2UD(modpath = coarsemod.train.lfdensfire60, envlayers = land2020_coarse, 
+testmyearscoarsedensfire60.ud <- mod2UD(mod = coarsemod.train.lfdensfire60, envlayers = rastLand2020.coarse, 
                                      studyArea = vect(sArea.coarsemod))
 plot(testmyearscoarsedensfire60.ud)
 
@@ -2559,76 +2179,8 @@ cor(propptsbin.myearscoarsedensfire60.tot$use.bin, propptsbin.myearscoarsedensfi
 
 
 ### Coarse mod lf dens, fire 2 ----
-make_pde <- function(mod.tab, land, saveName = NULL) {
-  # Paved roads
-  paved.main <- mod.tab[term == 'dens_paved_1000_end' & !grepl(":", term), estimate]
-  paved.cov <- 2 * paved.main * land$denspaved_1000
-  
-  # Unpaved roads
-  unpaved.main <- mod.tab[term == 'dens_unpaved_1000_end' & !grepl(":", term), estimate]
-  unpaved.cov <- 2 * unpaved.main * land$densunpaved_1000
-  
-  # Linear features - other
-  lfother.main <- mod.tab[term == 'dens_lfother_1000_end' & !grepl(":", term), estimate]
-  lfother.cov <- 2 * lfother.main * land$denslfother_1000
-  
-  # Other polygon
-  otherpoly.main <- mod.tab[term == 'pa_otherpoly_1000_end' & !grepl(":", term), estimate]
-  otherpoly.cov <- 2 * otherpoly.main * land$paotherpoly_1000
-  
-  # Placer
-  placer.main <- mod.tab[term == 'pa_placer_1000_end' & !grepl(":", term), estimate]
-  placer.cov <- 2 * placer.main * land$paplacer_1000
-  
-  # Quartz
-  quartz.main <- mod.tab[term == 'pa_quartz_1000_end' & !grepl(":", term), estimate]
-  quartz.cov <- 2 * quartz.main * land$paquartz_1000
-  
-  # Other mines
-  othermines.main <- mod.tab[term == 'pa_othermines_1000_end' & !grepl(":", term), estimate]
-  othermines.cov <- 2 * othermines.main * land$paothermines_1000
-  
-  # Prop forest
-  prop_forest.main <- mod.tab[term == 'prop_forest_1000_end' & !grepl(":", term), estimate]
-  prop_forest.cov <- 2 * prop_forest.main * land$prop_forest_1000
-  
-  # Prop veg
-  prop_veg.main <- mod.tab[term == 'prop_veg_1000_end' & !grepl(":", term), estimate]
-  prop_veg.cov <- 2 * prop_veg.main * land$prop_veg_1000
-  
-  # Harvest
-  harv.main <- mod.tab[term == 'harv_pa_1000_end' & !grepl(":", term), estimate]
-  harv.cov <- 2 * harv.main * land$paharv_1000
-  
-  # Fire
-  fire.main <- mod.tab[term == 'fire_2perc1000_end' & !grepl(":", term), estimate]
-  fire.cov <- 2 * fire.main * land$propfire2
-  
-  # Combine all terms in numerator
-  numerator <- exp(
-    paved.cov  + unpaved.cov +
-      lfother.cov + otherpoly.cov +
-      placer.cov +  quartz.cov + 
-      othermines.cov + 
-      prop_forest.cov + prop_veg.cov  +
-      harv.cov + fire.cov 
-  )
-  
-  # Normalize
-  C <- global(numerator, sum, na.rm = TRUE)
-  pde <- numerator / C[[1]]
-  
-  # Save if requested
-  if (!is.null(saveName)) {
-    writeRaster(pde, file.path(derived, saveName), overwrite = TRUE)
-  }
-  
-  return(pde)
-}
-
-
 gc()
-testmyearscoarsedensfire2.ud <- mod2UD(modpath = coarsemod.train.lfdensfire2, envlayers = land2020_coarse, 
+testmyearscoarsedensfire2.ud <- mod2UD(mod = coarsemod.train.lfdensfire2, envlayers = rastLand2020.coarse, 
                                         studyArea = vect(sArea.coarsemod))
 plot(testmyearscoarsedensfire2.ud)
 
@@ -2657,50 +2209,9 @@ cor(propptsbin.myearscoarsedensfire2.tot$use.bin, propptsbin.myearscoarsedensfir
 #0.6606061
 
 
-
 ### Coarse mod simple, fire 60 ----
-make_pde <- function(mod.tab, land, saveName = NULL) {
-  # Lf
-  lf.main <- mod.tab[term == 'dens_lf_1000_end' & !grepl(":", term), estimate]
-  lf.cov <- 2 * lf.main * land$dens_lf_1000
-  
-  # Poly
-  poly.main <- mod.tab[term == 'dens_poly_1000_end' & !grepl(":", term), estimate]
-  poly.cov <- 2 * poly.main * land$dens_poly_1000
-  
-  # Prop forest
-  prop_forest.main <- mod.tab[term == 'prop_forest_1000_end' & !grepl(":", term), estimate]
-  prop_forest.cov <- 2 * prop_forest.main * land$prop_forest_1000
-  
-  # Prop veg
-  prop_veg.main <- mod.tab[term == 'prop_veg_1000_end' & !grepl(":", term), estimate]
-  prop_veg.cov <- 2 * prop_veg.main * land$prop_veg_1000
-  
-  # Fire
-  fire.main <- mod.tab[term == 'fire_60perc1000_end' & !grepl(":", term), estimate]
-  fire.cov <- 2 * fire.main * land$propfire60
-  
-  # Combine all terms in numerator
-  numerator <- exp(
-    lf.cov  + poly.cov +
-      prop_forest.cov + prop_veg.cov  + fire.cov 
-  )
-  
-  # Normalize
-  C <- global(numerator, sum, na.rm = TRUE)
-  pde <- numerator / C[[1]]
-  
-  # Save if requested
-  if (!is.null(saveName)) {
-    writeRaster(pde, file.path(derived, saveName), overwrite = TRUE)
-  }
-  
-  return(pde)
-}
-
-
 gc()
-testmyearscoarsesimpfire60.ud <- mod2UD(modpath = coarsemod.train.simplefire60, envlayers = land2020_coarse, 
+testmyearscoarsesimpfire60.ud <- mod2UD(mod = coarsemod.train.simplefire60, envlayers = rastLand2020.coarse, 
                                        studyArea = vect(sArea.coarsemod))
 plot(testmyearscoarsesimpfire60.ud)
 
@@ -2730,47 +2241,8 @@ cor(propptsbin.myearscoarsesimpfire60.tot$use.bin, propptsbin.myearscoarsesimpfi
 
 
 ### Coarse mod simple, fire 2 ----
-make_pde <- function(mod.tab, land, saveName = NULL) {
-  # Lf
-  lf.main <- mod.tab[term == 'dens_lf_1000_end' & !grepl(":", term), estimate]
-  lf.cov <- 2 * lf.main * land$dens_lf_1000
-  
-  # Poly
-  poly.main <- mod.tab[term == 'dens_poly_1000_end' & !grepl(":", term), estimate]
-  poly.cov <- 2 * poly.main * land$dens_poly_1000
-  
-  # Prop forest
-  prop_forest.main <- mod.tab[term == 'prop_forest_1000_end' & !grepl(":", term), estimate]
-  prop_forest.cov <- 2 * prop_forest.main * land$prop_forest_1000
-  
-  # Prop veg
-  prop_veg.main <- mod.tab[term == 'prop_veg_1000_end' & !grepl(":", term), estimate]
-  prop_veg.cov <- 2 * prop_veg.main * land$prop_veg_1000
-  
-  # Fire
-  fire.main <- mod.tab[term == 'fire_2perc1000_end' & !grepl(":", term), estimate]
-  fire.cov <- 2 * fire.main * land$propfire2
-  
-  # Combine all terms in numerator
-  numerator <- exp(
-    lf.cov  + poly.cov +
-      prop_forest.cov + prop_veg.cov  + fire.cov 
-  )
-  
-  # Normalize
-  C <- global(numerator, sum, na.rm = TRUE)
-  pde <- numerator / C[[1]]
-  
-  # Save if requested
-  if (!is.null(saveName)) {
-    writeRaster(pde, file.path(derived, saveName), overwrite = TRUE)
-  }
-  
-  return(pde)
-}
-
 gc()
-testmyearscoarsesimpfire2.ud <- mod2UD(modpath = coarsemod.train.simplefire2, envlayers = land2020_coarse, 
+testmyearscoarsesimpfire2.ud <- mod2UD(mod = coarsemod.train.simplefire2, envlayers = rastLand2020.coarse, 
                                         studyArea = vect(sArea.coarsemod))
 plot(testmyearscoarsesimpfire2.ud)
 
@@ -2801,45 +2273,7 @@ cor(propptsbin.myearscoarsesimpfire2.tot$use.bin, propptsbin.myearscoarsesimpfir
 
 
 ### RSF Mod, Simple ----
-make_pde <- function(mod.tab, land, saveName = NULL) {
-  # Lf
-  lf.main <- mod.tab[term == 'dens_lf_z' & !grepl(":", term), estimate]
-  lf.cov <- lf.main * land$dens_lf_z
-  
-  # Poly
-  poly.main <- mod.tab[term == 'dens_poly_z' & !grepl(":", term), estimate]
-  poly.cov <- poly.main * land$dens_poly_z
-  
-  # Prop forest
-  prop_forest.main <- mod.tab[term == 'prop_forest_z' & !grepl(":", term), estimate]
-  prop_forest.cov <- prop_forest.main * land$prop_forest_z
-  
-  # Prop veg
-  prop_veg.main <- mod.tab[term == 'prop_veg_z' & !grepl(":", term), estimate]
-  prop_veg.cov <- prop_veg.main * land$prop_veg_z
-  
-  # Prop veg
-  prop_barren.main <- mod.tab[term == 'prop_barren_z' & !grepl(":", term), estimate]
-  prop_barren.cov <- prop_barren.main * land$prop_barren_z
-  
-  # Combine all terms in numerator
-  numerator <- exp(
-    lf.cov  + poly.cov +
-      prop_forest.cov + prop_veg.cov  + prop_barren.cov
-  )
-  
-  pde <- numerator
-  
-  # Save if requested
-  if (!is.null(saveName)) {
-    writeRaster(pde, file.path(derived, saveName), overwrite = TRUE)
-  }
-  
-  return(pde)
-}
-
-
-
+#NEEDS UPDATING
 gc()
 testmyearsrsfsimp.ud <- mod2UD(modpath = RSFmod.train.simple, envlayers = land2020_RSF, 
                                        studyArea = vect(sArea.rsfmod))
@@ -2875,53 +2309,6 @@ cor(propptsbin.myearsrsfsimp.tot$use.bin, propptsbin.myearsrsfsimp.tot$prop.pts,
 
 
 ### RSF Mod, mines int ----
-make_pde <- function(mod.tab, land, saveName = NULL) {
-  # Lf
-  lf.main <- mod.tab[term == 'dens_lf_z' & !grepl(":", term), estimate]
-  lf.cov <- lf.main * land$dens_lf_z
-  
-  # Poly
-  poly.main <- mod.tab[term == 'dens_poly_z' & !grepl(":", term), estimate]
-  poly.cov <- poly.main * land$dens_poly_z
-  
-  # Prop forest
-  prop_forest.main <- mod.tab[term == 'prop_forest_z' & !grepl(":", term), estimate]
-  prop_forest.cov <- prop_forest.main * land$prop_forest_z
-  
-  # Prop veg
-  prop_veg.main <- mod.tab[term == 'prop_veg_z' & !grepl(":", term), estimate]
-  prop_veg.cov <- prop_veg.main * land$prop_veg_z
-  
-  # Prop veg
-  prop_barren.main <- mod.tab[term == 'prop_barren_z' & !grepl(":", term), estimate]
-  prop_barren.cov <- prop_barren.main * land$prop_barren_z
-  
-  #Quartz int
-  quartz_int.main <- mod.tab[term == 'dens_poly_z:pa_quartz_z', estimate]
-  quartz_int.cov <- quartz_int.main * land$dens_poly_z * land$pa_quartz_z
-  
-  #Placer int
-  placer_int.main <- mod.tab[term == 'dens_poly_z:pa_placer_z', estimate]
-  placer_int.cov <- placer_int.main * land$dens_poly_z * land$pa_placer_z
-  
-  # Combine all terms in numerator
-  numerator <- exp(
-    lf.cov  + poly.cov +
-      prop_forest.cov + prop_veg.cov  + prop_barren.cov +
-      placer_int.cov + quartz_int.cov
-  )
-  
-  pde <- numerator
-  
-  # Save if requested
-  if (!is.null(saveName)) {
-    writeRaster(pde, file.path(derived, saveName), overwrite = TRUE)
-  }
-  
-  return(pde)
-}
-
-
 gc()
 testmyearsrsfminesint.ud <- mod2UD(modpath = RSFmod.train.minesint, envlayers = land2020_RSF, 
                                studyArea = vect(sArea.rsfmod))
@@ -2957,49 +2344,6 @@ cor(propptsbin.myearsrsfminesint.tot$use.bin, propptsbin.myearsrsfminesint.tot$p
 
 
 ### RSF Mod, mines pa ----
-make_pde <- function(mod.tab, land, saveName = NULL) {
-  # Lf
-  lf.main <- mod.tab[term == 'dens_lf_z' & !grepl(":", term), estimate]
-  lf.cov <- lf.main * land$dens_lf_z
-  
-  # Prop forest
-  prop_forest.main <- mod.tab[term == 'prop_forest_z' & !grepl(":", term), estimate]
-  prop_forest.cov <- prop_forest.main * land$prop_forest_z
-  
-  # Prop veg
-  prop_veg.main <- mod.tab[term == 'prop_veg_z' & !grepl(":", term), estimate]
-  prop_veg.cov <- prop_veg.main * land$prop_veg_z
-  
-  # Prop veg
-  prop_barren.main <- mod.tab[term == 'prop_barren_z' & !grepl(":", term), estimate]
-  prop_barren.cov <- prop_barren.main * land$prop_barren_z
-  
-  #Quartz pa
-  quartz.main <- mod.tab[term == 'pa_quartz_z', estimate]
-  quartz.cov <- quartz.main * land$pa_quartz_z
-  
-  #Placer pa
-  placer.main <- mod.tab[term == 'pa_placer_z', estimate]
-  placer.cov <- placer.main * land$pa_placer_z
-  
-  # Combine all terms in numerator
-  numerator <- exp(
-    lf.cov +
-      prop_forest.cov + prop_veg.cov  + prop_barren.cov +
-      placer.cov + quartz.cov
-  )
-  
-  pde <- numerator
-  
-  # Save if requested
-  if (!is.null(saveName)) {
-    writeRaster(pde, file.path(derived, saveName), overwrite = TRUE)
-  }
-  
-  return(pde)
-}
-
-
 gc()
 testmyearsrsfminespa.ud <- mod2UD(modpath = RSFmod.train.minespa, envlayers = land2020_RSF, 
                                    studyArea = vect(sArea.rsfmod))
@@ -3210,23 +2554,6 @@ make_pde <- function(mod.tab, land, saveName = NULL) {
 }
 
 
-#' crops `make_pde()` to study area and descretizes to 10 bins
-make_pde_map <- function(pde, sArea, saveName = NULL){
-  pde.sa <- crop(pde, sArea, mask = T)
-  plot(pde.sa)
-  
-  breaks <- global(pde.sa, quantile, na.rm = T, probs = seq(0,1,.1))
-  v.breaks <- unname(breaks)
-  t.breaks <- as.vector(t(v.breaks))
-  pde.discrete <- classify(pde.sa, t.breaks, include.lowest=TRUE, brackets=TRUE)
-  
-  if(!is.null(saveName)){
-    writeRaster(pde.discrete, 
-                file.path(derived, saveName), overwrite = T)
-  }
-  
-  return(pde.discrete)
-}
 
 ### globalfine predicting missing herds from old data ----
 finemod.train.mherdsyt <- file.path("m.fullmod10step.RDS")
