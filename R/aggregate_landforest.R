@@ -7,8 +7,7 @@ aggregate_landforest <- function(targetFile, trast, where2save = NULL){
   
     
     landRaw <- terra::rast(targetFile)
-    landCrop <- postProcess(landRaw, cropTo=terra::buffer(trast, width = 10000)) #|>
-     # Cache()
+    landCrop <- postProcess(landRaw, cropTo=terra::buffer(trast, width = 10000)) 
     
     # TODO make an argument/table so can use with diff datasets
     lccClasses <- c(20, 31, 32, 33, 40, 50, 80, 81, 100, 210, 220, 230)

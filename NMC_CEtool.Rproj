@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 Version: 1.0
 ProjectId: 90571ac4-5852-4fa0-b6ed-cb5d7e4d86e9
 
@@ -12,3 +13,18 @@ Encoding: UTF-8
 
 RnwWeave: Sweave
 LaTeX: pdfLaTeX
+=======
+Version: 1.0
+
+RestoreWorkspace: Default
+SaveWorkspace: Default
+AlwaysSaveHistory: Default
+
+EnableCodeIndexing: Yes
+UseSpacesForTab: Yes
+NumSpacesForTab: 2
+Encoding: UTF-8
+
+RnwWeave: Sweave
+LaTeX: pdfLaTeX
+>>>>>>> Stashed changes
