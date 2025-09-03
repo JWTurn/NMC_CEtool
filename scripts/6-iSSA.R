@@ -107,7 +107,7 @@ dat.issa <- dat[,.(id, area, prov, x1_, y1_, x2_, y2_, sl_, ta_, burst_, t1_, t2
                    dist_poly_250_end = pmin(dist_placer_250_end, dist_quartz_250_end, harv_dist_250_end, dist_othermines_250_end, dist_otherpoly_250_end, na.rm = T),
                    for_age_250_start, for_age_250_end,
                    ts_harv250_start, ts_harv250_end, ts_fires_250_start, ts_fires_250_end,
-                #1000
+                   #1000
                    prop_veg_1000_start, prop_veg_1000_end,
                    prop_forest_1000_start, prop_forest_1000_end,
                    prop_needleleaf_1000_start, prop_needleleaf_1000_end,
@@ -133,25 +133,25 @@ dat.issa <- dat[,.(id, area, prov, x1_, y1_, x2_, y2_, sl_, ta_, burst_, t1_, t2
                    ts_harv1000_start, ts_harv1000_end, ts_fires_1000_start, ts_fires_1000_end)]
 
 sumdat <- dat.issa[,.(prov, year, prop_veg_250_start, prop_veg_250_end,
-            for_age_250_start, for_age_250_end, prop_forest_250_start, prop_forest_250_end,
-            dist_paved_250_start, dist_paved_250_end, dist_unpaved_250_start, dist_unpaved_250_end, 
-            dist_road_250_end, dist_lfother_250_start, dist_lfother_250_end, dist_lf_250_end,
-            dist_otherpoly_250_start, dist_otherpoly_250_end, dist_mines_250_start, dist_mines_250_end,
-            dist_placer_250_start, dist_placer_250_end, dist_quartz_250_start, dist_quartz_250_end,
-            harv_dist_250_start, harv_dist_250_end,
-            dist_otherdisturbance_250_start, dist_otherdisturbance_250_end,
-            dist_anthrodisturbance_250_start, dist_anthrodisturbance_250_end,
-            ts_harv250_start, ts_harv250_end, ts_fires_250_start, ts_fires_250_end,
-            
-            for_age_1000_start, for_age_1000_end, prop_forest_1000_start, prop_forest_1000_end,
-            dist_paved_1000_start, dist_paved_1000_end, dist_unpaved_1000_start, dist_unpaved_1000_end, 
-            dist_road_1000_end, dist_lfother_1000_start, dist_lfother_1000_end, dist_lf_1000_end,
-            dist_otherpoly_1000_start, dist_otherpoly_1000_end, dist_mines_1000_start, dist_mines_1000_end,
-            dist_placer_1000_start, dist_placer_1000_end, dist_quartz_1000_start, dist_quartz_1000_end,
-            harv_dist_1000_start, harv_dist_1000_end,
-            dist_otherdisturbance_1000_start, dist_otherdisturbance_1000_end,
-            dist_anthrodisturbance_1000_start, dist_anthrodisturbance_1000_end,
-            ts_harv1000_start, ts_harv1000_end, ts_fires_1000_start, ts_fires_1000_end)] %>%
+                      for_age_250_start, for_age_250_end, prop_forest_250_start, prop_forest_250_end,
+                      dist_paved_250_start, dist_paved_250_end, dist_unpaved_250_start, dist_unpaved_250_end, 
+                      dist_road_250_end, dist_lfother_250_start, dist_lfother_250_end, dist_lf_250_end,
+                      dist_otherpoly_250_start, dist_otherpoly_250_end, dist_mines_250_start, dist_mines_250_end,
+                      dist_placer_250_start, dist_placer_250_end, dist_quartz_250_start, dist_quartz_250_end,
+                      harv_dist_250_start, harv_dist_250_end,
+                      dist_otherdisturbance_250_start, dist_otherdisturbance_250_end,
+                      dist_anthrodisturbance_250_start, dist_anthrodisturbance_250_end,
+                      ts_harv250_start, ts_harv250_end, ts_fires_250_start, ts_fires_250_end,
+                      
+                      for_age_1000_start, for_age_1000_end, prop_forest_1000_start, prop_forest_1000_end,
+                      dist_paved_1000_start, dist_paved_1000_end, dist_unpaved_1000_start, dist_unpaved_1000_end, 
+                      dist_road_1000_end, dist_lfother_1000_start, dist_lfother_1000_end, dist_lf_1000_end,
+                      dist_otherpoly_1000_start, dist_otherpoly_1000_end, dist_mines_1000_start, dist_mines_1000_end,
+                      dist_placer_1000_start, dist_placer_1000_end, dist_quartz_1000_start, dist_quartz_1000_end,
+                      harv_dist_1000_start, harv_dist_1000_end,
+                      dist_otherdisturbance_1000_start, dist_otherdisturbance_1000_end,
+                      dist_anthrodisturbance_1000_start, dist_anthrodisturbance_1000_end,
+                      ts_harv1000_start, ts_harv1000_end, ts_fires_1000_start, ts_fires_1000_end)] %>%
   group_by(prov) %>%
   summarise_all(mean, na.rm = T)
 
@@ -224,10 +224,10 @@ dat.issa.15 <- dat.issa[,.SD[1:16], by = .(indiv_step_id)]
 dat.issa.10 <- dat.issa[,.SD[1:11], by = .(indiv_step_id)]
 
 ---------------------------------------------
-
-
-# Separate seasons into diff datasets
-dat.issa.10$monthday <- format(as.Date(dat.issa.10$t1_, format="%Y/%m/%d"),"%m/%d") #Create new column that isolates the month and day out of t1_
+  
+  
+  # Separate seasons into diff datasets
+  dat.issa.10$monthday <- format(as.Date(dat.issa.10$t1_, format="%Y/%m/%d"),"%m/%d") #Create new column that isolates the month and day out of t1_
 dat.issa.10$monthday #Confirming that the new column was created correctly
 names(dat.issa.10) #Confirming that the new column exists
 
@@ -270,50 +270,50 @@ dat.issa.10.close <- dat.issa.10[dist_anthrodisturbance_250_start <= 20000]
 ### ---- Year-round ----
 gc()
 m.closedisturbancefull <- glmmTMB(case_ ~ -1 +
-                                I(log((sl_+1)/1000)) +
-                                I(cos(ta_)) +
-                                I(log((sl_+1)/1000)):I(cos(ta_)) +
-                                prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
-                                prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
-                                I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
-                                I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
-                                I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
-                                I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
-                                #I(log(((dist_road_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
-                                I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
-                                I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
-                                I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
-                                I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
-                                I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
-                                #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
-                                #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
-                                
-                                (1|indiv_step_id) +
-                                (0 + I(log((sl_ +1)/1000))|id) +
-                                (0 + I(cos(ta_))|id) +
-                                (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
-                                (0 + prop_forest_250_end|id) +
-                                (0 + prop_veg_250_end|id) +
-                                (0 + (I(log(ts_fires_250_end+1)))|id) +
-                                (0 + (I(log(ts_harv250_end+1)))|id) + 
-                                (0 + I(log((dist_paved_250_end+1)/1000))|id) + 
-                                (0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
-                                #(0 + I(log((dist_road_250_end+1)/1000))|id) + 
-                                (0 + I(log((dist_lfother_250_end+1)/1000))|id) +
-                                (0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
-                                (0 + I(log((dist_placer_250_end+1)/1000))|id) + 
-                                (0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
-                                (0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
-                                #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
-                                #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
-                                
-                                (1|year),
-                              family = poisson(), data = dat.issa.10.close[,`:=`(year = as.factor(year), 
-                                                                           indiv_step_id = as.factor(indiv_step_id),
-                                                                           id = as.factor(id))],
-                              map= list(theta = factor(c(NA,1:15))),
-                              start = list(theta =c(log(1000), seq(0,0, length.out = 15))), 
-                              verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+                                    I(log((sl_+1)/1000)) +
+                                    I(cos(ta_)) +
+                                    I(log((sl_+1)/1000)):I(cos(ta_)) +
+                                    prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
+                                    prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
+                                    I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
+                                    I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
+                                    I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
+                                    I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
+                                    #I(log(((dist_road_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
+                                    I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
+                                    I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
+                                    I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
+                                    I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
+                                    I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
+                                    #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
+                                    #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
+                                    
+                                    (1|indiv_step_id) +
+                                    (0 + I(log((sl_ +1)/1000))|id) +
+                                    (0 + I(cos(ta_))|id) +
+                                    (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                                    (0 + prop_forest_250_end|id) +
+                                    (0 + prop_veg_250_end|id) +
+                                    (0 + (I(log(ts_fires_250_end+1)))|id) +
+                                    (0 + (I(log(ts_harv250_end+1)))|id) + 
+                                    (0 + I(log((dist_paved_250_end+1)/1000))|id) + 
+                                    (0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
+                                    #(0 + I(log((dist_road_250_end+1)/1000))|id) + 
+                                    (0 + I(log((dist_lfother_250_end+1)/1000))|id) +
+                                    (0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
+                                    (0 + I(log((dist_placer_250_end+1)/1000))|id) + 
+                                    (0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
+                                    (0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
+                                    #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
+                                    #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
+                                    
+                                    (1|year),
+                                  family = poisson(), data = dat.issa.10.close[,`:=`(year = as.factor(year), 
+                                                                                     indiv_step_id = as.factor(indiv_step_id),
+                                                                                     id = as.factor(id))],
+                                  map= list(theta = factor(c(NA,1:15))),
+                                  start = list(theta =c(log(1000), seq(0,0, length.out = 15))), 
+                                  verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
 
 
@@ -365,50 +365,50 @@ dat.issa.10.summer.close <- dat.issa.10.summer[dist_anthrodisturbance_250_start 
 
 gc()
 m.closedisturbancesummer <- glmmTMB(case_ ~ -1 +
-                                    I(log((sl_+1)/1000)) +
-                                    I(cos(ta_)) +
-                                    I(log((sl_+1)/1000)):I(cos(ta_)) +
-                                    prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
-                                    prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
-                                    I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
-                                    I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
-                                    I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
-                                    I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
-                                    #I(log(((dist_road_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
-                                    I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
-                                    I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
-                                    I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
-                                    I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
-                                    I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
-                                    #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
-                                    #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
-                                    
-                                    (1|indiv_step_id) +
-                                    (0 + I(log((sl_ +1)/1000))|id) +
-                                    (0 + I(cos(ta_))|id) +
-                                    (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
-                                    (0 + prop_forest_250_end|id) +
-                                    (0 + prop_veg_250_end|id) +
-                                    (0 + (I(log(ts_fires_250_end+1)))|id) +
-                                    (0 + (I(log(ts_harv250_end+1)))|id) + 
-                                    (0 + I(log((dist_paved_250_end+1)/1000))|id) + 
-                                    (0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
-                                    #(0 + I(log((dist_road_250_end+1)/1000))|id) + 
-                                    (0 + I(log((dist_lfother_250_end+1)/1000))|id) +
-                                    (0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
-                                    (0 + I(log((dist_placer_250_end+1)/1000))|id) + 
-                                    (0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
-                                    (0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
-                                    #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
-                                    #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
-                                    
-                                    (1|year),
-                                  family = poisson(), data = dat.issa.10.summer.close[,`:=`(year = as.factor(year), 
-                                                                               indiv_step_id = as.factor(indiv_step_id),
-                                                                               id = as.factor(id))],
-                                  map= list(theta = factor(c(NA,1:15))),
-                                  start = list(theta =c(log(1000), seq(0,0, length.out = 15))), 
-                                  verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+                                      I(log((sl_+1)/1000)) +
+                                      I(cos(ta_)) +
+                                      I(log((sl_+1)/1000)):I(cos(ta_)) +
+                                      prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
+                                      prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
+                                      I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
+                                      I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
+                                      I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
+                                      I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
+                                      #I(log(((dist_road_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
+                                      I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
+                                      I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
+                                      I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
+                                      I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
+                                      I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
+                                      #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
+                                      #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
+                                      
+                                      (1|indiv_step_id) +
+                                      (0 + I(log((sl_ +1)/1000))|id) +
+                                      (0 + I(cos(ta_))|id) +
+                                      (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                                      (0 + prop_forest_250_end|id) +
+                                      (0 + prop_veg_250_end|id) +
+                                      (0 + (I(log(ts_fires_250_end+1)))|id) +
+                                      (0 + (I(log(ts_harv250_end+1)))|id) + 
+                                      (0 + I(log((dist_paved_250_end+1)/1000))|id) + 
+                                      (0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
+                                      #(0 + I(log((dist_road_250_end+1)/1000))|id) + 
+                                      (0 + I(log((dist_lfother_250_end+1)/1000))|id) +
+                                      (0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
+                                      (0 + I(log((dist_placer_250_end+1)/1000))|id) + 
+                                      (0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
+                                      (0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
+                                      #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
+                                      #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
+                                      
+                                      (1|year),
+                                    family = poisson(), data = dat.issa.10.summer.close[,`:=`(year = as.factor(year), 
+                                                                                              indiv_step_id = as.factor(indiv_step_id),
+                                                                                              id = as.factor(id))],
+                                    map= list(theta = factor(c(NA,1:15))),
+                                    start = list(theta =c(log(1000), seq(0,0, length.out = 15))), 
+                                    verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
 
 
@@ -495,8 +495,8 @@ m.closedisturbancewinter <- glmmTMB(case_ ~ -1 +
                                       
                                       (1|year),
                                     family = poisson(), data = dat.issa.10.winter.close[,`:=`(year = as.factor(year), 
-                                                                                        indiv_step_id = as.factor(indiv_step_id),
-                                                                                        id = as.factor(id))],
+                                                                                              indiv_step_id = as.factor(indiv_step_id),
+                                                                                              id = as.factor(id))],
                                     map= list(theta = factor(c(NA,1:15))),
                                     start = list(theta =c(log(1000), seq(0,0, length.out = 15))), 
                                     verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
@@ -547,50 +547,50 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 ### ---- Year-round ----
 gc()
 m.fardisturbancefull <- glmmTMB(case_ ~ -1 +
-                                    I(log((sl_+1)/1000)) +
-                                    I(cos(ta_)) +
-                                    I(log((sl_+1)/1000)):I(cos(ta_)) +
-                                    prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
-                                    prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
-                                    I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
-                                    I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
-                                    I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
-                                    I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
-                                    #I(log(((dist_road_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
-                                    I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
-                                    I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
-                                    I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
-                                    I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
-                                    I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
-                                    #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
-                                    #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
-                                    
-                                    (1|indiv_step_id) +
-                                    (0 + I(log((sl_ +1)/1000))|id) +
-                                    (0 + I(cos(ta_))|id) +
-                                    (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
-                                    (0 + prop_forest_250_end|id) +
-                                    (0 + prop_veg_250_end|id) +
-                                    (0 + (I(log(ts_fires_250_end+1)))|id) +
-                                    (0 + (I(log(ts_harv250_end+1)))|id) + 
-                                    #(0 + I(log((dist_paved_250_end+1)/1000))|id) + 
-                                    #(0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
-                                    #(0 + I(log((dist_road_250_end+1)/1000))|id) + 
-                                    #(0 + I(log((dist_lfother_250_end+1)/1000))|id) +
-                                    #(0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
-                                    #(0 + I(log((dist_placer_250_end+1)/1000))|id) + 
-                                    #(0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
-                                    #(0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
-                                    #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
-                                    #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
-                                    
-                                    (1|year),
-                                  family = poisson(), data = dat.issa.10[,`:=`(year = as.factor(year), 
-                                                                                     indiv_step_id = as.factor(indiv_step_id),
-                                                                                     id = as.factor(id))],
-                                  map= list(theta = factor(c(NA,1:8))),
-                                  start = list(theta =c(log(1000), seq(0,0, length.out = 8))), 
-                                  verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+                                  I(log((sl_+1)/1000)) +
+                                  I(cos(ta_)) +
+                                  I(log((sl_+1)/1000)):I(cos(ta_)) +
+                                  prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
+                                  prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
+                                  I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
+                                  I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
+                                  I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
+                                  I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
+                                  #I(log(((dist_road_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
+                                  I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
+                                  I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
+                                  I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
+                                  I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
+                                  I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
+                                  #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
+                                  #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
+                                  
+                                  (1|indiv_step_id) +
+                                  (0 + I(log((sl_ +1)/1000))|id) +
+                                  (0 + I(cos(ta_))|id) +
+                                  (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                                  (0 + prop_forest_250_end|id) +
+                                  (0 + prop_veg_250_end|id) +
+                                  (0 + (I(log(ts_fires_250_end+1)))|id) +
+                                  (0 + (I(log(ts_harv250_end+1)))|id) + 
+                                  #(0 + I(log((dist_paved_250_end+1)/1000))|id) + 
+                                  #(0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
+                                  #(0 + I(log((dist_road_250_end+1)/1000))|id) + 
+                                  #(0 + I(log((dist_lfother_250_end+1)/1000))|id) +
+                                  #(0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
+                                  #(0 + I(log((dist_placer_250_end+1)/1000))|id) + 
+                                  #(0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
+                                  #(0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
+                                  #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
+                                  #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
+                                  
+                                  (1|year),
+                                family = poisson(), data = dat.issa.10[,`:=`(year = as.factor(year), 
+                                                                             indiv_step_id = as.factor(indiv_step_id),
+                                                                             id = as.factor(id))],
+                                map= list(theta = factor(c(NA,1:8))),
+                                start = list(theta =c(log(1000), seq(0,0, length.out = 8))), 
+                                verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
 
 
@@ -637,50 +637,50 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 ### ---- SUMMER ----
 gc()
 m.fardisturbancesummer <- glmmTMB(case_ ~ -1 +
-                                  I(log((sl_+1)/1000)) +
-                                  I(cos(ta_)) +
-                                  I(log((sl_+1)/1000)):I(cos(ta_)) +
-                                  prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
-                                  prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
-                                  I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
-                                  I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
-                                  I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
-                                  I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
-                                  #I(log(((dist_road_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
-                                  I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
-                                  I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
-                                  I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
-                                  I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
-                                  I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
-                                  #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
-                                  #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
-                                  
-                                  (1|indiv_step_id) +
-                                  (0 + I(log((sl_ +1)/1000))|id) +
-                                  (0 + I(cos(ta_))|id) +
-                                  (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
-                                  (0 + prop_forest_250_end|id) +
-                                  (0 + prop_veg_250_end|id) +
-                                  (0 + (I(log(ts_fires_250_end+1)))|id) +
-                                  (0 + (I(log(ts_harv250_end+1)))|id) + 
-                                  #(0 + I(log((dist_paved_250_end+1)/1000))|id) + 
-                                  #(0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
-                                  #(0 + I(log((dist_road_250_end+1)/1000))|id) + 
-                                  #(0 + I(log((dist_lfother_250_end+1)/1000))|id) +
-                                  #(0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
-                                  #(0 + I(log((dist_placer_250_end+1)/1000))|id) + 
-                                  #(0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
-                                  #(0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
-                                  #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
-                                  #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
-                                  
-                                  (1|year),
-                                family = poisson(), data = dat.issa.10.summer[,`:=`(year = as.factor(year), 
-                                                                             indiv_step_id = as.factor(indiv_step_id),
-                                                                             id = as.factor(id))],
-                                map= list(theta = factor(c(NA,1:8))),
-                                start = list(theta =c(log(1000), seq(0,0, length.out = 8))), 
-                                verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+                                    I(log((sl_+1)/1000)) +
+                                    I(cos(ta_)) +
+                                    I(log((sl_+1)/1000)):I(cos(ta_)) +
+                                    prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
+                                    prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
+                                    I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
+                                    I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
+                                    I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
+                                    I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
+                                    #I(log(((dist_road_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
+                                    I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
+                                    I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
+                                    I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
+                                    I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
+                                    I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
+                                    #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
+                                    #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
+                                    
+                                    (1|indiv_step_id) +
+                                    (0 + I(log((sl_ +1)/1000))|id) +
+                                    (0 + I(cos(ta_))|id) +
+                                    (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                                    (0 + prop_forest_250_end|id) +
+                                    (0 + prop_veg_250_end|id) +
+                                    (0 + (I(log(ts_fires_250_end+1)))|id) +
+                                    (0 + (I(log(ts_harv250_end+1)))|id) + 
+                                    #(0 + I(log((dist_paved_250_end+1)/1000))|id) + 
+                                    #(0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
+                                    #(0 + I(log((dist_road_250_end+1)/1000))|id) + 
+                                    #(0 + I(log((dist_lfother_250_end+1)/1000))|id) +
+                                    #(0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
+                                    #(0 + I(log((dist_placer_250_end+1)/1000))|id) + 
+                                    #(0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
+                                    #(0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
+                                    #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
+                                    #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
+                                    
+                                    (1|year),
+                                  family = poisson(), data = dat.issa.10.summer[,`:=`(year = as.factor(year), 
+                                                                                      indiv_step_id = as.factor(indiv_step_id),
+                                                                                      id = as.factor(id))],
+                                  map= list(theta = factor(c(NA,1:8))),
+                                  start = list(theta =c(log(1000), seq(0,0, length.out = 8))), 
+                                  verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
 
 
@@ -822,50 +822,50 @@ ggplot(data = indivs[!(term %like% 'dist')], aes(x =term, y = estimate)) +
 #Trying 20 steps for each model now. Re-saving models as x20step (didn't work), trying 15, 15 didnt work
 gc()
 m.fullmod10step <- glmmTMB(case_ ~ -1 +
-                                    I(log((sl_+1)/1000)) +
-                                    I(cos(ta_)) +
-                                    I(log((sl_+1)/1000)):I(cos(ta_)) +
-                                    prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
-                                    prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
-                                    I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
-                                    I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
-                                    I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
-                                    I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
-                                    #I(log(((dist_road_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
-                                    I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
-                                    I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
-                                    I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
-                                    I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
-                                    I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
-                                    #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
-                                    #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
-                                    
-                                    (1|indiv_step_id) +
-                                    (0 + I(log((sl_ +1)/1000))|id) +
-                                    (0 + I(cos(ta_))|id) +
-                                    (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
-                                    (0 + prop_forest_250_end|id) +
-                                    (0 + prop_veg_250_end|id) +
-                                    (0 + (I(log(ts_fires_250_end+1)))|id) +
-                                    (0 + (I(log(ts_harv250_end+1)))|id) + 
-                                    (0 + I(log((dist_paved_250_end+1)/1000))|id) + 
-                                    (0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
-                                    #(0 + I(log((dist_road_250_end+1)/1000))|id) + 
-                                    (0 + I(log((dist_lfother_250_end+1)/1000))|id) +
-                                    (0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
-                                    (0 + I(log((dist_placer_250_end+1)/1000))|id) + 
-                                    (0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
-                                    (0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
-                                    #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
-                                    #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
-                                    
-                                    (1|year),
-                                  family = poisson(), data = dat.issa.10[,`:=`(year = as.factor(year), 
-                                                                                     indiv_step_id = as.factor(indiv_step_id),
-                                                                                     id = as.factor(id))],
-                                  map= list(theta = factor(c(NA,1:15))),
-                                  start = list(theta =c(log(1000), seq(0,0, length.out = 15))), 
-                                  verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+                             I(log((sl_+1)/1000)) +
+                             I(cos(ta_)) +
+                             I(log((sl_+1)/1000)):I(cos(ta_)) +
+                             prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
+                             prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
+                             I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
+                             I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
+                             I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
+                             I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
+                             #I(log(((dist_road_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
+                             I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
+                             I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
+                             I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
+                             I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
+                             I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
+                             #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
+                             #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
+                             
+                             (1|indiv_step_id) +
+                             (0 + I(log((sl_ +1)/1000))|id) +
+                             (0 + I(cos(ta_))|id) +
+                             (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                             (0 + prop_forest_250_end|id) +
+                             (0 + prop_veg_250_end|id) +
+                             (0 + (I(log(ts_fires_250_end+1)))|id) +
+                             (0 + (I(log(ts_harv250_end+1)))|id) + 
+                             (0 + I(log((dist_paved_250_end+1)/1000))|id) + 
+                             (0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
+                             #(0 + I(log((dist_road_250_end+1)/1000))|id) + 
+                             (0 + I(log((dist_lfother_250_end+1)/1000))|id) +
+                             (0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
+                             (0 + I(log((dist_placer_250_end+1)/1000))|id) + 
+                             (0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
+                             (0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
+                             #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
+                             #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
+                             
+                             (1|year),
+                           family = poisson(), data = dat.issa.10[,`:=`(year = as.factor(year), 
+                                                                        indiv_step_id = as.factor(indiv_step_id),
+                                                                        id = as.factor(id))],
+                           map= list(theta = factor(c(NA,1:15))),
+                           start = list(theta =c(log(1000), seq(0,0, length.out = 15))), 
+                           verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
 
 
@@ -1012,7 +1012,7 @@ for (model_var in names(var_map)) {
   
   plot_list[[model_var]] <- p
 }
-  
+
 require(patchwork)
 # Combine and print all plots
 combined_plot <- wrap_plots(plot_list, ncol = 3)
@@ -1537,50 +1537,50 @@ patchwork::wrap_plots(plot_list, ncol = 4)
 ### --- Summer ----
 gc()
 m.fullmodsummer20step <- glmmTMB(case_ ~ -1 +
-                       I(log((sl_+1)/1000)) +
-                       I(cos(ta_)) +
-                       I(log((sl_+1)/1000)):I(cos(ta_)) +
-                       prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
-                       prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
-                       I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
-                       I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
-                       I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
-                       I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
-                       #I(log(((dist_road_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
-                       I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
-                       I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
-                       I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
-                       I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
-                       I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
-                       #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
-                       #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
-                       
-                       (1|indiv_step_id) +
-                       (0 + I(log((sl_ +1)/1000))|id) +
-                       (0 + I(cos(ta_))|id) +
-                       (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
-                       (0 + prop_forest_250_end|id) +
-                       (0 + prop_veg_250_end|id) +
-                       (0 + (I(log(ts_fires_250_end+1)))|id) +
-                       (0 + (I(log(ts_harv250_end+1)))|id) + 
-                       (0 + I(log((dist_paved_250_end+1)/1000))|id) + 
-                       (0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
-                       #(0 + I(log((dist_road_250_end+1)/1000))|id) + 
-                       (0 + I(log((dist_lfother_250_end+1)/1000))|id) +
-                       (0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
-                       (0 + I(log((dist_placer_250_end+1)/1000))|id) + 
-                       (0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
-                       (0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
-                       #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
-                       #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
-                       
-                       (1|year),
-                     family = poisson(), data = dat.issa.20.summer[,`:=`(year = as.factor(year), 
-                                                                  indiv_step_id = as.factor(indiv_step_id),
-                                                                  id = as.factor(id))],
-                     map= list(theta = factor(c(NA,1:15))),
-                     start = list(theta =c(log(1000), seq(0,0, length.out = 15))), 
-                     verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+                                   I(log((sl_+1)/1000)) +
+                                   I(cos(ta_)) +
+                                   I(log((sl_+1)/1000)):I(cos(ta_)) +
+                                   prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
+                                   prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
+                                   I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
+                                   I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
+                                   I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
+                                   I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
+                                   #I(log(((dist_road_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
+                                   I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
+                                   I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
+                                   I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
+                                   I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
+                                   I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
+                                   #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
+                                   #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
+                                   
+                                   (1|indiv_step_id) +
+                                   (0 + I(log((sl_ +1)/1000))|id) +
+                                   (0 + I(cos(ta_))|id) +
+                                   (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                                   (0 + prop_forest_250_end|id) +
+                                   (0 + prop_veg_250_end|id) +
+                                   (0 + (I(log(ts_fires_250_end+1)))|id) +
+                                   (0 + (I(log(ts_harv250_end+1)))|id) + 
+                                   (0 + I(log((dist_paved_250_end+1)/1000))|id) + 
+                                   (0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
+                                   #(0 + I(log((dist_road_250_end+1)/1000))|id) + 
+                                   (0 + I(log((dist_lfother_250_end+1)/1000))|id) +
+                                   (0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
+                                   (0 + I(log((dist_placer_250_end+1)/1000))|id) + 
+                                   (0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
+                                   (0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
+                                   #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
+                                   #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
+                                   
+                                   (1|year),
+                                 family = poisson(), data = dat.issa.20.summer[,`:=`(year = as.factor(year), 
+                                                                                     indiv_step_id = as.factor(indiv_step_id),
+                                                                                     id = as.factor(id))],
+                                 map= list(theta = factor(c(NA,1:15))),
+                                 start = list(theta =c(log(1000), seq(0,0, length.out = 15))), 
+                                 verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
 
 
@@ -1715,7 +1715,7 @@ for (model_var in names(var_map)) {
   
   if (avail_var == "ts_harv1000_end") {
     plot_data <- plot_data[avail >= 4.0]
-  #} else if (avail_var == "ts_fires_1000_end") {
+    #} else if (avail_var == "ts_fires_1000_end") {
     #plot_data <- plot_data[avail >= 5.0]
   }
   
@@ -2245,50 +2245,50 @@ patchwork::wrap_plots(plot_list, ncol = 4)
 ### --- Winter ----
 gc()
 m.fullmodwinter20step <- glmmTMB(case_ ~ -1 +
-                             I(log((sl_+1)/1000)) +
-                             I(cos(ta_)) +
-                             I(log((sl_+1)/1000)):I(cos(ta_)) +
-                             prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
-                             prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
-                             I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
-                             I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
-                             I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
-                             I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
-                             #I(log(((dist_road_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
-                             I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
-                             I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
-                             I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
-                             I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
-                             I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
-                             #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
-                             #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
-                             
-                             (1|indiv_step_id) +
-                             (0 + I(log((sl_ +1)/1000))|id) +
-                             (0 + I(cos(ta_))|id) +
-                             (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
-                             (0 + prop_forest_250_end|id) +
-                             (0 + prop_veg_250_end|id) +
-                             (0 + (I(log(ts_fires_250_end+1)))|id) +
-                             (0 + (I(log(ts_harv250_end+1)))|id) + 
-                             (0 + I(log((dist_paved_250_end+1)/1000))|id) + 
-                             (0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
-                             #(0 + I(log((dist_road_250_end+1)/1000))|id) + 
-                             (0 + I(log((dist_lfother_250_end+1)/1000))|id) +
-                             (0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
-                             (0 + I(log((dist_placer_250_end+1)/1000))|id) + 
-                             (0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
-                             (0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
-                             #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
-                             #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
-                             
-                             (1|year),
-                           family = poisson(), data = dat.issa.20.winter[,`:=`(year = as.factor(year), 
-                                                                               indiv_step_id = as.factor(indiv_step_id),
-                                                                               id = as.factor(id))],
-                           map= list(theta = factor(c(NA,1:15))),
-                           start = list(theta =c(log(1000), seq(0,0, length.out = 15))), 
-                           verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+                                   I(log((sl_+1)/1000)) +
+                                   I(cos(ta_)) +
+                                   I(log((sl_+1)/1000)):I(cos(ta_)) +
+                                   prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
+                                   prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
+                                   I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
+                                   I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
+                                   I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
+                                   I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
+                                   #I(log(((dist_road_end+1)/1000))) + I(log((dist_road_250_end/1000)+1)):I(log((dist_road_1000_end/1000)+1)) +
+                                   I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
+                                   I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
+                                   I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
+                                   I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
+                                   I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
+                                   #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
+                                   #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
+                                   
+                                   (1|indiv_step_id) +
+                                   (0 + I(log((sl_ +1)/1000))|id) +
+                                   (0 + I(cos(ta_))|id) +
+                                   (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                                   (0 + prop_forest_250_end|id) +
+                                   (0 + prop_veg_250_end|id) +
+                                   (0 + (I(log(ts_fires_250_end+1)))|id) +
+                                   (0 + (I(log(ts_harv250_end+1)))|id) + 
+                                   (0 + I(log((dist_paved_250_end+1)/1000))|id) + 
+                                   (0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
+                                   #(0 + I(log((dist_road_250_end+1)/1000))|id) + 
+                                   (0 + I(log((dist_lfother_250_end+1)/1000))|id) +
+                                   (0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
+                                   (0 + I(log((dist_placer_250_end+1)/1000))|id) + 
+                                   (0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
+                                   (0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
+                                   #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
+                                   #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
+                                   
+                                   (1|year),
+                                 family = poisson(), data = dat.issa.20.winter[,`:=`(year = as.factor(year), 
+                                                                                     indiv_step_id = as.factor(indiv_step_id),
+                                                                                     id = as.factor(id))],
+                                 map= list(theta = factor(c(NA,1:15))),
+                                 start = list(theta =c(log(1000), seq(0,0, length.out = 15))), 
+                                 verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
 
 
@@ -2959,50 +2959,50 @@ patchwork::wrap_plots(plot_list, ncol = 4)
 ### ---Year-round ----
 gc()
 m.fullmodroadscomb10step <- glmmTMB(case_ ~ -1 +
-                       I(log((sl_+1)/1000)) +
-                       I(cos(ta_)) +
-                       I(log((sl_+1)/1000)):I(cos(ta_)) +
-                       prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
-                       prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
-                       I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
-                       I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
-                       #I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
-                       #I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
-                       I(log(((dist_road_250_end+1)/1000))) + I(log((dist_road_250_end+1)/1000)):I(log((dist_road_1000_end+1)/1000)) +
-                       I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
-                       I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
-                       I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
-                       I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
-                       I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
-                       #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
-                       #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
-                       
-                       (1|indiv_step_id) +
-                       (0 + I(log((sl_ +1)/1000))|id) +
-                       (0 + I(cos(ta_))|id) +
-                       (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
-                       (0 + prop_forest_250_end|id) +
-                       (0 + prop_veg_250_end|id) +
-                       (0 + (I(log(ts_fires_250_end+1)))|id) +
-                       (0 + (I(log(ts_harv250_end+1)))|id) + 
-                       #(0 + I(log((dist_paved_250_end+1)/1000))|id) + 
-                       #(0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
-                       (0 + I(log((dist_road_250_end+1)/1000))|id) + 
-                       (0 + I(log((dist_lfother_250_end+1)/1000))|id) +
-                       (0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
-                       (0 + I(log((dist_placer_250_end+1)/1000))|id) + 
-                       (0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
-                       (0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
-                       #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
-                       #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
-                       
-                       (1|year),
-                     family = poisson(), data = dat.issa.10[,`:=`(year = as.factor(year), 
-                                                                  indiv_step_id = as.factor(indiv_step_id),
-                                                                  id = as.factor(id))],
-                     map= list(theta = factor(c(NA,1:14))),
-                     start = list(theta =c(log(1000), seq(0,0, length.out = 14))), 
-                     verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+                                      I(log((sl_+1)/1000)) +
+                                      I(cos(ta_)) +
+                                      I(log((sl_+1)/1000)):I(cos(ta_)) +
+                                      prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
+                                      prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
+                                      I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
+                                      I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
+                                      #I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
+                                      #I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
+                                      I(log(((dist_road_250_end+1)/1000))) + I(log((dist_road_250_end+1)/1000)):I(log((dist_road_1000_end+1)/1000)) +
+                                      I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
+                                      I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
+                                      I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
+                                      I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
+                                      I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
+                                      #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
+                                      #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
+                                      
+                                      (1|indiv_step_id) +
+                                      (0 + I(log((sl_ +1)/1000))|id) +
+                                      (0 + I(cos(ta_))|id) +
+                                      (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                                      (0 + prop_forest_250_end|id) +
+                                      (0 + prop_veg_250_end|id) +
+                                      (0 + (I(log(ts_fires_250_end+1)))|id) +
+                                      (0 + (I(log(ts_harv250_end+1)))|id) + 
+                                      #(0 + I(log((dist_paved_250_end+1)/1000))|id) + 
+                                      #(0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
+                                      (0 + I(log((dist_road_250_end+1)/1000))|id) + 
+                                      (0 + I(log((dist_lfother_250_end+1)/1000))|id) +
+                                      (0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
+                                      (0 + I(log((dist_placer_250_end+1)/1000))|id) + 
+                                      (0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
+                                      (0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
+                                      #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
+                                      #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
+                                      
+                                      (1|year),
+                                    family = poisson(), data = dat.issa.10[,`:=`(year = as.factor(year), 
+                                                                                 indiv_step_id = as.factor(indiv_step_id),
+                                                                                 id = as.factor(id))],
+                                    map= list(theta = factor(c(NA,1:14))),
+                                    start = list(theta =c(log(1000), seq(0,0, length.out = 14))), 
+                                    verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
 
 
@@ -3134,7 +3134,7 @@ for (model_var in names(var_map)) {
   
   if (avail_var == "ts_harv1000_end") {
     plot_data <- plot_data[avail >= 4.4]
-    } else if (avail_var == "ts_fires_1000_end") {
+  } else if (avail_var == "ts_fires_1000_end") {
     plot_data <- plot_data[avail >= 4.9]
   }
   
@@ -3621,50 +3621,50 @@ patchwork::wrap_plots(plot_list, ncol = 4)
 ### ---Summer ----
 gc()
 m.fullmodsummerroadscomb20step <- glmmTMB(case_ ~ -1 +
-                             I(log((sl_+1)/1000)) +
-                             I(cos(ta_)) +
-                             I(log((sl_+1)/1000)):I(cos(ta_)) +
-                             prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
-                             prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
-                             I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
-                             I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
-                             #I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
-                             #I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
-                             I(log(((dist_road_250_end+1)/1000))) + I(log((dist_road_250_end+1)/1000)):I(log((dist_road_1000_end+1)/1000)) +
-                             I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
-                             I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
-                             I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
-                             I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
-                             I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
-                             #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
-                             #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
-                             
-                             (1|indiv_step_id) +
-                             (0 + I(log((sl_ +1)/1000))|id) +
-                             (0 + I(cos(ta_))|id) +
-                             (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
-                             (0 + prop_forest_250_end|id) +
-                             (0 + prop_veg_250_end|id) +
-                             (0 + (I(log(ts_fires_250_end+1)))|id) +
-                             (0 + (I(log(ts_harv250_end+1)))|id) + 
-                             #(0 + I(log((dist_paved_250_end+1)/1000))|id) + 
-                             #(0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
-                             (0 + I(log((dist_road_250_end+1)/1000))|id) + 
-                             (0 + I(log((dist_lfother_250_end+1)/1000))|id) +
-                             (0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
-                             (0 + I(log((dist_placer_250_end+1)/1000))|id) + 
-                             (0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
-                             (0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
-                             #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
-                             #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
-                             
-                             (1|year),
-                           family = poisson(), data = dat.issa.20.summer[,`:=`(year = as.factor(year), 
-                                                                               indiv_step_id = as.factor(indiv_step_id),
-                                                                               id = as.factor(id))],
-                           map= list(theta = factor(c(NA,1:14))),
-                           start = list(theta =c(log(1000), seq(0,0, length.out = 14))), 
-                           verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+                                            I(log((sl_+1)/1000)) +
+                                            I(cos(ta_)) +
+                                            I(log((sl_+1)/1000)):I(cos(ta_)) +
+                                            prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
+                                            prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
+                                            I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
+                                            I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
+                                            #I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
+                                            #I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
+                                            I(log(((dist_road_250_end+1)/1000))) + I(log((dist_road_250_end+1)/1000)):I(log((dist_road_1000_end+1)/1000)) +
+                                            I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
+                                            I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
+                                            I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
+                                            I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
+                                            I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
+                                            #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
+                                            #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
+                                            
+                                            (1|indiv_step_id) +
+                                            (0 + I(log((sl_ +1)/1000))|id) +
+                                            (0 + I(cos(ta_))|id) +
+                                            (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                                            (0 + prop_forest_250_end|id) +
+                                            (0 + prop_veg_250_end|id) +
+                                            (0 + (I(log(ts_fires_250_end+1)))|id) +
+                                            (0 + (I(log(ts_harv250_end+1)))|id) + 
+                                            #(0 + I(log((dist_paved_250_end+1)/1000))|id) + 
+                                            #(0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
+                                            (0 + I(log((dist_road_250_end+1)/1000))|id) + 
+                                            (0 + I(log((dist_lfother_250_end+1)/1000))|id) +
+                                            (0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
+                                            (0 + I(log((dist_placer_250_end+1)/1000))|id) + 
+                                            (0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
+                                            (0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
+                                            #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
+                                            #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
+                                            
+                                            (1|year),
+                                          family = poisson(), data = dat.issa.20.summer[,`:=`(year = as.factor(year), 
+                                                                                              indiv_step_id = as.factor(indiv_step_id),
+                                                                                              id = as.factor(id))],
+                                          map= list(theta = factor(c(NA,1:14))),
+                                          start = list(theta =c(log(1000), seq(0,0, length.out = 14))), 
+                                          verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
 
 
@@ -3794,8 +3794,8 @@ for (model_var in names(var_map)) {
   
   if (avail_var == "ts_harv1000_end") {
     plot_data <- plot_data[avail >= 4.3]
-  #} else if (avail_var == "ts_fires_1000_end") {
-   # plot_data <- plot_data[avail >= 4.9]
+    #} else if (avail_var == "ts_fires_1000_end") {
+    # plot_data <- plot_data[avail >= 4.9]
   }
   
   p <- ggplot(plot_data, aes(x = avail, y = slope)) +
@@ -4277,50 +4277,50 @@ patchwork::wrap_plots(plot_list, ncol = 4)
 ### ---Winter ----
 gc()
 m.fullmodwinterroadscomb20step <- glmmTMB(case_ ~ -1 +
-                             I(log((sl_+1)/1000)) +
-                             I(cos(ta_)) +
-                             I(log((sl_+1)/1000)):I(cos(ta_)) +
-                             prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
-                             prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
-                             I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
-                             I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
-                             #I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
-                             #I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
-                             I(log(((dist_road_250_end+1)/1000))) + I(log((dist_road_250_end+1)/1000)):I(log((dist_road_1000_end+1)/1000)) +
-                             I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
-                             I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
-                             I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
-                             I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
-                             I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
-                             #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
-                             #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
-                             
-                             (1|indiv_step_id) +
-                             (0 + I(log((sl_ +1)/1000))|id) +
-                             (0 + I(cos(ta_))|id) +
-                             (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
-                             (0 + prop_forest_250_end|id) +
-                             (0 + prop_veg_250_end|id) +
-                             (0 + (I(log(ts_fires_250_end+1)))|id) +
-                             (0 + (I(log(ts_harv250_end+1)))|id) + 
-                             #(0 + I(log((dist_paved_250_end+1)/1000))|id) + 
-                             #(0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
-                             (0 + I(log((dist_road_250_end+1)/1000))|id) + 
-                             (0 + I(log((dist_lfother_250_end+1)/1000))|id) +
-                             (0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
-                             (0 + I(log((dist_placer_250_end+1)/1000))|id) + 
-                             (0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
-                             (0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
-                             #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
-                             #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
-                             
-                             (1|year),
-                           family = poisson(), data = dat.issa.20.winter[,`:=`(year = as.factor(year), 
-                                                                               indiv_step_id = as.factor(indiv_step_id),
-                                                                               id = as.factor(id))],
-                           map= list(theta = factor(c(NA,1:14))),
-                           start = list(theta =c(log(1000), seq(0,0, length.out = 14))), 
-                           verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+                                            I(log((sl_+1)/1000)) +
+                                            I(cos(ta_)) +
+                                            I(log((sl_+1)/1000)):I(cos(ta_)) +
+                                            prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
+                                            prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
+                                            I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
+                                            I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
+                                            #I(log((dist_paved_250_end+1)/1000)) + I(log((dist_paved_250_end+1)/1000)):I(log((dist_paved_1000_end+1)/1000)) +
+                                            #I(log((dist_unpaved_250_end+1)/1000)) + I(log((dist_unpaved_250_end+1)/1000)):I(log((dist_unpaved_1000_end+1)/1000)) +
+                                            I(log(((dist_road_250_end+1)/1000))) + I(log((dist_road_250_end+1)/1000)):I(log((dist_road_1000_end+1)/1000)) +
+                                            I(log((dist_lfother_250_end+1)/1000)) + I(log((dist_lfother_250_end+1)/1000)):I(log((dist_lfother_1000_end+1)/1000)) +
+                                            I(log((dist_otherpoly_250_end+1)/1000)) + I(log((dist_otherpoly_250_end+1)/1000)):I(log((dist_otherpoly_1000_end+1)/1000)) +
+                                            I(log((dist_placer_250_end+1)/1000)) + I(log((dist_placer_250_end+1)/1000)):I(log((dist_placer_1000_end+1)/1000)) +
+                                            I(log((dist_quartz_250_end+1)/1000)) + I(log((dist_quartz_250_end+1)/1000)):I(log((dist_quartz_1000_end+1)/1000)) +
+                                            I(log((dist_othermines_250_end+1)/1000)) + I(log((dist_othermines_250_end+1)/1000)):I(log((dist_othermines_1000_end+1)/1000)) +
+                                            #I(log((dist_mines_250_end+1)/1000)) + I(log((dist_mines_250_end+1)/1000)):I(log((dist_mines_1000_end+1)/1000)) +
+                                            #I(log((dist_otherdisturbance_250_end+1)/1000)) + I(log((dist_otherdisturbance_250_end+1)/1000)):I(log((dist_otherdisturbance_1000_end+1)/1000)) +
+                                            
+                                            (1|indiv_step_id) +
+                                            (0 + I(log((sl_ +1)/1000))|id) +
+                                            (0 + I(cos(ta_))|id) +
+                                            (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                                            (0 + prop_forest_250_end|id) +
+                                            (0 + prop_veg_250_end|id) +
+                                            (0 + (I(log(ts_fires_250_end+1)))|id) +
+                                            (0 + (I(log(ts_harv250_end+1)))|id) + 
+                                            #(0 + I(log((dist_paved_250_end+1)/1000))|id) + 
+                                            #(0 + I(log((dist_unpaved_250_end+1)/1000))|id) + 
+                                            (0 + I(log((dist_road_250_end+1)/1000))|id) + 
+                                            (0 + I(log((dist_lfother_250_end+1)/1000))|id) +
+                                            (0 + I(log((dist_otherpoly_250_end+1)/1000))|id) + 
+                                            (0 + I(log((dist_placer_250_end+1)/1000))|id) + 
+                                            (0 + I(log((dist_quartz_250_end+1)/1000))|id) + 
+                                            (0 + I(log((dist_othermines_250_end+1)/1000))|id) + 
+                                            #(0 + I(log((dist_mines_250_end+1)/1000))|id) + 
+                                            #(0 + I(log((dist_otherdisturbance_250_end+1)/1000))|id) + 
+                                            
+                                            (1|year),
+                                          family = poisson(), data = dat.issa.20.winter[,`:=`(year = as.factor(year), 
+                                                                                              indiv_step_id = as.factor(indiv_step_id),
+                                                                                              id = as.factor(id))],
+                                          map= list(theta = factor(c(NA,1:14))),
+                                          start = list(theta =c(log(1000), seq(0,0, length.out = 14))), 
+                                          verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
 
 
@@ -4449,9 +4449,9 @@ for (model_var in names(var_map)) {
   }
   
   #if (avail_var == "ts_harv1000_end") {
-    #plot_data <- plot_data[avail >= 4.3]
-    #} else if (avail_var == "ts_fires_1000_end") {
-    # plot_data <- plot_data[avail >= 4.9]
+  #plot_data <- plot_data[avail >= 4.3]
+  #} else if (avail_var == "ts_fires_1000_end") {
+  # plot_data <- plot_data[avail >= 4.9]
   #}
   require(ggplot2)
   p <- ggplot(plot_data, aes(x = avail, y = slope)) +
@@ -4942,36 +4942,36 @@ patchwork::wrap_plots(plot_list, ncol = 4)
 ### ---- Year-round ----
 gc()
 m.simple15step <- glmmTMB(case_ ~ -1 +
-                                I(log((sl_+1)/1000)) +
-                                I(cos(ta_)) +
-                                I(log((sl_+1)/1000)):I(cos(ta_)) +
-                                prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
-                                prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
-                                I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
-                                I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
-                                I(log((dist_lf_250_end+1)/1000)) + I(log((dist_lf_250_end+1)/1000)):I(log((dist_lf_1000_end+1)/1000)) +
-                                I(log((dist_poly_250_end+1)/1000)) + I(log((dist_poly_250_end+1)/1000)):I(log((dist_poly_1000_end+1)/1000)) +
-                                
-                                            
-                                (1|indiv_step_id) +
-                                (0 + I(log((sl_ +1)/1000))|id) +
-                                (0 + I(cos(ta_))|id) +
-                                (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
-                                (0 + prop_forest_250_end|id) +
-                                (0 + prop_veg_250_end|id) +
-                                (0 + (I(log(ts_fires_250_end+1)))|id) +
-                                (0 + (I(log(ts_harv250_end+1)))|id) + 
-                                (0 + I(log((dist_lf_250_end+1)/1000))|id) + 
-                                (0 + I(log((dist_poly_250_end+1)/1000))|id) + 
-                                
-                                      
-                                (1|year),
-                               family = poisson(), data = dat.issa.15[,`:=`(year = as.factor(year), 
-                                                                                  indiv_step_id = as.factor(indiv_step_id),
-                                                                                  id = as.factor(id))],
-                               map= list(theta = factor(c(NA,1:10))),
-                               start = list(theta =c(log(1000), seq(0,0, length.out = 10))), 
-                               verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+                            I(log((sl_+1)/1000)) +
+                            I(cos(ta_)) +
+                            I(log((sl_+1)/1000)):I(cos(ta_)) +
+                            prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
+                            prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
+                            I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
+                            I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
+                            I(log((dist_lf_250_end+1)/1000)) + I(log((dist_lf_250_end+1)/1000)):I(log((dist_lf_1000_end+1)/1000)) +
+                            I(log((dist_poly_250_end+1)/1000)) + I(log((dist_poly_250_end+1)/1000)):I(log((dist_poly_1000_end+1)/1000)) +
+                            
+                            
+                            (1|indiv_step_id) +
+                            (0 + I(log((sl_ +1)/1000))|id) +
+                            (0 + I(cos(ta_))|id) +
+                            (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                            (0 + prop_forest_250_end|id) +
+                            (0 + prop_veg_250_end|id) +
+                            (0 + (I(log(ts_fires_250_end+1)))|id) +
+                            (0 + (I(log(ts_harv250_end+1)))|id) + 
+                            (0 + I(log((dist_lf_250_end+1)/1000))|id) + 
+                            (0 + I(log((dist_poly_250_end+1)/1000))|id) + 
+                            
+                            
+                            (1|year),
+                          family = poisson(), data = dat.issa.15[,`:=`(year = as.factor(year), 
+                                                                       indiv_step_id = as.factor(indiv_step_id),
+                                                                       id = as.factor(id))],
+                          map= list(theta = factor(c(NA,1:10))),
+                          start = list(theta =c(log(1000), seq(0,0, length.out = 10))), 
+                          verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
 
 
@@ -5023,36 +5023,36 @@ ggplot() +
 ### ---- Summer ----
 gc()
 m.simplesum20step <- glmmTMB(case_ ~ -1 +
-                      I(log((sl_+1)/1000)) +
-                      I(cos(ta_)) +
-                      I(log((sl_+1)/1000)):I(cos(ta_)) +
-                      prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
-                      prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
-                      I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
-                      I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
-                      I(log((dist_lf_250_end+1)/1000)) + I(log((dist_lf_250_end+1)/1000)):I(log((dist_lf_1000_end+1)/1000)) +
-                      I(log((dist_poly_250_end+1)/1000)) + I(log((dist_poly_250_end+1)/1000)):I(log((dist_poly_1000_end+1)/1000)) +
-                      
-                      
-                      (1|indiv_step_id) +
-                      (0 + I(log((sl_ +1)/1000))|id) +
-                      (0 + I(cos(ta_))|id) +
-                      (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
-                      (0 + prop_forest_250_end|id) +
-                      (0 + prop_veg_250_end|id) +
-                      (0 + (I(log(ts_fires_250_end+1)))|id) +
-                      (0 + (I(log(ts_harv250_end+1)))|id) + 
-                      (0 + I(log((dist_lf_250_end+1)/1000))|id) + 
-                      (0 + I(log((dist_poly_250_end+1)/1000))|id) + 
-                      
-                      
-                      (1|year),
-                    family = poisson(), data = dat.issa.20.summer[,`:=`(year = as.factor(year), 
-                                                                 indiv_step_id = as.factor(indiv_step_id),
-                                                                 id = as.factor(id))],
-                    map= list(theta = factor(c(NA,1:10))),
-                    start = list(theta =c(log(1000), seq(0,0, length.out = 10))), 
-                    verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+                               I(log((sl_+1)/1000)) +
+                               I(cos(ta_)) +
+                               I(log((sl_+1)/1000)):I(cos(ta_)) +
+                               prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
+                               prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
+                               I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
+                               I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
+                               I(log((dist_lf_250_end+1)/1000)) + I(log((dist_lf_250_end+1)/1000)):I(log((dist_lf_1000_end+1)/1000)) +
+                               I(log((dist_poly_250_end+1)/1000)) + I(log((dist_poly_250_end+1)/1000)):I(log((dist_poly_1000_end+1)/1000)) +
+                               
+                               
+                               (1|indiv_step_id) +
+                               (0 + I(log((sl_ +1)/1000))|id) +
+                               (0 + I(cos(ta_))|id) +
+                               (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                               (0 + prop_forest_250_end|id) +
+                               (0 + prop_veg_250_end|id) +
+                               (0 + (I(log(ts_fires_250_end+1)))|id) +
+                               (0 + (I(log(ts_harv250_end+1)))|id) + 
+                               (0 + I(log((dist_lf_250_end+1)/1000))|id) + 
+                               (0 + I(log((dist_poly_250_end+1)/1000))|id) + 
+                               
+                               
+                               (1|year),
+                             family = poisson(), data = dat.issa.20.summer[,`:=`(year = as.factor(year), 
+                                                                                 indiv_step_id = as.factor(indiv_step_id),
+                                                                                 id = as.factor(id))],
+                             map= list(theta = factor(c(NA,1:10))),
+                             start = list(theta =c(log(1000), seq(0,0, length.out = 10))), 
+                             verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
 
 
@@ -5104,36 +5104,36 @@ ggplot() +
 ### ---- Winter ----
 gc()
 m.simplewin15step <- glmmTMB(case_ ~ -1 +
-                      I(log((sl_+1)/1000)) +
-                      I(cos(ta_)) +
-                      I(log((sl_+1)/1000)):I(cos(ta_)) +
-                      prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
-                      prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
-                      I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
-                      I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
-                      I(log((dist_lf_250_end+1)/1000)) + I(log((dist_lf_250_end+1)/1000)):I(log((dist_lf_1000_end+1)/1000)) +
-                      I(log((dist_poly_250_end+1)/1000)) + I(log((dist_poly_250_end+1)/1000)):I(log((dist_poly_1000_end+1)/1000)) +
-                      
-                      
-                      (1|indiv_step_id) +
-                      (0 + I(log((sl_ +1)/1000))|id) +
-                      (0 + I(cos(ta_))|id) +
-                      (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
-                      (0 + prop_forest_250_end|id) +
-                      (0 + prop_veg_250_end|id) +
-                      (0 + (I(log(ts_fires_250_end+1)))|id) +
-                      (0 + (I(log(ts_harv250_end+1)))|id) + 
-                      (0 + I(log((dist_lf_250_end+1)/1000))|id) + 
-                      (0 + I(log((dist_poly_250_end+1)/1000))|id) + 
-                      
-                      
-                      (1|year),
-                    family = poisson(), data = dat.issa.15.winter[,`:=`(year = as.factor(year), 
-                                                                 indiv_step_id = as.factor(indiv_step_id),
-                                                                 id = as.factor(id))],
-                    map= list(theta = factor(c(NA,1:10))),
-                    start = list(theta =c(log(1000), seq(0,0, length.out = 10))), 
-                    verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
+                               I(log((sl_+1)/1000)) +
+                               I(cos(ta_)) +
+                               I(log((sl_+1)/1000)):I(cos(ta_)) +
+                               prop_forest_250_end + prop_forest_250_end:prop_forest_1000_end +
+                               prop_veg_250_end + prop_veg_250_end:prop_veg_1000_end +
+                               I(log(ts_fires_250_end+1)) + I(log(ts_fires_250_end+1)):I(log(ts_fires_1000_end+1)) +
+                               I(log(ts_harv250_end+1)) + I(log(ts_harv250_end+1)):I(log(ts_harv1000_end+1)) +
+                               I(log((dist_lf_250_end+1)/1000)) + I(log((dist_lf_250_end+1)/1000)):I(log((dist_lf_1000_end+1)/1000)) +
+                               I(log((dist_poly_250_end+1)/1000)) + I(log((dist_poly_250_end+1)/1000)):I(log((dist_poly_1000_end+1)/1000)) +
+                               
+                               
+                               (1|indiv_step_id) +
+                               (0 + I(log((sl_ +1)/1000))|id) +
+                               (0 + I(cos(ta_))|id) +
+                               (0 + I(log((sl_+1)/1000)):I(cos(ta_))|id) +
+                               (0 + prop_forest_250_end|id) +
+                               (0 + prop_veg_250_end|id) +
+                               (0 + (I(log(ts_fires_250_end+1)))|id) +
+                               (0 + (I(log(ts_harv250_end+1)))|id) + 
+                               (0 + I(log((dist_lf_250_end+1)/1000))|id) + 
+                               (0 + I(log((dist_poly_250_end+1)/1000))|id) + 
+                               
+                               
+                               (1|year),
+                             family = poisson(), data = dat.issa.15.winter[,`:=`(year = as.factor(year), 
+                                                                                 indiv_step_id = as.factor(indiv_step_id),
+                                                                                 id = as.factor(id))],
+                             map= list(theta = factor(c(NA,1:10))),
+                             start = list(theta =c(log(1000), seq(0,0, length.out = 10))), 
+                             verbose =TRUE, control = glmmTMBControl(rank_check = "adjust")
 )
 
 
