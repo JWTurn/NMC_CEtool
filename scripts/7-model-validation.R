@@ -381,7 +381,7 @@ finemod.train_full.summer <- glmmTMB(case_ ~ -1 +
 summary(finemod.train_full.summer)
 # save model output
 saveRDS(finemod.train_full.summer, "finemod.train_full.summer.RDS")
-finemod.train_full.summer <- file.path("finemod.train_full.summer.RDS")
+finemod.train_full.summer <- readRDS("finemod.train_full.summer.RDS")
 
 
 #### Full Model Winter ----
@@ -438,7 +438,7 @@ finemod.train_full.winter <- glmmTMB(case_ ~ -1 +
 summary(finemod.train_full.winter)
 # save model output
 saveRDS(finemod.train_full.winter, "finemod.train_full.winter.RDS")
-finemod.train_full.winter <- file.path("finemod.train_full.winter.RDS")
+finemod.train_full.winter <- readRDS("finemod.train_full.winter.RDS")
 
 
 
@@ -524,7 +524,7 @@ finemod.train_simple.summer <- glmmTMB(case_ ~ -1 +
 summary(finemod.train_simple.summer)
 # save model output
 saveRDS(finemod.train_simple.summer, "finemod.train_simple.summer.RDS")
-finemod.train_simple.summer <- file.path("finemod.train_simple.summer.RDS")
+finemod.train_simple.summer <- readRDS("finemod.train_simple.summer.RDS")
 
 
 
@@ -568,7 +568,7 @@ finemod.train_simple.winter <- glmmTMB(case_ ~ -1 +
 summary(finemod.train_simple.winter)
 # save model output
 saveRDS(finemod.train_simple.winter, "finemod.train_simple.winter.RDS")
-finemod.train_simple.winter <- file.path("finemod.train_simple.winter.RDS")
+finemod.train_simple.winter <- readRDS("finemod.train_simple.winter.RDS")
 
 
 ### Full mod roads comb ----
@@ -668,7 +668,7 @@ finemod.train_fullroadscomb.summer <- glmmTMB(case_ ~ -1 +
 summary(finemod.train_fullroadscomb.summer)
 # save model output
 saveRDS(finemod.train_fullroadscomb.summer, "finemod.train_fullroadscomb.summer.RDS")
-finemod.train_fullroadscomb.summer <- file.path("finemod.train_fullroadscomb.summer.RDS")
+finemod.train_fullroadscomb.summer <- readRDS("finemod.train_fullroadscomb.summer.RDS")
 
 
 #### Full mod roads comb winter ----
@@ -718,7 +718,7 @@ finemod.train_fullroadscomb.winter <- glmmTMB(case_ ~ -1 +
 summary(finemod.train_fullroadscomb.winter)
 # save model output
 saveRDS(finemod.train_fullroadscomb.winter, "finemod.train_fullroadscomb.winter.RDS")
-finemod.train_fullroadscomb.winter <- file.path("finemod.train_fullroadscomb.winter.RDS")
+finemod.train_fullroadscomb.winter <- readRDS("finemod.train_fullroadscomb.winter.RDS")
 
 
 ### Coarse mod, pa, fire60 ----
@@ -824,7 +824,6 @@ summary(coarsemod.train.pafire60.summer)
 # save model output
 saveRDS(coarsemod.train.pafire60.summer, "coarsemod.train.pafire60.summer.RDS")
 #coarsemod.train.pafire60.summer <- readRDS("coarsemod.train.pafire60.summer.RDS")
-coarsemod.train.pafire60.summer <- file.path("coarsemod.train.pafire60.summer.RDS")
 
 
 #### Coarse mod, pa, fire60 Winter ----
@@ -877,7 +876,6 @@ summary(coarsemod.train.pafire60.winter)
 # save model output
 saveRDS(coarsemod.train.pafire60.winter, "coarsemod.train.pafire60.winter.RDS")
 #coarsemod.train.pafire60.winter <- readRDS("coarsemod.train.pafire60.winter.RDS")
-coarsemod.train.pafire60.winter <- file.path("coarsemod.train.pafire60.winter.RDS")
 
 
 ### Coarse mod, pa, fire2 ----
@@ -982,7 +980,6 @@ summary(coarsemod.train.pafire2.summer)
 # save model output
 saveRDS(coarsemod.train.pafire2.summer, "coarsemod.train.pafire2.summer.RDS")
 #coarsemod.train.pafire2.summer <- readRDS("coarsemod.train.pafire2.summer.RDS")
-coarsemod.train.pafire2.summer <- file.path("coarsemod.train.pafire2.summer.RDS")
 
 
 
@@ -1036,7 +1033,6 @@ summary(coarsemod.train.pafire2.winter)
 # save model output
 saveRDS(coarsemod.train.pafire2.winter, "coarsemod.train.pafire2.winter.RDS")
 #coarsemod.train.pafire2.winter <- readRDS("coarsemod.train.pafire2.winter.RDS")
-coarsemod.train.pafire2.winter <- file.path("coarsemod.train.pafire2.winter.RDS")
 
 
 ### Coarse mod, lf dens, fire60 ----
@@ -1192,7 +1188,6 @@ summary(coarsemod.train.lfdensfire60.winter)
 # save model output
 saveRDS(coarsemod.train.lfdensfire60.winter, "coarsemod.train.lfdensfire60.winter.RDS")
 #coarsemod.train.lfdensfire60.winter <- readRDS("coarsemod.train.lfdensfire60.winter.RDS")
-coarsemod.train.lfdensfire60.winter <- file.path("coarsemod.train.lfdensfire60.winter.RDS")
 
 
 ### Coarse mod, lf dens, fire2 ----
@@ -1299,7 +1294,6 @@ summary(coarsemod.train.lfdensfire2.summer)
 # save model output
 saveRDS(coarsemod.train.lfdensfire2.summer, "coarsemod.train.lfdensfire2.summer.RDS")
 #coarsemod.train.lfdensfire2.summer <- readRDS("coarsemod.train.lfdensfire2.summer.RDS")
-coarsemod.train.lfdensfire2.summer <- file.path("coarsemod.train.lfdensfire2.summer.RDS")
 
 
 
@@ -1353,7 +1347,6 @@ summary(coarsemod.train.lfdensfire2.winter)
 # save model output
 saveRDS(coarsemod.train.lfdensfire2.winter, "coarsemod.train.lfdensfire2.winter.RDS")
 #coarsemod.train.lfdensfire2.winter <- readRDS("coarsemod.train.lfdensfire2.winter.RDS")
-coarsemod.train.lfdensfire2.winter <- file.path("coarsemod.train.lfdensfire2.winter.RDS")
 
 
 ### Coarse mod, simple, fire60 ----
@@ -1430,8 +1423,6 @@ summary(coarsemod.train.simplefire60.summer)
 # save model output
 saveRDS(coarsemod.train.simplefire60.summer, "coarsemod.train.simplefire60.summer.RDS")
 #coarsemod.train.simplefire60.summer <- readRDS("coarsemod.train.simplefire60.summer.RDS")
-coarsemod.train.simplefire60.summer <- file.path("coarsemod.train.simplefire60.summer.RDS")
-#make_betas_tab(coarsemod.train.simplefire60)
 
 
 
@@ -1471,7 +1462,6 @@ summary(coarsemod.train.simplefire60.winter)
 # save model output
 saveRDS(coarsemod.train.simplefire60.winter, "coarsemod.train.simplefire60.winter.RDS")
 #coarsemod.train.simplefire60.winter <- readRDS("coarsemod.train.simplefire60.winter.RDS")
-coarsemod.train.simplefire60.winter <- file.path("coarsemod.train.simplefire60.winter.RDS")
 
 
 
@@ -1549,7 +1539,6 @@ summary(coarsemod.train.simplefire2.summer)
 # save model output
 saveRDS(coarsemod.train.simplefire2.summer, "coarsemod.train.simplefire2.summer.RDS")
 #coarsemod.train.simplefire2.summer <- readRDS("coarsemod.train.simplefire2.summer.RDS")
-coarsemod.train.simplefire2.summer <- file.path("coarsemod.train.simplefire2.summer.RDS")
 
 
 #### Coarse mod, simple, fire2 Winter ----
@@ -1588,7 +1577,6 @@ summary(coarsemod.train.simplefire2.winter)
 # save model output
 saveRDS(coarsemod.train.simplefire2.winter, "coarsemod.train.simplefire2.winter.RDS")
 #coarsemod.train.simplefire2.winter <- readRDS("coarsemod.train.simplefire2.winter.RDS")
-coarsemod.train.simplefire2.winter <- file.path("coarsemod.train.simplefire2.winter.RDS")
 
 
 
@@ -1705,7 +1693,7 @@ RSFmod.train.minespa <- file.path("RSFmod.train.minespa.RDS")
 finemod.test_full <- finedat.10[year %in% c(2022, 2023, 2024, 2025) & case_ == TRUE]
 finemod.test.summer15 <- finedat.15.summer[year %in% c(2022, 2023, 2024, 2025) & case_ == TRUE]
 finemod.test_winter15 <- finedat.15.winter[year %in% c(2022, 2023, 2024, 2025) & case_ == TRUE]
-finemod.test.summer20 <- finedat.20.summer[year %in% c(2022, 2023, 2024, 2025) & case_ == TRUE]
+finemod.test_summer20 <- finedat.20.summer[year %in% c(2022, 2023, 2024, 2025) & case_ == TRUE]
 finemod.test_winter20 <- finedat.20.winter[year %in% c(2022, 2023, 2024, 2025) & case_ == TRUE]
 finemod.test_simple <- finedat.15[year %in% c(2022, 2023, 2024, 2025) & case_ == TRUE]
 
@@ -1719,7 +1707,13 @@ rsfmod.test[, case_ := TRUE] #Making case_ column to match the issa name
 
 #Make study area
 sArea.finemod <- make_study_area(finemod.test_full, crs, buff = buffer)
+sArea.finemod.summer <- make_study_area(finemod.test_summer20, crs, buff = buffer)
+sArea.finemod.winter <- make_study_area(finemod.test_winter20, crs, buff = buffer)
+
 sArea.coarsemod <- make_study_area(coarsemod.test, crs, buff = buffer)
+sArea.coarsemod.summer <- make_study_area(coarsemod.test.summer, crs, buff = buffer)
+sArea.coarsemod.winter <- make_study_area(coarsemod.test.winter, crs, buff = buffer)
+
 sArea.rsfmod <- make_study_area(rsfmod.test %>% rename(x2_ = x, y2_ = y), crs = crs, buff = buffer)
 
 
@@ -2021,6 +2015,72 @@ cor(propptsbin.myearsfinefull.tot$use.bin, propptsbin.myearsfinefull.tot$prop.pt
 #0.7212121
 
 
+
+#### Full mod Summer ------
+gc()
+testmyearsfinefull.summer.ud <- mod2UD(mod = finemod.train_full.summer, envlayers = rastLand2020.fine, 
+                                studyArea = vect(sArea.finemod.summer))
+plot(testmyearsfinefull.summer.ud)
+
+#saveRDS(testmyearsfinefull.ud, "testmyearsfinefull.ud.rds")
+#testmyearsfinefull.ud <- readRDS("testmyearsfinefull.ud.rds")
+
+gc()
+testmyearsfinefull.summer.prop <- make_prop_use(finemod.test_summer20, crs, testmyearsfinefull.summer.ud)
+
+gc()
+used.bin.myearsfinefull.summer <- make_map_bins(testmyearsfinefull.summer.prop)
+
+colnames(finemod.test_summer20) <- make.unique(colnames(finemod.test_summer20))
+gc()
+propptsbin.myearsfinefull.summer <- pts_in_bins(finemod.test_summer20, testmyearsfinefull.summer.ud)
+plot(propptsbin.myearsfinefull.summer$use.bin, propptsbin.myearsfinefull.summer$prop.pts)
+cor(propptsbin.myearsfinefull.summer$use.bin, propptsbin.myearsfinefull.summer$prop.pts, method = 'spearman')
+#0.5181653
+
+layerCor(c(testmyearsfinefull.summer.ud, used.bin.myearsfinefull.summer), fun = 'pearson', na.rm = T)
+
+propptsbin.myearsfinefull.summer.tot <- pts_in_bins_tot(finemod.test_summer20, testmyearsfinefull.summer.ud)
+
+plot(propptsbin.myearsfinefull.summer.tot$use.bin, propptsbin.myearsfinefull.summer.tot$prop.pts)
+cor(propptsbin.myearsfinefull.summer.tot$use.bin, propptsbin.myearsfinefull.summer.tot$prop.pts, method = 'spearman')
+#0.9636364
+
+
+
+#### Full mod Winter ------
+gc()
+testmyearsfinefull.winter.ud <- mod2UD(mod = finemod.train_full.winter, envlayers = rastLand2020.fine, 
+                                       studyArea = vect(sArea.finemod.winter))
+plot(testmyearsfinefull.winter.ud)
+
+#saveRDS(testmyearsfinefull.ud, "testmyearsfinefull.ud.rds")
+#testmyearsfinefull.ud <- readRDS("testmyearsfinefull.ud.rds")
+
+gc()
+testmyearsfinefull.winter.prop <- make_prop_use(finemod.test_winter20, crs, testmyearsfinefull.winter.ud)
+
+gc()
+used.bin.myearsfinefull.winter <- make_map_bins(testmyearsfinefull.winter.prop)
+
+colnames(finemod.test_winter20) <- make.unique(colnames(finemod.test_winter20))
+gc()
+propptsbin.myearsfinefull.winter <- pts_in_bins(finemod.test_winter20, testmyearsfinefull.winter.ud)
+plot(propptsbin.myearsfinefull.winter$use.bin, propptsbin.myearsfinefull.winter$prop.pts)
+cor(propptsbin.myearsfinefull.winter$use.bin, propptsbin.myearsfinefull.winter$prop.pts, method = 'spearman')
+# 0.1884571
+
+layerCor(c(testmyearsfinefull.winter.ud, used.bin.myearsfinefull.winter), fun = 'pearson', na.rm = T)
+
+propptsbin.myearsfinefull.winter.tot <- pts_in_bins_tot(finemod.test_winter20, testmyearsfinefull.winter.ud)
+
+plot(propptsbin.myearsfinefull.winter.tot$use.bin, propptsbin.myearsfinefull.winter.tot$prop.pts)
+cor(propptsbin.myearsfinefull.winter.tot$use.bin, propptsbin.myearsfinefull.winter.tot$prop.pts, method = 'spearman')
+#0.769697
+
+
+
+
 ### Simple model ----
 gc()
 testmyearsfinesimple.ud <- mod2UD(mod = finemod.train_simple, envlayers = rastLand2020.fine, 
@@ -2051,6 +2111,39 @@ plot(propptsbin.myearsfinesimple.tot$use.bin, propptsbin.myearsfinesimple.tot$pr
 cor(propptsbin.myearsfinesimple.tot$use.bin, propptsbin.myearsfinesimple.tot$prop.pts, method = 'spearman')
 
 #1
+
+
+#### Simple model Summer----
+gc()
+testmyearsfinesimple.summer.ud <- mod2UD(mod = finemod.train_simple.summer, envlayers = rastLand2020.fine, 
+                                  studyArea = vect(sArea.finemod.summer))
+plot(testmyearsfinesimple.summer.ud)
+
+#saveRDS(testmyearsfinesimple.ud, "testmyearsfinesimple.ud.rds")
+#testmyearsfinesimple.ud <- readRDS("testmyearsfinesimple.ud.rds")
+
+gc()
+testmyearsfinesimple.prop <- make_prop_use(finemod.test_simple, crs, testmyearsfinesimple.ud)
+
+gc()
+used.bin.myearsfinesimple <- make_map_bins(testmyearsfinesimple.prop)
+
+colnames(finemod.test_simple) <- make.unique(colnames(finemod.test_simple))
+gc()
+propptsbin.myearsfinesimple <- pts_in_bins(finemod.test_simple, testmyearsfinesimple.ud)
+plot(propptsbin.myearsfinesimple$use.bin, propptsbin.myearsfinesimple$prop.pts)
+cor(propptsbin.myearsfinesimple$use.bin, propptsbin.myearsfinesimple$prop.pts, method = 'spearman')
+#0.5206863
+
+layerCor(c(testmyearsfinesimple.ud, used.bin.myearsfinesimple), fun = 'pearson', na.rm = T)
+
+propptsbin.myearsfinesimple.tot <- pts_in_bins_tot(finemod.test_simple, testmyearsfinesimple.ud)
+
+plot(propptsbin.myearsfinesimple.tot$use.bin, propptsbin.myearsfinesimple.tot$prop.pts)
+cor(propptsbin.myearsfinesimple.tot$use.bin, propptsbin.myearsfinesimple.tot$prop.pts, method = 'spearman')
+
+#1
+
 
 
 ###Full model roads combined ----
