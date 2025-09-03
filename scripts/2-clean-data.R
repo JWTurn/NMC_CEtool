@@ -23,7 +23,7 @@ dat.in <- readRDS(file.path(derived, 'prepDat_nmc.RDS'))
 range(dat.in$longitude, na.rm = T)
 # [1] -140.50307   13.53413
 range(dat.in$latitude, na.rm = T)
-# [1]  0.00000 65.17495
+# [1]  0.00000 65.48225
 
 
 crs <- st_crs(4326)$wkt
@@ -33,6 +33,8 @@ outcrs <- st_crs(3154)
 # 3154 NAD83 (CSRS)/ UTM zone 7N ---- THIS ONE WORKING
 # didn't work
 # 3978, 3979
+
+#canPoly <- st_read('lpr_000b16a_e.shp') For Pete, delete later
 
 canPoly <- st_read(file.path(canada, 'CanadaPoly', 'lpr_000b16a_e.shp'))
 # really using YT, BC, and NWT because of transboundary herds
@@ -56,16 +58,18 @@ plot(dat.within$geometry)
 
 
 DT.filter <- setDT(sfheaders::sf_to_df(dat.within, fill = T))
+#DT.filter[, c("x", "y") := NULL]
+#setnames(DT.filter, old = c("x..1", "y..1"), new = c("x", "y"))
 
 
 # convert from long/lat to NAD83/Canada Atlas Lambert (need units to be m)
 range(DT.filter$x, na.rm = T)
-# [1] -140.5031 -117.3002
+# [1] -140.5031 -120.0000
 range(DT.filter$y, na.rm = T)
-# [1] 49.44640 65.17495
+# [1] 53.92103 65.48225
 quantile(DT.filter$y, na.rm = T)
-# 0%      25%      50%      75%     100% 
-# 49.44640 58.65384 60.10138 61.92756 65.17495 
+#   0%      25%      50%      75%     100% 
+#53.92103 59.36092 61.17853 62.23798 65.48225 
 
 # filter out those that are from the office further south
 DT.filter2 <- DT.filter[y>50]
@@ -79,10 +83,12 @@ dat.trans <- setDT(sfheaders::sf_to_df(out.filter.sf, fill = T))
 
 
 ### initial clean ####
-# remove old collars with infrequent fixes
-dat.gps <- dat.trans[!(duty_cycle %in% c("1 fix every 1-7 d (varied by season see notes)", 
-                                  "1 fix every 5 d", '23-hourly fixes'))]
-# check for duplicated time stamps
+# remove old collars with infrequent fixes - SKIPPING FOR NOW (May 2025)
+#dat.gps <- dat.trans[!(duty_cycle %in% c("1 fix every 1-7 d (varied by season see notes)", 
+                                  #"1 fix every 5 d", '23-hourly fixes'))]
+dat.gps <- dat.trans
+
+# check for duplicated time stamps 
 dat.gps[,any(duplicated(datetime)), by = .(id)]
 
 
@@ -105,10 +111,8 @@ sum.pts <- dat3 %>%
                    deployment.date = as.Date(as.character(min(datetime))),
                    last.date = as.Date(as.character(max(datetime))),
                    number.fix = n_distinct(datetime))
-# there are 11659 fixes from BC with no id... oy veh 
-# also NAs
+ 
 dat.ids <- dat3[!is.na(id)&id!=""]
-
 
 
 coords<- dat.ids%>%st_as_sf(coords = c('x','y'))%>%
@@ -117,7 +121,8 @@ coords<- dat.ids%>%st_as_sf(coords = c('x','y'))%>%
 
 plot(coords$geometry)
 
-# ok major weirdos gone but still some likely not real points
+# ok major weirdos gone but still some likely not real points, two obvious ones removed below.
+
 
 # Clean data for movement ----
 trk <- dat.ids %>%
@@ -126,11 +131,21 @@ trk <- dat.ids %>%
            .t = datetime,
            crs=outcrs,
            all_cols = T) 
+
+#Removing two obvious outliers, two lowest values on y axis
+lowest_values <- trk %>%
+  arrange(y_) %>%
+  slice(1:2)
+
+trk <- anti_join(trk, lowest_values)
+
+
 # Now we plot it
 plot(trk, main = "All Data")
 lines(trk)
 
 # We can also take a look on a map.
+
 trk %>%
  inspect(cluster=FALSE)
 
@@ -180,7 +195,7 @@ range(fixrate$median)
 median(fixrate$median)
 # 8 hours
 mean(fixrate$median)
-# 11.3
+# 10.5
 
 # quick check steps
 
@@ -188,12 +203,12 @@ step.lengths <- unlist(map(trkid$data, step_lengths))
 hist(step.lengths, main="Histogram of step lengths", xlab="Step lengths", ylim = c(0,1000))
 
 median(step.lengths, na.rm = T)
-
+# 325.4736
 
 quantile(diff(trk4$t_))
-# Time differences in secs
-# 0%    25%    50%    75%   100% 
-# 0      0      0      2 601200 
+#Time differences in secs
+#0%     25%     50%     75%    100% 
+#0       0       0       2 6476400 
 
 #  For hourly data, much larger values are still safe.
 
@@ -240,6 +255,7 @@ head(trk7)
 trk7 %>% 
   filter(fast_step_)
 
+
 # We're going to remove a couple of "real" locations and a "fast_rt" location,
 # but we mostly got it right. Here, we can afford to lose a few "real" locations
 # for the sake of cleaning out bad ones.
@@ -271,11 +287,11 @@ trk8a <- trk8 %>%
   unnest(data)
 # How many?
 trk8a %>% 
-  filter(fast_roundtrip_) #93
+  filter(fast_roundtrip_) #27-Pete
 
 ## Get the entries where fast roundtrip == TRUE
 flagged.entries <- trk8a %>% 
-  filter(fast_roundtrip_) %>% #68 observations
+  filter(fast_roundtrip_) %>% #27 observations
   dplyr::mutate(flag.number = 1:n())
 
 ## Select defining columns of interest (we only want id*date combinations that had a fast roundtrip)
@@ -337,9 +353,19 @@ trk9 <- trk8.remove %>%
 trk9 %>% 
   filter(defunct_cluster_) 
 
+#Getting rid of remaining obvious outliers
+trk9_clean <- trk9 %>%
+  filter(y_ >= 6200000, x_ <= 1650000)
+
+
+plot(trk9_clean$x_, trk9_clean$y_,
+     xlab = "Longitude", ylab = "Latitude",
+     pch = 20, col = rgb(0, 0, 1, 0.3), cex = 0.5)
+
+#Much better!
 
 # final ----
-final <- trk9 # down to 1263050 from 1505945
+final <- trk9_clean # down to 1673644 from 1982056
 
 final.dt <- setDT(final)
 
@@ -361,7 +387,7 @@ st_write(sa.union, file.path(derived, 'prepped', 'clean_NMC_20kmBuff.shp'), appe
 
 
 # checking fix rate now clean
-fixrate.clean <- trk9 %>% make_track(x_,y_, t_, crs = crs, all_cols = T) %>% 
+fixrate.clean <- trk9_clean %>% make_track(x_,y_, t_, crs = crs, all_cols = T) %>% 
   nest(data = -"id") %>% 
   mutate(sr = lapply(data, summarize_sampling_rate)) %>%
   dplyr::select(id, sr) %>% unnest(cols = c(sr))
@@ -371,7 +397,7 @@ range(fixrate$median)
 median(fixrate$median)
 # 8 hours
 mean(fixrate$median)
-# 11.3
+# 10.45918
 ### steps ----
 steps <- 
   final %>% 
@@ -382,12 +408,12 @@ hist(step.lengths, ylim = c(0, 1000), main="Histogram of step lengths", xlab="St
 
 range(step.lengths, na.rm = T)
 quantile(step.lengths, na.rm = T)
-# 0%          25%          50%          75%         100% 
-# 0.0000     134.7577     453.0335    1261.1896 1004079.8111 
+#           0%         25%         50%         75%        100% 
+#0.0000    101.7988    358.7581   1052.1574 364213.1197 
 quantile(step.lengths, na.rm = T, probs = c(0.9, 0.95, 0.99))
-# 90%      95%      99% 
-# 2777.656 4302.666 9245.579
+#  90%      95%      99% 
+#2418.884 3859.316 8876.558 
 mean(step.lengths, na.rm = T)
-# 1210.56
+#  989.5847
 
 # there are some REALLY big steps

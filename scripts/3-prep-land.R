@@ -23,7 +23,7 @@ derived <- file.path('data','derived')
 
 canada <- file.path('C:','Users', 'julie', 'Dropbox', 'ActiveDocs', 'Git-local', 'Can_GIS_layers')
 #canada <- file.path('~/Dropbox', 'ActiveDocs', 'Git-local', 'Can_GIS_layers')
-roads.bc <- file.path(canada, 'CA_rd_data', 'canvec', 'canvec_50K_BC_Transport_shp', 'canvec_50K_BC_Transport')
+roads.bc <- file.path(raw, 'CA_rd_data', 'canvec', 'canvec_50K_BC_Transport_shp', 'canvec_50K_BC_Transport')
 # roads.yt <- file.path(canada, 'CA_rd_data', 'canvec', 'canvec_50K_YT_Transport_shp', 'canvec_50K_YT_Transport')
 #roads.bc <- file.path(raw, 'disturbances', 'bc', 'BC_CEF_Integrated_Roads_2021.gdb', 'BC_CE_Integrated_Roads_2021_20210805.gdb')
 roads.yt <- file.path(raw, 'disturbances', 'yukon', 'NMC_LinearFeatures_Reclassified_final_20240517', 'NMC_LinearFeatures_Reclassified_final.shp')
@@ -225,6 +225,7 @@ unpaved.all <- rbind(unpaved.yt, unpaved.nt, bc.unpaved.proj)
 writeVector(unpaved.all, file.path(raw, 'linear_features', 'roadunpaved.shp'))
 
 gc()
+
 # other LFs
 commline <- project(vect(file.path(resmgmt, 'communication_line_1.shp')), crs)
 pipeline <- project(vect(file.path(resmgmt, 'pipeline_1.shp')), crs)
@@ -277,7 +278,6 @@ anthropolys.rast <- rasterize(vect(file.path(raw, 'polygonal_features', 'anthrop
 anthropolys.rast[is.na(anthropolys.rast)]<-0
 mean.anthropolys <- focal(anthropolys.rast, Buff, na.rm = TRUE, pad = TRUE, padValue = 0, fun = 'mean')
 writeRaster(mean.anthropolys, file.path(raw, 'anthroDisturbance', 'antro_polys_prop700.tif'), overwrite = T)
-
 
 
 miningpolys.rast <- rasterize(miningpolys.all, rast(land))

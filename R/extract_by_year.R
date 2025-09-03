@@ -6,7 +6,7 @@ extract_by_year <- function(DT, var, startyr, endyr, maxyr, where = 'end', out =
   #lyr <- vect(layer)
   object_name <- deparse(substitute(var))
   yrs <- startyr:endyr
-  ls_rast <-c(paste0(var, '_', yrs, '.tif'))
+  ls_rast <- setNames(paste0(var, '_', yrs, '.tif'), as.character(yrs))
   names(ls_rast) <- as.character(yrs)
   # one year with gps data but no yearly rasters
   if(endyr < maxyr){
@@ -25,13 +25,13 @@ extract_by_year <- function(DT, var, startyr, endyr, maxyr, where = 'end', out =
   if (where == 'end') {
     DT[, paste(object_name, 'end', sep = "_") := 
          terra::extract(rast(ls_rast[as.integer(names(ls_rast)) == .BY[[1]]]),
-      .SD,
-      cells = FALSE,
-      xy = FALSE,
-      ID = FALSE
-    ),
-    by = year,
-    .SDcols = c(coords_end)]
+                        .SD,
+                        cells = FALSE,
+                        xy = FALSE,
+                        ID = FALSE
+         ),
+       by = year,
+       .SDcols = c(coords_end)]
     
     if (is.null(out)){
       return(DT)

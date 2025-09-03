@@ -1,7 +1,7 @@
 ### Explore Data ====
 # Julie Turner
 # Started: November 2 2023
-
+#Modified: April 28 2025 PB
 require('data.table')
 require('amt')
 require('dplyr')
@@ -18,6 +18,8 @@ canada <- file.path('~/Dropbox', 'ActiveDocs', 'Git-local', 'Can_GIS_layers')
 
 dat.in <- readRDS(file.path(derived, 'prepDat_nmc.RDS'))
 dat <- readRDS(file.path(derived, 'clean_NMC.RDS'))
+#dat.new <- readRDS(file.path(derived, 'clean_NMC.RDS'))
+#dat.old <- readRDS(file.path(derived, 'clean_NMC_old.RDS'))
 mort <- setDT(read_excel(file.path(raw, "Mortality Tracker NEW_20240429.xlsx"), sheet = 'Caribou Mort Tracker'))
 
 crs <- st_crs(3154)
@@ -52,7 +54,7 @@ range(fixrate.clean$median)
 median(fixrate.clean$median)
 # 8 hours
 mean(fixrate.clean$median)
-# 11.1
+# 10.5119
 
 
 ### steps ----
@@ -62,7 +64,6 @@ steps <-
   mutate(track = map(data, ~ mk_track(., x_, y_, t_, crs= crs)))
 step.lengths <- unlist(map(steps$track, step_lengths))
 hist(step.lengths, ylim = c(0, 1000), main="Histogram of step lengths", xlab="Step lengths")
-
 
 
 trk.fr <- dat |> 
@@ -89,15 +90,15 @@ steps.id <- steps.fr |> select(id,  steps)|>
   unnest(cols = steps)
 
 quantile(steps.id$sl_)
-# 0%         25%         50%         75%        100% 
-# 0.00000    73.15349   360.33912  1055.95952 34554.88582 
+#  0%        25%        50%        75%       100% 
+#0.0000   172.0587   486.6992  1220.7022 32015.2891 
 quantile(steps.id$sl_, probs = c(0.9, 0.95, 0.99))
 # 90%      95%      99% 
-# 2366.798 3690.058 7940.462 
+# 2541.657 3868.712 7978.692   
 mean(steps.id$sl_)
-# [1] 914.1802
+# [1] 1033.364
 median(steps.id$sl_)
-# [1] 360.3391
+# [1] 486.6992
 
 
 
@@ -128,10 +129,81 @@ steps.id13 <- steps.fr13 |> select(id,  steps)|>
 # this one has more points
 quantile(steps.id13$sl_)
 # 0%       25%       50%       75%      100% 
-# 0.000   257.667   716.164  1686.861 66248.619 
+# 0.0000   275.1718   748.6220  1743.0098 82427.1468 
 quantile(steps.id13$sl_, probs = c(0.9, 0.95, 0.99))
 # 90%      95%      99% 
-# 3377.296 5033.502 9918.429 
+# 3480.750  5165.166 10171.974 
 mean(steps.id13$sl_)
-# [1] 1393.192
+# [1] 1440.936
+
+
+#Summary stats
+unique_ids_per_prov <- dat[, .(unique_ids = uniqueN(id)), by = prov]
+print(unique_ids_per_prov)
+
+ids <- fixrate.clean$id            # vector of ids
+means <- fixrate.clean$mean        # vector of mean fix rates
+medians <- fixrate.clean$median    # vector of median fix rates
+id_prov_map <- setNames(as.character(dat$prov), as.character(dat$id))
+provs <- id_prov_map[as.character(ids)]
+
+aggregate_by_prov <- function(values, groups, FUN) {
+  tapply(values, groups, FUN, na.rm = TRUE)
+}
+
+mean_fixrate_mean <- aggregate_by_prov(means, provs, mean)
+median_fixrate_mean <- aggregate_by_prov(means, provs, median)
+mean_fixrate_median <- aggregate_by_prov(medians, provs, mean)
+median_fixrate_median <- aggregate_by_prov(medians, provs, median)
+
+summary_df <- data.frame(
+  prov = names(mean_fixrate_mean),
+  mean_fixrate_mean = as.numeric(mean_fixrate_mean),
+  median_fixrate_mean = as.numeric(median_fixrate_mean),
+  mean_fixrate_median = as.numeric(mean_fixrate_median),
+  median_fixrate_median = as.numeric(median_fixrate_median),
+  stringsAsFactors = FALSE
+)
+
+print(summary_df)
+
+
+#How many indivs in the filtered timing datasets?
+library(lubridate)
+dat[, ym := format(t_, "%Y-%m")]
+months_per_id <- dat[, .(n_months = uniqueN(ym)), by = .(id, prov)]
+valid_ids <- months_per_id[n_months > 9]
+individuals_per_prov <- valid_ids[, .N, by = prov]
+print(individuals_per_prov)
+
+
+
+dat[, `:=`(
+  year = year(t_),
+  month = month(t_),
+  day = day(t_)
+)]
+
+dat[, season := fifelse(
+  (month %in% c(11, 12, 1, 2, 3)) | (month == 4 & day <= 15),
+  "winter",
+  fifelse(month %in% c(7, 8, 9), "summer", NA_character_)
+)]
+
+dat[, ym := format(t_, "%Y-%m")]
+
+season_months <- dat[!is.na(season), .(n_months = uniqueN(ym)), by = .(id, prov, season)]
+
+season_wide <- dcast(season_months, id + prov ~ season, value.var = "n_months", fill = 0)
+
+summary <- season_wide[, .(
+  n_summer_ids = sum(summer >= 1),
+  n_winter_ids = sum(winter >= 3)
+), by = prov]
+
+print(summary)
+
+
+
+
 
