@@ -108,9 +108,9 @@ metadat <- rbindlist(move.meta, fill =T)
 move.clean <- move.expand[, .(
   area,
   id = fifelse(
-    "individual_local_identifier" %in% names(.SD) & !all(is.na(individual_local_identifier)),
-    as.character(individual_local_identifier),
-    as.character(deployment_id)
+    area %in% c("SouthernLakes", "ClearCreek") | is.na(individual_local_identifier),
+    as.character(deployment_id),
+    as.character(individual_local_identifier)
   ),
   gps_dop, gps_fix_type_raw, migration_stage,
   gps_satellite_count, gps_twilight, import_marked_outlier,
@@ -122,9 +122,9 @@ move.clean <- move.expand[, .(
 
 meta.clean <- metadat[, .(
   id = fifelse(
-    "individual_local_identifier" %in% names(.SD) & !all(is.na(individual_local_identifier)),
-    as.character(individual_local_identifier),
-    as.character(deployment_id)
+    study_site %in% c("Clear Creek", "Carcross") | is.na(individual_local_identifier),
+    as.character(deployment_id),
+    as.character(individual_local_identifier)
   ),
   deploy_on_timestamp,
   deploy_off_timestamp,
