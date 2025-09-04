@@ -2,7 +2,8 @@
 # Julie Turner
 # Started: July 14 2023
 
-#Modified by Peter Baker April 23 2025
+# Modified by Peter Baker April 23 2025
+# Modified by Katie Florko Sept 4 2025
 .libPaths()
 
 # require(Require)
@@ -43,8 +44,8 @@ dsNames <-c('Aishihik Caribou', 'Bonnet Plume caribou - Yukon Collars', 'Clear C
 
 # make a list of all data from Movebank
 # TODO: update this with prepInputs()
-# LAST downloaded May 2025
-#Missing southern lakes, and clear lakes caribou
+# LAST downloaded Sept 2025
+
 move <- list()
 for (ds in 1:length(dsNames)) {
   #hh = 1
