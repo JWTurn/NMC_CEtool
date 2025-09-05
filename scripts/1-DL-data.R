@@ -259,6 +259,43 @@ bcpc.clean <- bcpc_dt[, .(
 )]
 
 
+# Data from Kelsey Russell - Chisana
+# Read shapefile (already in WGS84, so no transform needed)
+bcc <- st_read(file.path("raw", "Chisana Locations_SHP_2020-Mar2023",
+                          "Chisana Locations_SHP_2020-Mar2023",
+                          "CHCH_All_Locations_3_8_2023.shp"))
+
+# Extract coordinates from geometry
+coords <- st_coordinates(bcc)
+
+# Convert to data.table without geometry
+bcc_dt <- as.data.table(st_drop_geometry(bcc))
+bcc_dt[, `:=`(
+  longitude = coords[, 1],
+  latitude  = coords[, 2]
+)]
+
+# Ensure datetime is POSIXct
+bcc_dt[, LocalDateT := as.POSIXct(LocalDateT, tz = "UTC")]
+
+# Add deploy_start / deploy_end per animal ID
+bcc_dt[, `:=`(
+  deploy_start = min(LocalDateT),
+  deploy_end   = max(LocalDateT)
+), by = .(AnimalId)]
+
+# Clean to match other bc data
+bcc.clean <- bcc_dt[, .(
+  prov = 'yt',
+  area = "Chisana",
+  id = as.character(AnimalId),
+  deployment_end_type = NA,  # fill if mortality info exists
+  deploy_start,
+  deploy_end,
+  datetime = LocalDateT,
+  longitude,
+  latitude
+)]
 
 
 
