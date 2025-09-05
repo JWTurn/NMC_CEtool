@@ -180,6 +180,49 @@ bcmn.clean <- bcmn.trans[,.(prov = 'bc', area = Pop_Unit, id=as.character(WLH_ID
 
 setnames(bcmn.clean, old = c("Latitude", "Longitude"), new = c("latitude", "longitude"))
 
+
+# Data from Kelsey Russell - Redstone
+# Read shapefile
+bcrs <- st_read(file.path("raw", "Redstone_collar_locations_2002-2007",
+                          "Redstone_collar_locations_2002-2007.shp"))
+
+# Transform to WGS84
+bcrs_wgs84 <- st_transform(bcrs, 4326)
+
+# Extract coords
+coords <- st_coordinates(bcrs_wgs84)
+
+# Convert to data.table without geometry
+bcrs_dt <- as.data.table(st_drop_geometry(bcrs_wgs84))
+bcrs_dt[, `:=`(
+  longitude = coords[, 1],
+  latitude  = coords[, 2]
+)]
+
+# Ensure Date is POSIXct
+bcrs_dt[, Date := as.POSIXct(Date)]
+
+# Add deploy start/end
+bcrs_dt[, `:=`(
+  deploy_start = min(Date),
+  deploy_end   = max(Date)
+), by = .(Id)]
+
+# Clean to match schema
+bcrs.clean <- bcrs_dt[, .(
+  prov = 'nt',
+  area = "Redstone",
+  id = as.character(Id),
+  deployment_end_type = NA,
+  deploy_start,
+  deploy_end,
+  datetime = Date,
+  longitude,
+  latitude)]
+
+
+
+
 # COMBO DATA ----
 yt.clean <- readRDS(file.path(derived, 'data_all_yt.RDS'))
 yt.clean[,prov := 'yt']
