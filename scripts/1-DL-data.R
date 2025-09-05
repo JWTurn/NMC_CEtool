@@ -303,7 +303,9 @@ bcc.clean <- bcc_dt[, .(
 yt.clean <- readRDS(file.path(derived, 'data_all_yt.RDS'))
 yt.clean[,prov := 'yt']
 
-nmc.clean <- rbind(yt.clean, bc.clean, bcmn.clean, fill = T)
+nmc.clean <- rbind(yt.clean, bc.clean, bcmn.clean, 
+                   bcrs.clean, bcpc.clean, bcc.clean, # Kelsey Russell data Sept 2025
+                   fill = T)
 
 # save combo 'clean' data 
 saveRDS(nmc.clean, file.path(derived, 'prepDat_nmc.RDS'))
