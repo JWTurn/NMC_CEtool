@@ -221,7 +221,8 @@ trk5 <- trk4 %>%
   unnest(data) 
 head(trk5)
 
-# Katie update: the flag_duplicates too >12hrs on my computer, here's an option that took 1hr on my computer
+# Katie update: the flag_duplicates too >12hrs on my computer, 
+# here's an option that took 1hr on my computer
 
 # setDT(trk4)
 
@@ -238,11 +239,12 @@ head(trk5)
 #     as.data.table(flag_duplicates(trk, gamma = minutes(15), DOP = "dop2"))
 # }, by = id]
 
-# back to a track
+# back to a track, note I renamed here so you don't overwrite immediately
 # trk5_track <- make_track(
 #   trk5,
 #   x_, y_, t_,
-#   crs = 3154   # your projected CRS
+#   crs=outcrs,
+#   all_cols = T
 # )
 
 
@@ -312,7 +314,7 @@ trk8a <- trk8 %>%
   unnest(data)
 # How many?
 trk8a %>% 
-  filter(fast_roundtrip_) #27-Pete
+  filter(fast_roundtrip_) #27-Pete, 69-Katie
 
 ## Get the entries where fast roundtrip == TRUE
 flagged.entries <- trk8a %>% 
