@@ -234,9 +234,17 @@ head(trk5)
 # # Apply flag_duplicates per id without nest/map overhead
 # trk5 <- trk4[, {
      # Convert this subset to a track_xyt with dop2 included
-    # trk <- make_track(.SD, x_, y_, t_, crs = 3154, dop2 = dop2)
-    # as.data.table(flag_duplicates(trk, gamma = minutes(15), DOP = "dop2"))
+#     trk <- make_track(.SD, x_, y_, t_, crs = 3154, dop2 = dop2)
+#     as.data.table(flag_duplicates(trk, gamma = minutes(15), DOP = "dop2"))
 # }, by = id]
+
+# back to a track
+# trk5_track <- make_track(
+#   trk5,
+#   x_, y_, t_,
+#   crs = 3154   # your projected CRS
+# )
+
 
 # Recall that this function just flags duplicates -- you may decide you didn't
 # like your gamma parameter and want to try again. Let's look.
