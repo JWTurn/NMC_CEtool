@@ -221,6 +221,23 @@ trk5 <- trk4 %>%
   unnest(data) 
 head(trk5)
 
+# Katie update: the flag_duplicates too >12hrs on my computer, here's an option that took 1hr on my computer
+
+# setDT(trk4)
+
+# # Ensure dop2 exists with matching class
+# trk4[, dop2 := fifelse(is.na(gps_dop), as.numeric(11), as.numeric(gps_dop))]
+
+# # Sort once globally by id and t_
+# setkey(trk4, id, t_)
+
+# # Apply flag_duplicates per id without nest/map overhead
+# trk5 <- trk4[, {
+     # Convert this subset to a track_xyt with dop2 included
+    # trk <- make_track(.SD, x_, y_, t_, crs = 3154, dop2 = dop2)
+    # as.data.table(flag_duplicates(trk, gamma = minutes(15), DOP = "dop2"))
+# }, by = id]
+
 # Recall that this function just flags duplicates -- you may decide you didn't
 # like your gamma parameter and want to try again. Let's look.
 trk5 %>% 

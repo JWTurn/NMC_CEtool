@@ -122,7 +122,7 @@ move.clean <- move.expand[, .(
 
 meta.clean <- metadat[, .(
   id = fifelse(
-    study_site %in% c("Clear Creek", "Carcross") | is.na(individual_local_identifier),
+    study_site %in% c("Clear Creek", "Carcross", "Ibex", "Laberge") | is.na(individual_local_identifier),
     as.character(deployment_id),
     as.character(individual_local_identifier)
   ),
