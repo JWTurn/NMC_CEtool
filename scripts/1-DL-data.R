@@ -208,7 +208,7 @@ bcrs_dt[, `:=`(
   deploy_end   = max(Date)
 ), by = .(Id)]
 
-# Clean to match schema
+# Clean to match other bc data
 bcrs.clean <- bcrs_dt[, .(
   prov = 'nt',
   area = "Redstone",
@@ -219,6 +219,45 @@ bcrs.clean <- bcrs_dt[, .(
   datetime = Date,
   longitude,
   latitude)]
+
+# Data from Kelsey Russell - Prairie Creek
+# Read shapefile (already in WGS84, so no transform needed)
+bcpc <- st_read(file.path("raw", "PrairieCreekCaribou_2015-2018",
+                          "PrairieCreekCaribou_2015-2018.shp"))
+
+# Extract coordinates
+coords <- st_coordinates(bcpc)
+
+# Convert to data.table without geometry
+bcpc_dt <- as.data.table(st_drop_geometry(bcpc))
+bcpc_dt[, `:=`(
+  longitude = coords[, 1],
+  latitude  = coords[, 2]
+)]
+
+# Ensure datetime column is POSIXct
+bcpc_dt[, Date_Time := as.POSIXct(Date_Time, tz = "UTC")]
+
+# Add deploy_start / deploy_end per animal ID
+# Using Collar_ID as the unique animal identifier
+bcpc_dt[, `:=`(
+  deploy_start = min(Date_Time),
+  deploy_end   = max(Date_Time)
+), by = .(Collar_ID)]
+
+# Clean to match other bc data
+bcpc.clean <- bcpc_dt[, .(
+  prov = 'nt', 
+  area = "Prairie Creek",
+  id = as.character(Collar_ID),
+  deployment_end_type = NA,  # fill if mortality info exists
+  deploy_start,
+  deploy_end,
+  datetime = Date_Time,
+  longitude,
+  latitude
+)]
+
 
 
 
