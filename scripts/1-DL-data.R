@@ -299,6 +299,33 @@ bcc.clean <- bcc_dt[, .(
 
 
 
+# Zinc data
+zinc <- fread(file.path(raw, "PrairieCreekZincCaribou", 'Prairie Creek Northern Mountain Caribou.csv'))
+
+# Ensure timestamp is POSIXct
+zinc[, timestamp := as.POSIXct(timestamp, tz = "UTC")]
+
+# Add deploy_start / deploy_end per animal
+zinc[, `:=`(
+  deploy_start = min(timestamp),
+  deploy_end   = max(timestamp)
+), by = .(`individual-local-identifier`)]
+
+# Clean to match other data
+zinc.clean <- zinc[, .(
+  prov = "nt",
+  area = "Prairie Creek Zinc",
+  id = as.character(`individual-local-identifier`),
+  deployment_end_type = NA,  # fill if mortality info exists
+  deploy_start,
+  deploy_end,
+  datetime = timestamp,
+  longitude = `location-long`,
+  latitude  = `location-lat`)]
+
+
+
+
 # COMBO DATA ----
 yt.clean <- readRDS(file.path(derived, 'data_all_yt.RDS'))
 yt.clean[,prov := 'yt']
