@@ -223,13 +223,12 @@ step.lengths <- unlist(map(trkid$data, step_lengths))
 hist(step.lengths, main="Histogram of step lengths", xlab="Step lengths", ylim = c(0,1000))
 
 median(step.lengths, na.rm = T)
-# 168.281
+# 171.0468
 
 quantile(diff(trk4$t_))
 #Time differences in secs
-#0%     25%     50%     75%    100% 
-#0       0       0       2 6476400 
-
+# 0%     25%     50%     75%    100% 
+# 0       0       0       3 1281600 
 #  For hourly data, much larger values are still safe.
 
 # making a toy dop col so can filter duplicates but keep unknown DOPs
