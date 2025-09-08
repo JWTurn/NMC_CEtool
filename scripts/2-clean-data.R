@@ -240,23 +240,30 @@ trk5 <- trk4 %>%
   unnest(data) 
 head(trk5)
 
-# Katie update: the flag_duplicates too >12hrs on my computer, 
-# here's an option that took 1hr on my computer
+# Katie update for a quicker/more efficient run:
 
+# Step 1: Convert to data.table
 # setDT(trk4)
 
-# # Ensure dop2 exists with matching class
-# trk4[, dop2 := fifelse(is.na(gps_dop), as.numeric(11), as.numeric(gps_dop))]
+# Step 2: Clean dop2 column with consistent numeric type
+# trk4[, dop2 := fifelse(is.na(as.numeric(gps_dop)), 11, as.numeric(gps_dop))]
 
-# # Sort once globally by id and t_
-# setkey(trk4, id, t_)
+# Step 3: Filter out rows with missing key columns
+# trk4 <- trk4[!is.na(x_) & !is.na(y_) & !is.na(t_) & !is.na(dop2)]
 
-# # Apply flag_duplicates per id without nest/map overhead
+# Step 4: Sort for efficient grouping (use setorder instead of setkey)
+# setorder(trk4, id, t_)
+
+# Step 5: Apply flag_duplicates per id using data.table loop
 # trk5 <- trk4[, {
-     # Convert this subset to a track_xyt with dop2 included
-#     trk <- make_track(.SD, x_, y_, t_, crs = 3154, dop2 = dop2)
-#     as.data.table(flag_duplicates(trk, gamma = minutes(15), DOP = "dop2"))
+  # Restrict to essential columns for speed
+#  trk <- make_track(copy(.SD[, .(x_, y_, t_, dop2)]), x_, y_, t_, crs = 3154, dop2 = dop2)
+  
+  # Apply flag_duplicates and return as data.table
+#  as.data.table(flag_duplicates(trk, gamma = minutes(15), DOP = "dop2"))
 # }, by = id]
+
+
 
 # back to a track, note I renamed here so you don't overwrite immediately
 # trk5_track <- make_track(
