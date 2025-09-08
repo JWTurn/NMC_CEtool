@@ -332,6 +332,7 @@ yt.clean[,prov := 'yt']
 
 nmc.clean <- rbind(yt.clean, bc.clean, bcmn.clean, 
                    bcrs.clean, bcpc.clean, bcc.clean, # Kelsey Russell data Sept 2025
+                   zinc.clean, # zinc data Sept 2025
                    fill = T)
 
 # save combo 'clean' data 

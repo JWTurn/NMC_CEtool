@@ -81,6 +81,26 @@ out.filter.sf <- st_transform(filter.sf, outcrs)
 dat.trans <- setDT(sfheaders::sf_to_df(out.filter.sf, fill = T))
 
 
+# Filter out those that are from the Fort Nelson office
+# Create Fort Nelson point and buffer (5 km radius)
+fort_nelson <- st_sfc(st_point(c(-122.6965, 58.80485)), crs = 4326)
+fort_nelson_proj <- st_transform(fort_nelson, outcrs)
+buffer_5km <- st_buffer(fort_nelson_proj, dist = 5000)
+
+# Flag points within buffer
+out.filter.sf$near_fort_nelson <- st_within(out.filter.sf, buffer_5km, sparse = FALSE)[, 1]
+
+# Plot to confirm
+plot(st_geometry(out.filter.sf), col = "grey", pch = 16, main = "Points Near Fort Nelson")
+plot(st_geometry(buffer_5km), border = "blue", add = TRUE)
+plot(st_geometry(out.filter.sf[out.filter.sf$near_fort_nelson, ]), col = "red", pch = 16, add = TRUE)
+
+# Remove flagged points
+out.filter.sf_fn <- out.filter.sf[!out.filter.sf$near_fort_nelson, ]
+
+# Convert back to data.table
+dat.trans <- setDT(sfheaders::sf_to_df(out.filter.sf_fn, fill = TRUE))
+
 
 ### initial clean ####
 # remove old collars with infrequent fixes - SKIPPING FOR NOW (May 2025)
