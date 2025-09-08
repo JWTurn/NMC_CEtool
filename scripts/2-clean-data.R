@@ -21,9 +21,9 @@ dat.in <- readRDS(file.path(derived, 'prepDat_nmc.RDS'))
 
 # there are definitely outliers/wrong points
 range(dat.in$longitude, na.rm = T)
-# [1] -140.50307   13.53413
+# [1] -142.54516   13.53413
 range(dat.in$latitude, na.rm = T)
-# [1]  0.00000 65.48225
+# [1]  0.00000 65.62536
 
 
 crs <- st_crs(4326)$wkt
@@ -64,12 +64,12 @@ DT.filter <- setDT(sfheaders::sf_to_df(dat.within, fill = T))
 
 # convert from long/lat to NAD83/Canada Atlas Lambert (need units to be m)
 range(DT.filter$x, na.rm = T)
-# [1] -140.5031 -120.0000
+# [1] -141.0181 -120.0000
 range(DT.filter$y, na.rm = T)
-# [1] 53.92103 65.48225
+# [1] 53.92103 65.62536
 quantile(DT.filter$y, na.rm = T)
 #   0%      25%      50%      75%     100% 
-#53.92103 59.36092 61.17853 62.23798 65.48225 
+#53.92103 59.80891 60.57156 62.19685 65.62536  
 
 # filter out those that are from the office further south
 DT.filter2 <- DT.filter[y>50]
@@ -203,7 +203,7 @@ step.lengths <- unlist(map(trkid$data, step_lengths))
 hist(step.lengths, main="Histogram of step lengths", xlab="Step lengths", ylim = c(0,1000))
 
 median(step.lengths, na.rm = T)
-# 325.4736
+# 168.281
 
 quantile(diff(trk4$t_))
 #Time differences in secs
