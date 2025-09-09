@@ -275,6 +275,9 @@ head(trk5)
 #   all_cols = T
 # )
 
+# If you want to overwrite
+# trk5 <- trk5_track
+
 
 # Recall that this function just flags duplicates -- you may decide you didn't
 # like your gamma parameter and want to try again. Let's look.
@@ -420,7 +423,7 @@ plot(trk9_clean$x_, trk9_clean$y_,
 #Much better!
 
 # final ----
-final <- trk9_clean # down to 1673644 from 1982056
+final <- trk9_clean # down to 2,610,193 from 3,338,853
 
 final.dt <- setDT(final)
 
