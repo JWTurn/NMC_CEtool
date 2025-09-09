@@ -467,11 +467,11 @@ hist(step.lengths, ylim = c(0, 1000), main="Histogram of step lengths", xlab="St
 range(step.lengths, na.rm = T)
 quantile(step.lengths, na.rm = T)
 #           0%         25%         50%         75%        100% 
-#0.0000    101.7988    358.7581   1052.1574 364213.1197 
+#0.00000     61.94866    258.68751    849.59703 364213.11965 
 quantile(step.lengths, na.rm = T, probs = c(0.9, 0.95, 0.99))
 #  90%      95%      99% 
-#2418.884 3859.316 8876.558 
+#2074.861 3391.759 8134.163
 mean(step.lengths, na.rm = T)
-#  989.5847
+#  837.3996
 
 # there are some REALLY big steps
