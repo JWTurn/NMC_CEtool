@@ -263,11 +263,13 @@ head(trk5)
 #  as.data.table(flag_duplicates(trk, gamma = minutes(15), DOP = "dop2"))
 # }, by = id]
 
+# Merge flagged results back with full original data
+# trk5_full <- merge(trk5, trk4, by = c("id", "x_", "y_", "t_"), all.x = TRUE)
 
 
-# back to a track, note I renamed here so you don't overwrite immediately
+# Back to a track, note I renamed here so you don't overwrite immediately
 # trk5_track <- make_track(
-#   trk5,
+#   trk5_full,
 #   x_, y_, t_,
 #   crs=outcrs,
 #   all_cols = T
