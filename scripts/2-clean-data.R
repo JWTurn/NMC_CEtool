@@ -82,10 +82,10 @@ dat.trans <- setDT(sfheaders::sf_to_df(out.filter.sf, fill = T))
 
 
 # Filter out those that are from the Fort Nelson office
-# Create Fort Nelson point and buffer (5 km radius)
+# Create Fort Nelson point and buffer (10 km radius)
 fort_nelson <- st_sfc(st_point(c(-122.6965, 58.80485)), crs = 4326)
 fort_nelson_proj <- st_transform(fort_nelson, outcrs)
-buffer_5km <- st_buffer(fort_nelson_proj, dist = 5000)
+buffer_5km <- st_buffer(fort_nelson_proj, dist = 10000)
 
 # Flag points within buffer
 out.filter.sf$near_fort_nelson <- st_within(out.filter.sf, buffer_5km, sparse = FALSE)[, 1]
@@ -413,12 +413,14 @@ trk9 %>%
 
 #Getting rid of remaining obvious outliers
 trk9_clean <- trk9 %>%
-  filter(y_ >= 6200000, x_ <= 1650000)
+  filter(y_ >= 6200000, x_ <= 1650000, y_ <= 7313900)
 
 
 plot(trk9_clean$x_, trk9_clean$y_,
      xlab = "Longitude", ylab = "Latitude",
      pch = 20, col = rgb(0, 0, 1, 0.3), cex = 0.5)
+abline(h = 7314000, col = "red", lty = 2, lwd = 2)
+
 
 #Much better!
 
