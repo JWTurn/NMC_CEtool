@@ -419,7 +419,6 @@ trk9_clean <- trk9 %>%
 plot(trk9_clean$x_, trk9_clean$y_,
      xlab = "Longitude", ylab = "Latitude",
      pch = 20, col = rgb(0, 0, 1, 0.3), cex = 0.5)
-abline(h = 7314000, col = "red", lty = 2, lwd = 2)
 
 
 #Much better!
