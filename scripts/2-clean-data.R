@@ -413,7 +413,7 @@ trk9 %>%
 
 #Getting rid of remaining obvious outliers
 trk9_clean <- trk9 %>%
-  filter(y_ >= 6200000, x_ <= 1650000, y_ <= 7313900)
+  filter(y_ >= 6200000, x_ <= 1650000)
 
 
 plot(trk9_clean$x_, trk9_clean$y_,
@@ -424,7 +424,7 @@ plot(trk9_clean$x_, trk9_clean$y_,
 #Much better!
 
 # final ----
-final <- trk9_clean # down to 2,610,193 from 3,338,853
+final <- trk9_clean # down to 2,610,171 from 3,338,853
 
 final.dt <- setDT(final)
 
