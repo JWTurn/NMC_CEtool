@@ -138,6 +138,25 @@ mean(steps.id13$sl_)
 
 
 #Summary stats
+
+# katie updates
+unique(dat$prov)
+# combine nt and yt
+dat[prov == "nt", prov := "yt"]
+# combine prairie creeks
+dat[area == "Prairie Creek Zinc", area := "PrairieCreek"]
+# combine prairie creeks
+dat[area == "Prairie Creek", area := "PrairieCreek"]
+# combine little rancherias
+dat[area == "LittleRancheriaYT", area := "LittleRancheria"]
+# combine little rancherias
+dat[area == "LittleRancheriaBC", area := "LittleRancheria"]
+# combine little rancherias
+dat[area == "Little Rancheria", area := "LittleRancheria"]
+n_distinct(dat$area)
+unique(dat$area)
+
+dat
 unique_ids_per_prov <- dat[, .(unique_ids = uniqueN(id)), by = prov]
 print(unique_ids_per_prov)
 

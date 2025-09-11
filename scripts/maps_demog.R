@@ -164,7 +164,7 @@ p1 <- ggplot() +
   labs(
     fill = "Years with counts",
     color = "Years with counts",
-    title = "Total Mortalities",
+    title = "Total mortalities",
     x = NULL, y = NULL
   ) +
   theme(
