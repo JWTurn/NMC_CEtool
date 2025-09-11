@@ -504,6 +504,7 @@ steps_table <- final %>%
   # Unnest the nested data so you get a full flat tibble
   unnest(data)
 
+# summarize step length by herd
 step_herd <- steps_table %>%
   group_by(area) %>%
   summarise(
@@ -513,7 +514,7 @@ step_herd <- steps_table %>%
   ) %>%
   arrange(desc(mean_step_length))
 
-
+# summarize step length by prov
 step_prov <- steps_table %>%
   group_by(prov) %>%
   summarise(
@@ -526,3 +527,47 @@ step_prov <- steps_table %>%
 print(step_herd, n = 32)
 print(step_prov)
 
+
+# Add fix intervals (in hours) to steps_table
+fixrate_table <- final %>%
+  nest(data = -id) %>%
+  mutate(track = map(data, ~ mk_track(., x_, y_, t_, crs = outcrs))) %>%
+  mutate(step_data = map(track, ~ quietly(step_lengths)(.)$result)) %>%
+  mutate(fix_rate = map(track, ~ {
+    times <- .$t_
+    diffs <- as.numeric(difftime(times[-1], times[-length(times)], units = "hours"))
+    c(NA, diffs)  # pad with NA to match original rows
+  })) %>%
+  mutate(data = pmap(list(data, step_data, fix_rate), ~ {
+    n <- nrow(..1)
+    sl <- ..2
+    fr <- ..3
+    if (is.null(sl)) sl <- rep(NA_real_, n)
+    if (length(sl) == n - 1) sl <- c(NA, sl)
+    if (length(sl) < n) sl <- c(rep(NA_real_, n - length(sl)), sl)
+    bind_cols(..1, tibble(step_length = sl, fix_rate_hr = fr))
+  })) %>%
+  unnest(data)
+
+# summarize fix rate by herd
+fixrate_herd <- fixrate_table %>%
+  group_by(area) %>%
+  summarise(
+    mean_fix_rate_hr = mean(fix_rate_hr, na.rm = TRUE),
+    median_fix_rate_hr = median(fix_rate_hr, na.rm = TRUE),
+    n_fixes = sum(!is.na(fix_rate_hr))
+  ) %>%
+  arrange(mean_fix_rate_hr)
+
+# summarize fix rate by prov
+fixrate_prov <- fixrate_table %>%
+  group_by(prov) %>%
+  summarise(
+    mean_fix_rate_hr = mean(fix_rate_hr, na.rm = TRUE),
+    median_fix_rate_hr = median(fix_rate_hr, na.rm = TRUE),
+    n_fixes = sum(!is.na(fix_rate_hr))
+  ) %>%
+  arrange(mean_fix_rate_hr)
+
+print(fixrate_herd, n = 32)
+print(fixrate_prov)
