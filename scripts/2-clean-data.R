@@ -476,3 +476,53 @@ mean(step.lengths, na.rm = T)
 #  837.3996
 
 # there are some REALLY big steps
+
+# katie calculate step lengths by herd
+# Compute step lengths and bind them into a full table
+steps_table <- final %>%
+  # Nest the data by 'id' so each individual has their own data chunk
+  nest(data = -id) %>%
+  # Create a track object for each individual using amt::mk_track()
+  mutate(track = map(data, ~ mk_track(., x_, y_, t_, crs = outcrs))) %>%
+  # Compute step lengths quietly (suppressing console output)
+  mutate(step_data = map(track, ~ quietly(step_lengths)(.)$result)) %>%
+  # For each individual, bind the step lengths back to their original data
+  #     - Pad with NA if step lengths are shorter than the number of rows
+  #     - Ensures alignment between movement metrics and GPS points
+  mutate(data = map2(data, step_data, ~ {
+    n <- nrow(.x)           # number of GPS points
+    sl <- .y                # step lengths
+    if (is.null(sl)) {
+      sl <- rep(NA_real_, n)  # if step_lengths failed, pad with NAs
+    } else if (length(sl) == n - 1) {
+      sl <- c(NA, sl)         # pad with NA at the start
+    } else if (length(sl) < n) {
+      sl <- c(rep(NA_real_, n - length(sl)), sl)  # pad to match
+    }
+    bind_cols(.x, tibble(step_length = sl))  # combine with original data
+  })) %>%
+  # Unnest the nested data so you get a full flat tibble
+  unnest(data)
+
+step_herd <- steps_table %>%
+  group_by(area) %>%
+  summarise(
+    mean_step_length = mean(step_length, na.rm = TRUE),
+    median_step_length = median(step_length, na.rm = TRUE),
+    n_steps = sum(!is.na(step_length))
+  ) %>%
+  arrange(desc(mean_step_length))
+
+
+step_prov <- steps_table %>%
+  group_by(prov) %>%
+  summarise(
+    mean_step_length = mean(step_length, na.rm = TRUE),
+    median_step_length = median(step_length, na.rm = TRUE),
+    n_steps = sum(!is.na(step_length))
+  ) %>%
+  arrange(desc(mean_step_length))
+
+print(step_herd, n = 32)
+print(step_prov)
+
