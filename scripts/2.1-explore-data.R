@@ -138,6 +138,106 @@ mean(steps.id13$sl_)
 
 
 #Summary stats
+
+# katie updates
+unique(dat$prov)
+# combine nt and yt
+dat[prov == "nt", prov := "yt"]
+# combine prairie creeks
+dat[area == "Prairie Creek Zinc", area := "PrairieCreek"]
+# combine prairie creeks
+dat[area == "Prairie Creek", area := "PrairieCreek"]
+# combine little rancherias
+dat[area == "LittleRancheriaYT", area := "LittleRancheria"]
+# combine little rancherias
+dat[area == "LittleRancheriaBC", area := "LittleRancheria"]
+# combine little rancherias
+dat[area == "Little Rancheria", area := "LittleRancheria"]
+n_distinct(dat$area)
+unique(dat$area)
+
+#----------------------------
+# Function: rarefy + keep all data + compute steps
+#----------------------------
+rarefy_with_steps <- function(df, target_hours, tol_minutes) {
+  df %>%
+    # Create track object with all original columns
+    make_track(x_, y_, t_, all_cols = TRUE, crs = crs) %>%
+    # Nest by individual
+    nest(data = -"id") %>%
+    mutate(
+      # Rarefy to target interval ± tolerance
+      resamp = map(data, ~ track_resample(.x,
+                                          rate = hours(target_hours),
+                                          tolerance = minutes(tol_minutes))),
+      # Calculate steps for each burst
+      steps  = map(resamp, steps_by_burst),
+      # Join step metrics back to the *end point* of each step
+      resamp_with_steps = map2(resamp, steps, ~ {
+        if (nrow(.y) == 0) {
+          # No steps: fill with NAs
+          .x %>% mutate(step_length = NA_real_,
+                        ta_ = NA_real_,
+                        burst_ = NA_character_)
+        } else {
+          .x %>%
+            left_join(
+              .y %>%
+                rename(step_length = sl_) %>%   # rename sl_ to step_length
+                select(t2_, step_length, ta_, burst_),
+              by = c("t_" = "t2_")
+            )
+        }
+      })
+    ) %>%
+    # Flatten back to one table
+    select(id, resamp_with_steps) %>%
+    unnest(cols = resamp_with_steps) %>%
+    # Tag with the interval used
+    mutate(interval_hours = target_hours)
+}
+
+#----------------------------
+# Run for both 11 h and 13 h ± 120 min
+#----------------------------
+steps_all <- bind_rows(
+  rarefy_with_steps(dat, target_hours = 11, tol_minutes = 120),
+  rarefy_with_steps(dat, target_hours = 13, tol_minutes = 120))
+
+#----------------------------
+# Summarise by herd (area)
+#----------------------------
+step_herd <- steps_all %>%
+  group_by(interval_hours, area) %>%
+  summarise(
+    mean_step_length   = mean(step_length, na.rm = TRUE),
+    median_step_length = median(step_length, na.rm = TRUE),
+    n_steps            = sum(!is.na(step_length)),
+    .groups = "drop") %>%
+  arrange(interval_hours, desc(mean_step_length))
+
+#----------------------------
+# Summarise by province
+#----------------------------
+step_prov <- steps_all %>%
+  group_by(interval_hours, prov) %>%
+  summarise(
+    mean_step_length   = mean(step_length, na.rm = TRUE),
+    median_step_length = median(step_length, na.rm = TRUE),
+    n_steps            = sum(!is.na(step_length)),
+    .groups = "drop") %>%
+  arrange(interval_hours, desc(mean_step_length))
+
+#----------------------------
+# View results
+#----------------------------
+print(step_herd, n = nrow(step_herd))
+print(step_prov, n = nrow(step_prov))
+
+
+# katie end
+
+dat
 unique_ids_per_prov <- dat[, .(unique_ids = uniqueN(id)), by = prov]
 print(unique_ids_per_prov)
 

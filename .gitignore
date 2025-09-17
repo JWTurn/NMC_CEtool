@@ -26,3 +26,5 @@ summary-availability_files/libs/clipboard/
 summary-availability_files/libs/quarto-html/
 
 OLD/
+local_config.R
+

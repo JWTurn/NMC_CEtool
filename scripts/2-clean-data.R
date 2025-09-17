@@ -21,9 +21,9 @@ dat.in <- readRDS(file.path(derived, 'prepDat_nmc.RDS'))
 
 # there are definitely outliers/wrong points
 range(dat.in$longitude, na.rm = T)
-# [1] -140.50307   13.53413
+# [1] -142.54516   13.53413
 range(dat.in$latitude, na.rm = T)
-# [1]  0.00000 65.48225
+# [1]  0.00000 65.62536
 
 
 crs <- st_crs(4326)$wkt
@@ -64,12 +64,12 @@ DT.filter <- setDT(sfheaders::sf_to_df(dat.within, fill = T))
 
 # convert from long/lat to NAD83/Canada Atlas Lambert (need units to be m)
 range(DT.filter$x, na.rm = T)
-# [1] -140.5031 -120.0000
+# [1] -141.0181 -120.0000
 range(DT.filter$y, na.rm = T)
-# [1] 53.92103 65.48225
+# [1] 53.92103 65.62536
 quantile(DT.filter$y, na.rm = T)
 #   0%      25%      50%      75%     100% 
-#53.92103 59.36092 61.17853 62.23798 65.48225 
+#53.92103 59.80891 60.57156 62.19685 65.62536  
 
 # filter out those that are from the office further south
 DT.filter2 <- DT.filter[y>50]
@@ -80,6 +80,26 @@ plot(filter.sf$geometry)
 out.filter.sf <- st_transform(filter.sf, outcrs)
 dat.trans <- setDT(sfheaders::sf_to_df(out.filter.sf, fill = T))
 
+
+# Filter out those that are from the Fort Nelson office
+# Create Fort Nelson point and buffer (10 km radius)
+fort_nelson <- st_sfc(st_point(c(-122.6965, 58.80485)), crs = 4326)
+fort_nelson_proj <- st_transform(fort_nelson, outcrs)
+buffer_5km <- st_buffer(fort_nelson_proj, dist = 10000)
+
+# Flag points within buffer
+out.filter.sf$near_fort_nelson <- st_within(out.filter.sf, buffer_5km, sparse = FALSE)[, 1]
+
+# Plot to confirm
+plot(st_geometry(out.filter.sf), col = "grey", pch = 16, main = "Points Near Fort Nelson")
+plot(st_geometry(buffer_5km), border = "blue", add = TRUE)
+plot(st_geometry(out.filter.sf[out.filter.sf$near_fort_nelson, ]), col = "red", pch = 16, add = TRUE)
+
+# Remove flagged points
+out.filter.sf_fn <- out.filter.sf[!out.filter.sf$near_fort_nelson, ]
+
+# Convert back to data.table
+dat.trans <- setDT(sfheaders::sf_to_df(out.filter.sf_fn, fill = TRUE))
 
 
 ### initial clean ####
@@ -203,13 +223,12 @@ step.lengths <- unlist(map(trkid$data, step_lengths))
 hist(step.lengths, main="Histogram of step lengths", xlab="Step lengths", ylim = c(0,1000))
 
 median(step.lengths, na.rm = T)
-# 325.4736
+# 171.0468
 
 quantile(diff(trk4$t_))
 #Time differences in secs
-#0%     25%     50%     75%    100% 
-#0       0       0       2 6476400 
-
+# 0%     25%     50%     75%    100% 
+# 0       0       0       3 1281600 
 #  For hourly data, much larger values are still safe.
 
 # making a toy dop col so can filter duplicates but keep unknown DOPs
@@ -220,6 +239,45 @@ trk5 <- trk4 %>%
   mutate(data = map(data, ~flag_duplicates(.x, gamma = minutes(15), DOP = "dop2"))) %>%
   unnest(data) 
 head(trk5)
+
+# Katie update for a quicker/more efficient run:
+
+# Step 1: Convert to data.table
+# setDT(trk4)
+
+# Step 2: Clean dop2 column with consistent numeric type
+# trk4[, dop2 := fifelse(is.na(as.numeric(gps_dop)), 11, as.numeric(gps_dop))]
+
+# Step 3: Filter out rows with missing key columns
+# trk4 <- trk4[!is.na(x_) & !is.na(y_) & !is.na(t_) & !is.na(dop2)]
+
+# Step 4: Sort for efficient grouping (use setorder instead of setkey)
+# setorder(trk4, id, t_)
+
+# Step 5: Apply flag_duplicates per id using data.table loop
+# trk5 <- trk4[, {
+  # Restrict to essential columns for speed
+#  trk <- make_track(copy(.SD[, .(x_, y_, t_, dop2)]), x_, y_, t_, crs = 3154, dop2 = dop2)
+  
+  # Apply flag_duplicates and return as data.table
+#  as.data.table(flag_duplicates(trk, gamma = minutes(15), DOP = "dop2"))
+# }, by = id]
+
+# Merge flagged results back with full original data
+# trk5_full <- merge(trk5, trk4, by = c("id", "x_", "y_", "t_"), all.x = TRUE)
+
+
+# Back to a track, note I renamed here so you don't overwrite immediately
+# trk5_track <- make_track(
+#   trk5_full,
+#   x_, y_, t_,
+#   crs=outcrs,
+#   all_cols = T
+# )
+
+# If you want to overwrite
+# trk5 <- trk5_track
+
 
 # Recall that this function just flags duplicates -- you may decide you didn't
 # like your gamma parameter and want to try again. Let's look.
@@ -287,7 +345,7 @@ trk8a <- trk8 %>%
   unnest(data)
 # How many?
 trk8a %>% 
-  filter(fast_roundtrip_) #27-Pete
+  filter(fast_roundtrip_) #27-Pete, 69-Katie
 
 ## Get the entries where fast roundtrip == TRUE
 flagged.entries <- trk8a %>% 
@@ -362,10 +420,11 @@ plot(trk9_clean$x_, trk9_clean$y_,
      xlab = "Longitude", ylab = "Latitude",
      pch = 20, col = rgb(0, 0, 1, 0.3), cex = 0.5)
 
+
 #Much better!
 
 # final ----
-final <- trk9_clean # down to 1673644 from 1982056
+final <- trk9_clean # down to 2,610,171 from 3,338,853
 
 final.dt <- setDT(final)
 
@@ -409,11 +468,106 @@ hist(step.lengths, ylim = c(0, 1000), main="Histogram of step lengths", xlab="St
 range(step.lengths, na.rm = T)
 quantile(step.lengths, na.rm = T)
 #           0%         25%         50%         75%        100% 
-#0.0000    101.7988    358.7581   1052.1574 364213.1197 
+#0.00000     61.94866    258.68751    849.59703 364213.11965 
 quantile(step.lengths, na.rm = T, probs = c(0.9, 0.95, 0.99))
 #  90%      95%      99% 
-#2418.884 3859.316 8876.558 
+#2074.861 3391.759 8134.163
 mean(step.lengths, na.rm = T)
-#  989.5847
+#  837.3996
 
 # there are some REALLY big steps
+
+# katie calculate step lengths by herd
+# Compute step lengths and bind them into a full table
+steps_table <- final %>%
+  # Nest the data by 'id' so each individual has their own data chunk
+  nest(data = -id) %>%
+  # Create a track object for each individual using amt::mk_track()
+  mutate(track = map(data, ~ mk_track(., x_, y_, t_, crs = outcrs))) %>%
+  # Compute step lengths quietly (suppressing console output)
+  mutate(step_data = map(track, ~ quietly(step_lengths)(.)$result)) %>%
+  # For each individual, bind the step lengths back to their original data
+  #     - Pad with NA if step lengths are shorter than the number of rows
+  #     - Ensures alignment between movement metrics and GPS points
+  mutate(data = map2(data, step_data, ~ {
+    n <- nrow(.x)           # number of GPS points
+    sl <- .y                # step lengths
+    if (is.null(sl)) {
+      sl <- rep(NA_real_, n)  # if step_lengths failed, pad with NAs
+    } else if (length(sl) == n - 1) {
+      sl <- c(NA, sl)         # pad with NA at the start
+    } else if (length(sl) < n) {
+      sl <- c(rep(NA_real_, n - length(sl)), sl)  # pad to match
+    }
+    bind_cols(.x, tibble(step_length = sl))  # combine with original data
+  })) %>%
+  # Unnest the nested data so you get a full flat tibble
+  unnest(data)
+
+# summarize step length by herd
+step_herd <- steps_table %>%
+  group_by(area) %>%
+  summarise(
+    mean_step_length = mean(step_length, na.rm = TRUE),
+    median_step_length = median(step_length, na.rm = TRUE),
+    n_steps = sum(!is.na(step_length))
+  ) %>%
+  arrange(desc(mean_step_length))
+
+# summarize step length by prov
+step_prov <- steps_table %>%
+  group_by(prov) %>%
+  summarise(
+    mean_step_length = mean(step_length, na.rm = TRUE),
+    median_step_length = median(step_length, na.rm = TRUE),
+    n_steps = sum(!is.na(step_length))
+  ) %>%
+  arrange(desc(mean_step_length))
+
+print(step_herd, n = 32)
+print(step_prov)
+
+
+# Add fix intervals (in hours) to steps_table
+fixrate_table <- final %>%
+  nest(data = -id) %>%
+  mutate(track = map(data, ~ mk_track(., x_, y_, t_, crs = outcrs))) %>%
+  mutate(step_data = map(track, ~ quietly(step_lengths)(.)$result)) %>%
+  mutate(fix_rate = map(track, ~ {
+    times <- .$t_
+    diffs <- as.numeric(difftime(times[-1], times[-length(times)], units = "hours"))
+    c(NA, diffs)  # pad with NA to match original rows
+  })) %>%
+  mutate(data = pmap(list(data, step_data, fix_rate), ~ {
+    n <- nrow(..1)
+    sl <- ..2
+    fr <- ..3
+    if (is.null(sl)) sl <- rep(NA_real_, n)
+    if (length(sl) == n - 1) sl <- c(NA, sl)
+    if (length(sl) < n) sl <- c(rep(NA_real_, n - length(sl)), sl)
+    bind_cols(..1, tibble(step_length = sl, fix_rate_hr = fr))
+  })) %>%
+  unnest(data)
+
+# summarize fix rate by herd
+fixrate_herd <- fixrate_table %>%
+  group_by(area) %>%
+  summarise(
+    mean_fix_rate_hr = mean(fix_rate_hr, na.rm = TRUE),
+    median_fix_rate_hr = median(fix_rate_hr, na.rm = TRUE),
+    n_fixes = sum(!is.na(fix_rate_hr))
+  ) %>%
+  arrange(mean_fix_rate_hr)
+
+# summarize fix rate by prov
+fixrate_prov <- fixrate_table %>%
+  group_by(prov) %>%
+  summarise(
+    mean_fix_rate_hr = mean(fix_rate_hr, na.rm = TRUE),
+    median_fix_rate_hr = median(fix_rate_hr, na.rm = TRUE),
+    n_fixes = sum(!is.na(fix_rate_hr))
+  ) %>%
+  arrange(mean_fix_rate_hr)
+
+print(fixrate_herd, n = 32)
+print(fixrate_prov)

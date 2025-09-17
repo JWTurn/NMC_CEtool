@@ -2,7 +2,8 @@
 # Julie Turner
 # Started: July 14 2023
 
-#Modified by Peter Baker April 23 2025
+# Modified by Peter Baker April 23 2025
+# Modified by Katie Florko Sept 4 2025
 .libPaths()
 
 # require(Require)
@@ -43,8 +44,8 @@ dsNames <-c('Aishihik Caribou', 'Bonnet Plume caribou - Yukon Collars', 'Clear C
 
 # make a list of all data from Movebank
 # TODO: update this with prepInputs()
-# LAST downloaded May 2025
-#Missing southern lakes, and clear lakes caribou
+# LAST downloaded Sept 2025
+
 move <- list()
 for (ds in 1:length(dsNames)) {
   #hh = 1
@@ -107,9 +108,9 @@ metadat <- rbindlist(move.meta, fill =T)
 move.clean <- move.expand[, .(
   area,
   id = fifelse(
-    "individual_local_identifier" %in% names(.SD) & !all(is.na(individual_local_identifier)),
-    as.character(individual_local_identifier),
-    as.character(deployment_id)
+    area %in% c("SouthernLakes", "ClearCreek") | is.na(individual_local_identifier),
+    as.character(deployment_id),
+    as.character(individual_local_identifier)
   ),
   gps_dop, gps_fix_type_raw, migration_stage,
   gps_satellite_count, gps_twilight, import_marked_outlier,
@@ -121,9 +122,9 @@ move.clean <- move.expand[, .(
 
 meta.clean <- metadat[, .(
   id = fifelse(
-    "individual_local_identifier" %in% names(.SD) & !all(is.na(individual_local_identifier)),
-    as.character(individual_local_identifier),
-    as.character(deployment_id)
+    study_site %in% c("Clear Creek", "Carcross", "Ibex", "Laberge") | is.na(individual_local_identifier),
+    as.character(deployment_id),
+    as.character(individual_local_identifier)
   ),
   deploy_on_timestamp,
   deploy_off_timestamp,
@@ -179,11 +180,160 @@ bcmn.clean <- bcmn.trans[,.(prov = 'bc', area = Pop_Unit, id=as.character(WLH_ID
 
 setnames(bcmn.clean, old = c("Latitude", "Longitude"), new = c("latitude", "longitude"))
 
+
+# Data from Kelsey Russell - Redstone
+# Read shapefile
+bcrs <- st_read(file.path("raw", "Redstone_collar_locations_2002-2007",
+                          "Redstone_collar_locations_2002-2007.shp"))
+
+# Transform to WGS84
+bcrs_wgs84 <- st_transform(bcrs, 4326)
+
+# Extract coords
+coords <- st_coordinates(bcrs_wgs84)
+
+# Convert to data.table without geometry
+bcrs_dt <- as.data.table(st_drop_geometry(bcrs_wgs84))
+bcrs_dt[, `:=`(
+  longitude = coords[, 1],
+  latitude  = coords[, 2]
+)]
+
+# Ensure Date is POSIXct
+bcrs_dt[, Date := as.POSIXct(Date)]
+
+# Add deploy start/end
+bcrs_dt[, `:=`(
+  deploy_start = min(Date),
+  deploy_end   = max(Date)
+), by = .(Id)]
+
+# Clean to match other bc data
+bcrs.clean <- bcrs_dt[, .(
+  prov = 'nt',
+  area = "Redstone",
+  id = as.character(Id),
+  deployment_end_type = NA,
+  deploy_start,
+  deploy_end,
+  datetime = Date,
+  longitude,
+  latitude)]
+
+# Data from Kelsey Russell - Prairie Creek
+# Read shapefile (already in WGS84, so no transform needed)
+bcpc <- st_read(file.path("raw", "PrairieCreekCaribou_2015-2018",
+                          "PrairieCreekCaribou_2015-2018.shp"))
+
+# Extract coordinates
+coords <- st_coordinates(bcpc)
+
+# Convert to data.table without geometry
+bcpc_dt <- as.data.table(st_drop_geometry(bcpc))
+bcpc_dt[, `:=`(
+  longitude = coords[, 1],
+  latitude  = coords[, 2]
+)]
+
+# Ensure datetime column is POSIXct
+bcpc_dt[, Date_Time := as.POSIXct(Date_Time, tz = "UTC")]
+
+# Add deploy_start / deploy_end per animal ID
+# Using Collar_ID as the unique animal identifier
+bcpc_dt[, `:=`(
+  deploy_start = min(Date_Time),
+  deploy_end   = max(Date_Time)
+), by = .(Collar_ID)]
+
+# Clean to match other bc data
+bcpc.clean <- bcpc_dt[, .(
+  prov = 'nt', 
+  area = "Prairie Creek",
+  id = as.character(Collar_ID),
+  deployment_end_type = NA,  # fill if mortality info exists
+  deploy_start,
+  deploy_end,
+  datetime = Date_Time,
+  longitude,
+  latitude
+)]
+
+
+# Data from Kelsey Russell - Chisana
+# Read shapefile (already in WGS84, so no transform needed)
+bcc <- st_read(file.path("raw", "Chisana Locations_SHP_2020-Mar2023",
+                          "Chisana Locations_SHP_2020-Mar2023",
+                          "CHCH_All_Locations_3_8_2023.shp"))
+
+# Extract coordinates from geometry
+coords <- st_coordinates(bcc)
+
+# Convert to data.table without geometry
+bcc_dt <- as.data.table(st_drop_geometry(bcc))
+bcc_dt[, `:=`(
+  longitude = coords[, 1],
+  latitude  = coords[, 2]
+)]
+
+# Ensure datetime is POSIXct
+bcc_dt[, LocalDateT := as.POSIXct(LocalDateT, tz = "UTC")]
+
+# Add deploy_start / deploy_end per animal ID
+bcc_dt[, `:=`(
+  deploy_start = min(LocalDateT),
+  deploy_end   = max(LocalDateT)
+), by = .(AnimalId)]
+
+# Clean to match other bc data
+bcc.clean <- bcc_dt[, .(
+  prov = 'yt',
+  area = "Chisana",
+  id = as.character(AnimalId),
+  deployment_end_type = NA,  # fill if mortality info exists
+  deploy_start,
+  deploy_end,
+  datetime = LocalDateT,
+  longitude,
+  latitude
+)]
+
+
+
+# Zinc data
+zinc <- fread(file.path(raw, "PrairieCreekZincCaribou", 'Prairie Creek Northern Mountain Caribou.csv'))
+
+# Ensure timestamp is POSIXct
+zinc[, timestamp := as.POSIXct(timestamp, tz = "UTC")]
+
+# Add deploy_start / deploy_end per animal
+zinc[, `:=`(
+  deploy_start = min(timestamp),
+  deploy_end   = max(timestamp)
+), by = .(`individual-local-identifier`)]
+
+# Clean to match other data
+zinc.clean <- zinc[, .(
+  prov = "nt",
+  area = "Prairie Creek Zinc",
+  id = as.character(`individual-local-identifier`),
+  deployment_end_type = NA,  # fill if mortality info exists
+  deploy_start,
+  deploy_end,
+  datetime = timestamp,
+  longitude = `location-long`,
+  latitude  = `location-lat`)]
+
+
+
+
 # COMBO DATA ----
 yt.clean <- readRDS(file.path(derived, 'data_all_yt.RDS'))
 yt.clean[,prov := 'yt']
 
-nmc.clean <- rbind(yt.clean, bc.clean, bcmn.clean, fill = T)
+nmc.clean <- rbind(yt.clean, bc.clean, bcmn.clean, 
+                   bcrs.clean, bcpc.clean, bcc.clean, # Kelsey Russell data Sept 2025
+                   zinc.clean, # zinc data Sept 2025
+                   fill = T)
 
 # save combo 'clean' data 
 saveRDS(nmc.clean, file.path(derived, 'prepDat_nmc.RDS'))

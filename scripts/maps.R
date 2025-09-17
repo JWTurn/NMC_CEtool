@@ -23,8 +23,9 @@ ytbc <- subset(canPoly, canPoly$PREABBR %in% c('B.C.', 'Y.T.', 'N.W.T.'))
 ytbc.wgs <- st_transform(ytbc, crs)
 ytbc.ext <- st_bbox(ytbc.wgs)
 nmcherds <- st_read(file.path(raw, "nmcherds2.shp"))
+# katie update: not including migratory herds
+# nmcherds <- st_read("G:/Shared drives/WSC_Yukon/CEtool_component3/demogData/nmc_herds_updated/nmc_herds_updated_merged.shp")
 nmcherds <- st_transform(nmcherds, crs = st_crs(ytbc.wgs))
-
 
 dat.sf <- st_as_sf(dat, coords = c("x_", "y_"), crs = 3154)
 
@@ -78,19 +79,19 @@ town_labels <- towns %>%
 
 
 
-ggplot() +
+map1 <- ggplot() +
   geom_sf(data = ytbc.wgs, fill = "gray95", color = "black") +
-  geom_sf(data = nmcherds, fill = "lightblue", color = "blue", alpha = 0.6) +
-  geom_sf(data = dat.within, color = "red", alpha = 0.01, size = 0.3) +
+  geom_sf(data = nmcherds, fill = "white", color = "grey50", alpha = 0.5) +
+  geom_sf(data = dat.within, color = "#6A00A8FF", alpha = 0.01, size = 0.3) +
   geom_sf(data = towns, size = 1, color = "black") +
   geom_text(data = town_labels, aes(x = x, y = y, label = `Town.Name`), size = 3) +
   geom_text(data = herd_labels, aes(x = x, y = y, label = `Herd.Name`), 
-            size = 3, color = "blue") +
+            size = 3, color = "grey50") +
   
   coord_sf(xlim = c(-141.01807, -118), ylim = c(55, 68), expand = FALSE) +
   theme_minimal() +
   labs(x = NULL, y = NULL)
-
+ggsave("map1.png", plot = map1, width = 6, height = 7.5, units = "in", dpi = 300, device = "png")
 
 #Map 2 is PDE
 dat.sf <- st_transform(dat.sf, 3154)
