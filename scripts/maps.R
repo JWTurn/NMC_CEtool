@@ -1,5 +1,5 @@
 # === Predicted use maps -------------------------------------
-# Peter Baker
+# Peter Baker, Julie Turner, Katie Florko
 # started July 18, 2025
 
 #### Packages ####
@@ -99,6 +99,7 @@ map1 <- ggplot() +
 ggsave("map1.png", plot = map1, width = 6, height = 7.5, units = "in", dpi = 300, device = "png")
 
 #Map 2 is PDE ----
+# quick and dirty -- being updated
 ftNelBuff <- towns |>
   filter(Town.Name == 'Fort Nelson') |>
   st_buffer(30000)
@@ -159,7 +160,10 @@ ggplot() +
   coord_sf(xlim = c(-141.01807, -118), ylim = c(55, 68), expand = FALSE) +
   theme_minimal() +
   labs(x = NULL, y = NULL)
-####
+
+
+#### OLD 
+# TODO update with new functions
 #Map 2 is PDE
 dat.sf <- st_transform(dat.sf, 3154)
 studyArea <- st_buffer(dat.sf, dist = 10000)
