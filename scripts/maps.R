@@ -14,13 +14,18 @@ lapply(dir('R', '*.R', full.names = TRUE), source)
 ### Input data ----
 raw <-  file.path('data', 'raw')
 derived <- file.path('data', 'derived')
-canPoly <- st_read('lpr_000b16a_e.shp')
+canada <- file.path('C:','Users', 'julie', 'Dropbox', 'ActiveDocs', 'Git-local', 'Can_GIS_layers')
+dataDrive <- file.path('G:', 'Shared drives', 'WSC_Yukon', 'CEtool_component3', 'data_models_new', 'Fine_Models', 'data')
+
+canPoly <- st_read(file.path(canada, 'CanadaPoly', 'lpr_000b16a_e.shp'))
+
 dat <- readRDS(file.path(derived, 'clean_NMC.RDS'))
 
 
 #Map 1 is density points on top of herd boundaries, on top of BC and YT shapefile
+mapCRS <- st_crs(4326)$wkt
 ytbc <- subset(canPoly, canPoly$PREABBR %in% c('B.C.', 'Y.T.', 'N.W.T.'))
-ytbc.wgs <- st_transform(ytbc, crs)
+ytbc.wgs <- st_transform(ytbc, mapCRS)
 ytbc.ext <- st_bbox(ytbc.wgs)
 nmcherds <- st_read(file.path(raw, "nmcherds2.shp"))
 # katie update: not including migratory herds
@@ -29,7 +34,7 @@ nmcherds <- st_transform(nmcherds, crs = st_crs(ytbc.wgs))
 
 dat.sf <- st_as_sf(dat, coords = c("x_", "y_"), crs = 3154)
 
-dat.sf <- st_transform(dat.sf, 4326)
+dat.sf <- st_transform(dat.sf, mapCRS)
 
 dat.within <- st_crop(dat.sf, st_bbox(ytbc.wgs))
 
@@ -93,6 +98,68 @@ map1 <- ggplot() +
   labs(x = NULL, y = NULL)
 ggsave("map1.png", plot = map1, width = 6, height = 7.5, units = "in", dpi = 300, device = "png")
 
+#Map 2 is PDE ----
+ftNelBuff <- towns |>
+  filter(Town.Name == 'Fort Nelson') |>
+  st_buffer(30000)
+
+
+pdeFine <- rast(file.path(dataDrive, 'pde_fine.tif'))
+pdeFine <- project(pdeFine, mapCRS)
+ytbcVect <- vect(ytbc.wgs)
+nmcherdsVect <- vect(nmcherds)
+
+# remove Ft Nel points (this is fixed in next iter)
+ftNelRast <- rasterize(vect(ftNelBuff), pdeFine)
+pdeFineMask <- mask(pdeFine, ftNelRast, inverse = T)
+plot(pdeFineMask)
+
+maxPde <- global(pdeFine, max, na.rm = T)[[1]]
+minPde <- global(pdeFine, min, na.rm = T)[[1]]
+
+ggplot() +
+  geom_spatvector(data = ytbcVect, fill = "gray95", color = "black") +
+  geom_spatraster(data = as.numeric(pdeFineMask), show.legend = T) +
+  scale_fill_viridis(option = 'plasma', na.value = NA) +
+  # name = 'Intensity of selection', 
+  # breaks = c(minPde, maxPde), 
+  # labels = c('low', 'high')) +
+  geom_spatvector(data = nmcherdsVect, fill = NA, color = "lightblue", alpha = 0.6) +
+  geom_sf(data = towns, size = 1, color = "black") +
+  geom_text(data = town_labels, aes(x = x, y = y, label = `Town.Name`), size = 3) +
+  # geom_text(data = herd_labels, aes(x = x, y = y, label = `Herd.Name`), 
+  #           size = 3, color = "blue") +
+  
+  coord_sf(xlim = c(-141.01807, -118), ylim = c(55, 68), expand = FALSE) +
+  theme_minimal() +
+  labs(x = NULL, y = NULL)
+
+pdeCoarse<- rast(file.path(dataDrive, 'pde_coarse.tif'))
+pdeCoarse <- project(pdeCoarse, mapCRS)
+
+pdeCoarseMask <- mask(pdeCoarse, ftNelRast, inverse = T)
+plot(pdeCoarseMask)
+
+maxPdeCoarse <- global(pdeCoarse, max, na.rm = T)[[1]]
+minPdeCoarse <- global(pdeCoarse, min, na.rm = T)[[1]]
+
+ggplot() +
+  geom_spatvector(data = ytbcVect, fill = "gray95", color = "black") +
+  geom_spatraster(data = as.numeric(pdeCoarseMask), show.legend = T) +
+  scale_fill_viridis(option = 'plasma', na.value = NA,
+                     name = stringr::str_wrap('Utilization distribution', width = 13),
+                     breaks = c(minPde, maxPdeCoarse),
+                     labels = c('low', 'high')) +
+  geom_spatvector(data = nmcherdsVect, fill = NA, color = "lightblue", alpha = 0.6) +
+  geom_sf(data = towns, size = 1, color = "black") +
+  geom_text(data = town_labels, aes(x = x, y = y, label = `Town.Name`), size = 3) +
+  # geom_text(data = herd_labels, aes(x = x, y = y, label = `Herd.Name`), 
+  #           size = 3, color = "blue") +
+  
+  coord_sf(xlim = c(-141.01807, -118), ylim = c(55, 68), expand = FALSE) +
+  theme_minimal() +
+  labs(x = NULL, y = NULL)
+####
 #Map 2 is PDE
 dat.sf <- st_transform(dat.sf, 3154)
 studyArea <- st_buffer(dat.sf, dist = 10000)
