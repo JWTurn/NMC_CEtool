@@ -1,6 +1,7 @@
 ### Prepare Landcover data ====
 # Julie Turner & Peter Baker
 # revamped: April 2025
+# revamped: Sept 2025 (florko)
 
 require('data.table')
 require(reproducible)
@@ -1293,6 +1294,37 @@ for (cat in poly_categories) {
 #Load NBAC (1972–2023) and NFDB (pre-1972) shapefiles
 fires <- vect(file.path(canada, 'fire_nbac_1972_2023', 'nbac_1972_2023_20240530.shp'))
 fires.old <- vect(file.path(canada, 'NFDB_poly', 'NFDB_poly_20210707.shp'))
+
+
+# katie update
+# Define URLs and local paths
+NBACURL <- "https://cwfis.cfs.nrcan.gc.ca/downloads/nbac/NBAC_1972to2024_20250506_shp.zip"
+NFDBURL <- "https://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_poly/current_version/NFDB_poly.zip"
+
+nbac_zip <- file.path(raw, "fires", "nbac_1972_2024.zip")
+nfdb_zip <- file.path(raw, "fires", "nfdb_poly.zip")
+
+nbac_dir <- file.path(raw, "fires", "fire_nbac_1972_2024")
+nfdb_dir <- file.path(raw, "fires", "NFDB_poly")
+
+# Download if missing
+if (!file.exists(nbac_zip)) download.file(NBACURL, nbac_zip)
+if (!file.exists(nfdb_zip)) download.file(NFDBURL, nfdb_zip)
+
+# Unzip if needed
+if (!dir.exists(nbac_dir)) unzip(nbac_zip, exdir = nbac_dir)
+if (!dir.exists(nfdb_dir)) unzip(nfdb_zip, exdir = nfdb_dir)
+
+# Define shapefile paths
+nbac_shp <- file.path(nbac_dir, "NBAC_1972to2024_20250506.shp")
+nfdb_shp <- file.path(nfdb_dir, "NFDB_poly_20210707.shp")
+
+# Load and reproject
+fires <- vect(nbac_shp)
+fires.old <- vect(nfdb_shp)
+
+#-- katie update end
+
 
 #Reproject to match study area CRS
 fires.proj <- project(fires, crs)
