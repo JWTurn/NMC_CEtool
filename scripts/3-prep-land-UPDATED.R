@@ -10,6 +10,7 @@ require('dplyr')
 require('tidyr')
 require('sf')
 require(terra)
+require('elevatr')
 
 lapply(dir('R', '*.R', full.names = TRUE), source)
 ## Input data ----
@@ -1525,3 +1526,45 @@ for (res in names(ages)) {
 
 #forage5000_2012 <- rast(file.path(raw, 'age5000', 'forest_age_2012.tif'))
 #plot(forage5000_2012)
+
+
+#---- Elevation ----
+# Paths
+elev_dir <- file.path(derived, "elevation")
+dir.create(elev_dir, showWarnings = FALSE)
+
+# Reproject study area to WGS84 for elevatr
+studyArea_wgs84 <- project(studyArea_extendedLandscape, "EPSG:4326")
+studyArea_sf <- st_as_sf(studyArea_wgs84)
+
+# Set cache path
+options("reproducible.cachePath" = file.path(elev_dir))
+
+# Download elevation once (z = 10 ≈ ~30m resolution)
+elev_raw <- Cache(get_elev_raster,
+                  locations = studyArea_sf,
+                  z = 10,
+                  clip = "locations")
+
+elev_base <- rast(elev_raw)
+
+# Function to reproject, resample, save, and cache
+prep_elevation <- function(rtm, filename) {
+  elev_proj <- project(elev_base, crs(rtm))
+  elev_resampled <- resample(elev_proj, rtm, method = "bilinear")
+  elev_path <- file.path(elev_dir, filename)
+  writeRaster(elev_resampled, elev_path, overwrite = TRUE)
+  
+  # Use prepInputs to cache and reload
+  prepInputs(
+    targetFile = filename,
+    destinationPath = elev_dir,
+    fun = "terra::rast"
+  )
+}
+
+# Run for all three resolutions
+elev250m <- prep_elevation(rasterToMatch_extendedLandscape250m, "elevation_250m.tif")
+elev1000m <- prep_elevation(rasterToMatch_extendedLandscape1000m, "elevation_1000m.tif")
+elev5000m <- prep_elevation(rasterToMatch_extendedLandscape5000m, "elevation_5000m.tif")
+
