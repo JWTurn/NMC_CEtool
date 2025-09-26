@@ -1352,13 +1352,13 @@ nmc.fires.all$YEAR <- ifelse(!is.na(nmc.fires.all$year_burn),
                              nmc.fires.all$year_burn,
                              nmc.fires.all$REP_YEAR)
 #Save cleaned full dataset
-writeVector(nmc.fires.all, file.path(raw, 'fires', 'fires_1920_2023.shp'), overwrite = TRUE)
+writeVector(nmc.fires.all, file.path(raw, 'fires', 'fires_1920_2024.shp'), overwrite = TRUE)
 
 
 #Clean Up Invalid YEARs using FIRE_ID
 
 # Load cleaned shapefile
-fires_clean <- vect(file.path(raw, "fires", "fires_1920_2023.shp"))
+fires_clean <- vect(file.path(raw, "fires", "fires_1920_2024.shp"))
 
 # Extract likely year from FIRE_ID where available (e.g., "1985-FIRE_12")
 fire_ids <- as.character(fires_clean$FIRE_ID)
@@ -1371,37 +1371,37 @@ fires_clean$YEAR[invalid_years] <- ifelse(!is.na(year_guess[invalid_years]),
                                           as.integer(year_guess[invalid_years]),
                                           NA)
 # Save cleaned version
-writeVector(fires_clean, file.path(canada, "fires_1920_2023_cleaned.shp"), overwrite = TRUE)
+writeVector(fires_clean, file.path(raw, "fires", "fires_1920_2024_cleaned.shp"), overwrite = TRUE)
 
 
 #Reproject to Different Raster Grids (250m, 1000m, 5000m)
 # Create aligned vector layers at each resolution
 fire250m <- reproducible::prepInputs(
-  targetFile = "fires_1920_2023_cleaned.shp",
-  destinationPath = canada,
+  targetFile = "fires_1920_2024_cleaned.shp",
+  destinationPath = file.path(raw, "fires"),
   fun = "terra::vect",
   to = rasterToMatch_extendedLandscape250m
 ) |> Cache()
 
-writeVector(fire250m, file.path(derived, "fires_1920_2023_250m.shp"))
+writeVector(fire250m, file.path(derived, "fires_1920_2024_250m.shp"))
 
 fire1000m <- reproducible::prepInputs(
-  targetFile = "fires_1920_2023_cleaned.shp",
-  destinationPath = canada,
+  targetFile = "fires_1920_2024_cleaned.shp",
+  destinationPath = file.path(raw, "fires"),
   fun = "terra::vect",
   to = rasterToMatch_extendedLandscape1000m
 ) |> Cache()
 
-writeVector(fire1000m, file.path(derived, "fires_1920_2023_1000m.shp"))
+writeVector(fire1000m, file.path(derived, "fires_1920_2024_1000m.shp"))
 
 fire5000m <- reproducible::prepInputs(
-  targetFile = "fires_1920_2023_cleaned.shp",
-  destinationPath = canada,
+  targetFile = "fires_1920_2024_cleaned.shp",
+  destinationPath = file.path(raw, "fires"),
   fun = "terra::vect",
   to = rasterToMatch_extendedLandscape5000m
 ) |> Cache()
 
-writeVector(fire5000m, file.path(derived, "fires_1920_2023_5000m.shp"))
+writeVector(fire5000m, file.path(derived, "fires_1920_2024_5000m.shp"))
 
 gc()
 
@@ -1416,7 +1416,7 @@ dir.create(file.path(derived, "fireRasters5000m"), recursive = TRUE, showWarning
 
 # Rasterize to 250m grid
 make_fire_rast(
-  layer = file.path(derived, "fires_1920_2023_250m.shp"),
+  layer = file.path(derived, "fires_1920_2024_250m.shp"),
   rast = rasterToMatch_extendedLandscape250m,
   minyr = 2012,
   where2save = file.path(derived, "fireRasters250m")
@@ -1424,7 +1424,7 @@ make_fire_rast(
 
 # Rasterize to 1000m grid
 make_fire_rast(
-  layer = file.path(derived, "fires_1920_2023_1000m.shp"),
+  layer = file.path(derived, "fires_1920_2024_1000m.shp"),
   rast = rasterToMatch_extendedLandscape1000m,
   minyr = 2012,
   where2save = file.path(derived, "fireRasters1000m")
@@ -1432,7 +1432,7 @@ make_fire_rast(
 
 # Rasterize to 5000m grid
 make_fire_rast(
-  layer = file.path(derived, "fires_1920_2023_5000m.shp"),
+  layer = file.path(derived, "fires_1920_2024_5000m.shp"),
   rast = rasterToMatch_extendedLandscape5000m,
   minyr = 2012,
   where2save = file.path(derived, "fireRasters5000m")
