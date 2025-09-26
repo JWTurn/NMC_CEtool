@@ -1541,11 +1541,9 @@ studyArea_sf <- st_as_sf(studyArea_wgs84)
 options("reproducible.cachePath" = file.path(elev_dir))
 
 # Download elevation once (z = 10 ≈ ~30m resolution)
-elev_raw <- Cache(get_elev_raster,
-                  locations = studyArea_sf,
-                  z = 10,
-                  clip = "locations")
-
+elev_raw <- get_elev_raster(locations = studyArea_sf, 
+                            z = 10, 
+                            clip = "locations")
 elev_base <- rast(elev_raw)
 
 # Function to reproject, resample, save, and cache
@@ -1568,3 +1566,12 @@ elev250m <- prep_elevation(rasterToMatch_extendedLandscape250m, "elevation_250m.
 elev1000m <- prep_elevation(rasterToMatch_extendedLandscape1000m, "elevation_1000m.tif")
 elev5000m <- prep_elevation(rasterToMatch_extendedLandscape5000m, "elevation_5000m.tif")
 
+# Define output paths
+elev_path_250 <- file.path(elev_dir, "elevation_250m.tif")
+elev_path_1000 <- file.path(elev_dir, "elevation_1000m.tif")
+elev_path_5000 <- file.path(elev_dir, "elevation_5000m.tif")
+
+# Write rasters
+writeRaster(elev250m, elev_path_250, overwrite = TRUE)
+writeRaster(elev1000m, elev_path_1000, overwrite = TRUE)
+writeRaster(elev5000m, elev_path_5000, overwrite = TRUE)
