@@ -1537,9 +1537,6 @@ dir.create(elev_dir, showWarnings = FALSE)
 studyArea_wgs84 <- project(studyArea_extendedLandscape, "EPSG:4326")
 studyArea_sf <- st_as_sf(studyArea_wgs84)
 
-# Set cache path
-options("reproducible.cachePath" = file.path(elev_dir))
-
 # Download elevation once (z = 10 ≈ ~30m resolution)
 elev_raw <- get_elev_raster(locations = studyArea_sf, 
                             z = 10, 
@@ -1566,12 +1563,25 @@ elev250m <- prep_elevation(rasterToMatch_extendedLandscape250m, "elevation_250m.
 elev1000m <- prep_elevation(rasterToMatch_extendedLandscape1000m, "elevation_1000m.tif")
 elev5000m <- prep_elevation(rasterToMatch_extendedLandscape5000m, "elevation_5000m.tif")
 
-# Define output paths
-elev_path_250 <- file.path(elev_dir, "elevation_250m.tif")
-elev_path_1000 <- file.path(elev_dir, "elevation_1000m.tif")
-elev_path_5000 <- file.path(elev_dir, "elevation_5000m.tif")
 
-# Write rasters
-writeRaster(elev250m, elev_path_250, overwrite = TRUE)
-writeRaster(elev1000m, elev_path_1000, overwrite = TRUE)
-writeRaster(elev5000m, elev_path_5000, overwrite = TRUE)
+# Add northness
+prep_northness <- function(elev_rast, res_tag) {
+  aspect <- terrain(elev_rast, v = "aspect", unit = "radians")
+  northness <- cos(aspect)
+  north_path <- file.path(elev_dir, paste0("northness_", res_tag, ".tif"))
+  
+  # Save raster
+  writeRaster(northness, north_path, overwrite = TRUE)
+  
+  # Reload reproducibly
+  prepInputs(
+    targetFile = paste0("northness_", res_tag, ".tif"),
+    destinationPath = elev_dir,
+    fun = "terra::rast"
+  )
+}
+
+# Run for all three resolutions 
+north250m <- prep_northness(elev250m, "250m")
+north1000m <- prep_northness(elev1000m, "1000m")
+north5000m <- prep_northness(elev5000m, "5000m")
