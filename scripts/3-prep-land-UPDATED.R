@@ -1,6 +1,7 @@
 ### Prepare Landcover data ====
 # Julie Turner & Peter Baker
 # revamped: April 2025
+# revamped: Sept 2025 (florko)
 
 require('data.table')
 require(reproducible)
@@ -9,6 +10,7 @@ require('dplyr')
 require('tidyr')
 require('sf')
 require(terra)
+require('elevatr')
 
 lapply(dir('R', '*.R', full.names = TRUE), source)
 ## Input data ----
@@ -1294,6 +1296,37 @@ for (cat in poly_categories) {
 fires <- vect(file.path(canada, 'fire_nbac_1972_2023', 'nbac_1972_2023_20240530.shp'))
 fires.old <- vect(file.path(canada, 'NFDB_poly', 'NFDB_poly_20210707.shp'))
 
+
+# katie update
+# Define URLs and local paths
+NBACURL <- "https://cwfis.cfs.nrcan.gc.ca/downloads/nbac/NBAC_1972to2024_20250506_shp.zip"
+NFDBURL <- "https://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_poly/current_version/NFDB_poly.zip"
+
+nbac_zip <- file.path(raw, "fires", "nbac_1972_2024.zip")
+nfdb_zip <- file.path(raw, "fires", "nfdb_poly.zip")
+
+nbac_dir <- file.path(raw, "fires", "fire_nbac_1972_2024")
+nfdb_dir <- file.path(raw, "fires", "NFDB_poly")
+
+# Download if missing
+if (!file.exists(nbac_zip)) download.file(NBACURL, nbac_zip)
+if (!file.exists(nfdb_zip)) download.file(NFDBURL, nfdb_zip)
+
+# Unzip if needed
+if (!dir.exists(nbac_dir)) unzip(nbac_zip, exdir = nbac_dir)
+if (!dir.exists(nfdb_dir)) unzip(nfdb_zip, exdir = nfdb_dir)
+
+# Define shapefile paths
+nbac_shp <- file.path(nbac_dir, "NBAC_1972to2024_20250506.shp")
+nfdb_shp <- file.path(nfdb_dir, "NFDB_poly_20210707.shp")
+
+# Load and reproject
+fires <- vect(nbac_shp)
+fires.old <- vect(nfdb_shp)
+
+#-- katie update end
+
+
 #Reproject to match study area CRS
 fires.proj <- project(fires, crs)
 fires.old.proj <- project(fires.old, crs)
@@ -1302,8 +1335,8 @@ fires.old.proj <- project(fires.old, crs)
 fires.pre <- subset(fires.old.proj, fires.old.proj$YEAR < 1972)
 
 #Crop new and old fires to study area extent
-nmc.fires.proj <- crop(fires.proj, ext(vect(studyArea_extendedLandscape)))
-nmc.fires.pre  <- crop(fires.pre, ext(vect(studyArea_extendedLandscape)))
+nmc.fires.proj <- crop(fires.proj, ext(studyArea_extendedLandscape))
+nmc.fires.pre  <- crop(fires.pre, ext(studyArea_extendedLandscape))
 
 #Merge pre-1972 and post-1972 fire polygons
 gc()
@@ -1320,13 +1353,13 @@ nmc.fires.all$YEAR <- ifelse(!is.na(nmc.fires.all$year_burn),
                              nmc.fires.all$year_burn,
                              nmc.fires.all$REP_YEAR)
 #Save cleaned full dataset
-writeVector(nmc.fires.all, file.path(raw, 'fires', 'fires_1920_2023.shp'), overwrite = TRUE)
+writeVector(nmc.fires.all, file.path(raw, 'fires', 'fires_1920_2024.shp'), overwrite = TRUE)
 
 
 #Clean Up Invalid YEARs using FIRE_ID
 
 # Load cleaned shapefile
-fires_clean <- vect(file.path(raw, "fires", "fires_1920_2023.shp"))
+fires_clean <- vect(file.path(raw, "fires", "fires_1920_2024.shp"))
 
 # Extract likely year from FIRE_ID where available (e.g., "1985-FIRE_12")
 fire_ids <- as.character(fires_clean$FIRE_ID)
@@ -1339,37 +1372,37 @@ fires_clean$YEAR[invalid_years] <- ifelse(!is.na(year_guess[invalid_years]),
                                           as.integer(year_guess[invalid_years]),
                                           NA)
 # Save cleaned version
-writeVector(fires_clean, file.path(canada, "fires_1920_2023_cleaned.shp"), overwrite = TRUE)
+writeVector(fires_clean, file.path(raw, "fires", "fires_1920_2024_cleaned.shp"), overwrite = TRUE)
 
 
 #Reproject to Different Raster Grids (250m, 1000m, 5000m)
 # Create aligned vector layers at each resolution
 fire250m <- reproducible::prepInputs(
-  targetFile = "fires_1920_2023_cleaned.shp",
-  destinationPath = canada,
+  targetFile = "fires_1920_2024_cleaned.shp",
+  destinationPath = file.path(raw, "fires"),
   fun = "terra::vect",
   to = rasterToMatch_extendedLandscape250m
 ) |> Cache()
 
-writeVector(fire250m, file.path(derived, "fires_1920_2023_250m.shp"))
+writeVector(fire250m, file.path(derived, "fires_1920_2024_250m.shp"))
 
 fire1000m <- reproducible::prepInputs(
-  targetFile = "fires_1920_2023_cleaned.shp",
-  destinationPath = canada,
+  targetFile = "fires_1920_2024_cleaned.shp",
+  destinationPath = file.path(raw, "fires"),
   fun = "terra::vect",
   to = rasterToMatch_extendedLandscape1000m
 ) |> Cache()
 
-writeVector(fire1000m, file.path(derived, "fires_1920_2023_1000m.shp"))
+writeVector(fire1000m, file.path(derived, "fires_1920_2024_1000m.shp"))
 
 fire5000m <- reproducible::prepInputs(
-  targetFile = "fires_1920_2023_cleaned.shp",
-  destinationPath = canada,
+  targetFile = "fires_1920_2024_cleaned.shp",
+  destinationPath = file.path(raw, "fires"),
   fun = "terra::vect",
   to = rasterToMatch_extendedLandscape5000m
 ) |> Cache()
 
-writeVector(fire5000m, file.path(derived, "fires_1920_2023_5000m.shp"))
+writeVector(fire5000m, file.path(derived, "fires_1920_2024_5000m.shp"))
 
 gc()
 
@@ -1384,7 +1417,7 @@ dir.create(file.path(derived, "fireRasters5000m"), recursive = TRUE, showWarning
 
 # Rasterize to 250m grid
 make_fire_rast(
-  layer = file.path(derived, "fires_1920_2023_250m.shp"),
+  layer = file.path(derived, "fires_1920_2024_250m.shp"),
   rast = rasterToMatch_extendedLandscape250m,
   minyr = 2012,
   where2save = file.path(derived, "fireRasters250m")
@@ -1392,7 +1425,7 @@ make_fire_rast(
 
 # Rasterize to 1000m grid
 make_fire_rast(
-  layer = file.path(derived, "fires_1920_2023_1000m.shp"),
+  layer = file.path(derived, "fires_1920_2024_1000m.shp"),
   rast = rasterToMatch_extendedLandscape1000m,
   minyr = 2012,
   where2save = file.path(derived, "fireRasters1000m")
@@ -1400,7 +1433,7 @@ make_fire_rast(
 
 # Rasterize to 5000m grid
 make_fire_rast(
-  layer = file.path(derived, "fires_1920_2023_5000m.shp"),
+  layer = file.path(derived, "fires_1920_2024_5000m.shp"),
   rast = rasterToMatch_extendedLandscape5000m,
   minyr = 2012,
   where2save = file.path(derived, "fireRasters5000m")
@@ -1493,3 +1526,62 @@ for (res in names(ages)) {
 
 #forage5000_2012 <- rast(file.path(raw, 'age5000', 'forest_age_2012.tif'))
 #plot(forage5000_2012)
+
+
+#---- Elevation ----
+# Paths
+elev_dir <- file.path(derived, "elevation")
+dir.create(elev_dir, showWarnings = FALSE)
+
+# Reproject study area to WGS84 for elevatr
+studyArea_wgs84 <- project(studyArea_extendedLandscape, "EPSG:4326")
+studyArea_sf <- st_as_sf(studyArea_wgs84)
+
+# Download elevation once (z = 10 ≈ ~30m resolution)
+elev_raw <- get_elev_raster(locations = studyArea_sf, 
+                            z = 10, 
+                            clip = "locations")
+elev_base <- rast(elev_raw)
+
+# Function to reproject, resample, save, and cache
+prep_elevation <- function(rtm, filename) {
+  elev_proj <- project(elev_base, crs(rtm))
+  elev_resampled <- resample(elev_proj, rtm, method = "bilinear")
+  elev_path <- file.path(elev_dir, filename)
+  writeRaster(elev_resampled, elev_path, overwrite = TRUE)
+  
+  # Use prepInputs to cache and reload
+  prepInputs(
+    targetFile = filename,
+    destinationPath = elev_dir,
+    fun = "terra::rast"
+  )
+}
+
+# Run for all three resolutions
+elev250m <- prep_elevation(rasterToMatch_extendedLandscape250m, "elevation_250m.tif")
+elev1000m <- prep_elevation(rasterToMatch_extendedLandscape1000m, "elevation_1000m.tif")
+elev5000m <- prep_elevation(rasterToMatch_extendedLandscape5000m, "elevation_5000m.tif")
+
+
+# Add northness
+prep_northness <- function(elev_rast, res_tag) {
+  aspect <- terrain(elev_rast, v = "aspect", unit = "radians")
+  northness <- cos(aspect)
+  north_path <- file.path(elev_dir, paste0("northness_", res_tag, ".tif"))
+  
+  # Save raster
+  writeRaster(northness, north_path, overwrite = TRUE)
+  
+  # Reload reproducibly
+  prepInputs(
+    targetFile = paste0("northness_", res_tag, ".tif"),
+    destinationPath = elev_dir,
+    fun = "terra::rast"
+  )
+}
+
+# Run for all three resolutions 
+north250m <- prep_northness(elev250m, "250m")
+north1000m <- prep_northness(elev1000m, "1000m")
+north5000m <- prep_northness(elev5000m, "5000m")
