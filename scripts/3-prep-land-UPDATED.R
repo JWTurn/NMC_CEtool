@@ -1377,6 +1377,15 @@ writeVector(fires_clean, file.path(raw, "fires", "fires_1920_2024_cleaned.shp"),
 
 #Reproject to Different Raster Grids (250m, 1000m, 5000m)
 # Create aligned vector layers at each resolution
+fire30m <- reproducible::prepInputs(
+  targetFile = "fires_1920_2024_cleaned.shp",
+  destinationPath = file.path(raw, "fires"),
+  fun = "terra::vect",
+  to = rasterToMatch_extendedLandscape30m
+) |> Cache()
+
+writeVector(fire30m, file.path(derived, "fires_1920_2024_30m.shp"))
+
 fire250m <- reproducible::prepInputs(
   targetFile = "fires_1920_2024_cleaned.shp",
   destinationPath = file.path(raw, "fires"),
@@ -1438,6 +1447,58 @@ make_fire_rast(
   minyr = 2012,
   where2save = file.path(derived, "fireRasters5000m")
 )
+
+
+
+#MAKING PERCENT BURNED RASTERS
+fire_vect <- vect(file.path(derived, "fires_1920_2024_30m.shp"))
+template30m <- rasterToMatch_extendedLandscape30m
+fire_raster <- rasterize(fire_vect, template30m, field = "YEAR", fun = max, touches = TRUE)
+writeRaster(fire_raster, file.path(derived, "fires_1920_2024_30m.tif"), overwrite = TRUE)
+fire_raster <- rast(file.path(derived, "fires_1920_2024_30m.tif"))
+fire_raster[is.na(fire_raster)] <- 0
+
+# Output directories by resolution
+outputDir1000 <- file.path(derived, "perc_burned_1000")
+outputDir5000 <- file.path(derived, "perc_burned_5000")
+dir.create(outputDir1000, recursive = TRUE, showWarnings = FALSE)
+dir.create(outputDir5000, recursive = TRUE, showWarnings = FALSE)
+
+# Raster templates for resampling
+template1000m <- rasterToMatch_extendedLandscape1000m
+template5000m <- rasterToMatch_extendedLandscape5000m
+
+# Loop through each year and calculate proportions
+for (yr in 2012:2024) {
+  message("Processing year: ", yr)
+  
+  # Binary layers: burned within last 60 years or last 2 years
+  burned60 <- as.numeric(fire_raster >= (yr - 59) & fire_raster <= yr)
+  burned2  <- as.numeric(fire_raster >= (yr - 1) & fire_raster <= yr)
+  
+  # Resample to 1000m
+  burned60_1000 <- resample(burned60, template1000m, method = "average")
+  burned2_1000  <- resample(burned2,  template1000m, method = "average")
+  
+  # Resample to 5000m
+  burned60_5000 <- resample(burned60, template5000m, method = "average")
+  burned2_5000  <- resample(burned2,  template5000m, method = "average")
+  
+  # Save rasters with year last in filename
+  writeRaster(burned60_1000, file.path(outputDir1000, paste0("burned60_1000m_", yr, ".tif")), overwrite = TRUE)
+  writeRaster(burned2_1000,  file.path(outputDir1000, paste0("burned2_1000m_",  yr, ".tif")), overwrite = TRUE)
+  
+  writeRaster(burned60_5000, file.path(outputDir5000, paste0("burned60_5000m_", yr, ".tif")), overwrite = TRUE)
+  writeRaster(burned2_5000,  file.path(outputDir5000, paste0("burned2_5000m_",  yr, ".tif")), overwrite = TRUE)
+  
+  message("✓ Saved rasters for year ", yr)
+}
+
+
+
+
+
+
 
 
 #---- Forest age ----

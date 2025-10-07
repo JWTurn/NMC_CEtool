@@ -38,59 +38,6 @@ studyArea <- file.path(derived, 'prepped', 'clean_NMC_20kmBuff_crop.shp')
 #canPoly <- st_read('lpr_000b16a_e.shp') For Pete, delete later
 
 
-#Landcover for 250m resolution
-#prop_land_prefix <- file.path("data", "derived", "prop_land", "prop_land_split")
-landcov250 <- file.path('data', 'derived', 'prop_land', 'window250')
-prop_water_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', "prop_water_250")
-prop_snow_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_snow_250')
-prop_rock_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_rock_250')
-prop_barren_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_barrenland_250')
-prop_bryoids_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_bryoids_250')
-prop_shrub_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_shrub_250')
-prop_wetland_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_wetland_250')
-prop_wettreed_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_wet_treed_250')
-prop_herbs_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_herbs_250')
-prop_needleleaf_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_needleleaf_250')
-prop_deciduous_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_deciduous_250')
-prop_mixed_250 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_mixed_250')
-
-
-#Fires 250
-fires_250 <- file.path('data', 'derived', 'fireRasters250m', 'fires')
-
-#Harvest 250
-harv250 <- file.path('harv250', 'harv')
-harv_dist_250 <- file.path('data', 'derived', 'harv_dist_250m', 'harvdist_250m')
-harv_pa_250 <- file.path('data', 'derived', 'harv_pa_250m', 'harvpres_250m')
-harv_dens_250 <- file.path('data', 'derived', 'harv_dens_250m', 'harvdens_250m')
-
-#Forest age 250
-for_age_250 <- file.path('data', 'raw', 'age250', 'forest_age')
-
-#Anthro-disturbance 250
-dens_lfother_250 <- file.path('data', 'derived', 'dens_disturb_250m', 'otherlf_dens_250m')
-dens_paved_250 <- file.path('data', 'derived', 'dens_disturb_250m', 'paved_dens_250m')
-dens_unpaved_250 <- file.path('data', 'derived', 'dens_disturb_250m', 'unpaved_dens_250m')
-dens_placer_250 <- file.path('data', 'derived', 'dens_disturb_250m', 'placer_dens_250m')
-dens_quartz_250 <- file.path('data', 'derived', 'dens_disturb_250m', 'quartz_dens_250m')
-dens_otherpoly_250 <- file.path('data', 'derived', 'dens_disturb_250m', 'otherpoly_dens_250m')
-dens_othermines_250 <- file.path('data', 'derived', 'dens_disturb_250m', 'othermines_dens_250m')
-dist_paved_250 <- file.path('data', 'derived', 'dist_disturb_250m', 'paved_distance_250m')
-dist_unpaved_250 <- file.path('data', 'derived', 'dist_disturb_250m', 'unpaved_distance_250m')
-dist_lfother_250 <- file.path('data', 'derived', 'dist_disturb_250m', 'otherlf_distance_250m')
-dist_placer_250 <- file.path('data', 'derived', 'dist_disturb_250m', 'placer_distance_250m')
-dist_quartz_250 <- file.path('data', 'derived', 'dist_disturb_250m', 'quartz_distance_250m')
-dist_othermines_250 <- file.path('data', 'derived', 'dist_disturb_250m', 'othermines_distance_250m')
-dist_otherpoly_250 <- file.path('data', 'derived', 'dist_disturb_250m', 'otherpoly_distance_250m')
-pa_paved_250 <- file.path('data', 'derived', 'pa_disturb_250m', 'paved_pa_250m')
-pa_unpaved_250 <- file.path('data', 'derived', 'pa_disturb_250m', 'unpaved_pa_250m')
-pa_lfother_250 <- file.path('data', 'derived', 'pa_disturb_250m', 'otherlf_pa_250m')
-pa_placer_250 <- file.path('data', 'derived', 'pa_disturb_250m', 'placer_pa_250m')
-pa_quartz_250 <- file.path('data', 'derived', 'pa_disturb_250m', 'quartz_pa_250m')
-pa_othermines_250 <- file.path('data', 'derived', 'pa_disturb_250m', 'othermines_pa_250m')
-pa_otherpoly_250 <- file.path('data', 'derived', 'pa_disturb_250m', 'otherpoly_pa_250m')
-
-
 #Landcover for 1000m resolution
 prop_water_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_water_1000')
 prop_snow_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_snow_1000')
@@ -105,11 +52,14 @@ prop_needleleaf_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_spl
 prop_deciduous_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_deciduous_1000')
 prop_mixed_1000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_mixed_1000')
 
+
 #Fires 1000
 fires_1000 <- file.path('data', 'derived', 'fireRasters1000m', 'fires')
+fire_60perc1000 <- file.path('data', 'derived', 'perc_burned_1000', 'burned60_1000m')
+fire_2perc1000 <- file.path('data', 'derived', 'perc_burned_1000', 'burned2_1000m')
 
 #Harvest 1000
-harv1000 <- file.path('harv1000', 'harv')
+harv1000 <- file.path('data', 'derived', 'harv1000', 'harv1000')
 harv_dist_1000 <- file.path('data', 'derived', 'harv_dist_1000m', 'harvdist_1000m')
 harv_pa_1000 <- file.path('data', 'derived', 'harv_pa_1000m', 'harvpres_1000m')
 harv_dens_1000 <- file.path('data', 'derived', 'harv_dens_1000m', 'harvdens_1000m')
@@ -123,8 +73,8 @@ dens_paved_1000 <- file.path('data', 'derived', 'dens_disturb_1000m', 'paved_den
 dens_unpaved_1000 <- file.path('data', 'derived', 'dens_disturb_1000m', 'unpaved_dens_1000m')
 dens_placer_1000 <- file.path('data', 'derived', 'dens_disturb_1000m', 'placer_dens_1000m')
 dens_quartz_1000 <- file.path('data', 'derived', 'dens_disturb_1000m', 'quartz_dens_1000m')
-dens_otherpoly_1000 <- file.path('data', 'derived', 'dens_disturb_1000m', 'otherpoly_dens_1000m')
 dens_othermines_1000 <- file.path('data', 'derived', 'dens_disturb_1000m', 'othermines_dens_1000m')
+dens_otherpoly_1000 <- file.path('data', 'derived', 'dens_disturb_1000m', 'otherpoly_dens_1000m')
 dist_paved_1000 <- file.path('data', 'derived', 'dist_disturb_1000m', 'paved_distance_1000m')
 dist_unpaved_1000 <- file.path('data', 'derived', 'dist_disturb_1000m', 'unpaved_distance_1000m')
 dist_lfother_1000 <- file.path('data', 'derived', 'dist_disturb_1000m', 'otherlf_distance_1000m')
@@ -139,6 +89,68 @@ pa_placer_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'placer_pa_10
 pa_quartz_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'quartz_pa_1000m')
 pa_othermines_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'othermines_pa_1000m')
 pa_otherpoly_1000 <- file.path('data', 'derived', 'pa_disturb_1000m', 'otherpoly_pa_1000m')
+
+
+#Elevation and northness 1000
+elev_1000 <- file.path('data', 'derived','elevation', 'elevation_1000m.tif')
+north_1000 <- file.path('data', 'derived','elevation', 'northness_1000m.tif')
+
+
+#Landcover for 5000m resolution
+prop_water_5000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_water_5000')
+prop_snow_5000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_snow_5000')
+prop_rock_5000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_rock_5000')
+prop_barren_5000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_barrenland_5000')
+prop_bryoids_5000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_bryoids_5000')
+prop_shrub_5000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_shrub_5000')
+prop_wetland_5000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_wetland_5000')
+prop_wettreed_5000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_wet_treed_5000')
+prop_herbs_5000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_herbs_5000')
+prop_needleleaf_5000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_needleleaf_5000')
+prop_deciduous_5000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_deciduous_5000')
+prop_mixed_5000 <- file.path('data', 'derived', 'prop_land', 'prop_land_split', 'prop_mixed_5000')
+
+
+#Fires 5000
+fires_5000 <- file.path('data', 'derived', 'fireRasters5000m', 'fires')
+fire_60perc5000 <- file.path('data', 'derived', 'perc_burned_5000', 'burned60_5000m')
+fire_2perc5000 <- file.path('data', 'derived', 'perc_burned_5000', 'burned2_5000m')
+
+#Harvest 5000
+harv5000 <- file.path('data', 'derived', 'harv5000', 'harv5000')
+harv_dist_5000 <- file.path('data', 'derived', 'harv_dist_5000m', 'harvdist_5000m')
+harv_pa_5000 <- file.path('data', 'derived', 'harv_pa_5000m', 'harvpres_5000m')
+harv_dens_5000 <- file.path('data', 'derived', 'harv_dens_5000m', 'harvdens_5000m')
+
+#Forest age 5000
+for_age_5000 <- file.path('data', 'raw', 'age5000', 'forest_age')
+
+#Anthro-disturbance 5000
+dens_lfother_5000 <- file.path('data', 'derived', 'dens_disturb_5000m', 'otherlf_dens_5000m')
+dens_paved_5000 <- file.path('data', 'derived', 'dens_disturb_5000m', 'paved_dens_5000m')
+dens_unpaved_5000 <- file.path('data', 'derived', 'dens_disturb_5000m', 'unpaved_dens_5000m')
+dens_placer_5000 <- file.path('data', 'derived', 'dens_disturb_5000m', 'placer_dens_5000m')
+dens_quartz_5000 <- file.path('data', 'derived', 'dens_disturb_5000m', 'quartz_dens_5000m')
+dens_othermines_5000 <- file.path('data', 'derived', 'dens_disturb_5000m', 'othermines_dens_5000m')
+dens_otherpoly_5000 <- file.path('data', 'derived', 'dens_disturb_5000m', 'otherpoly_dens_5000m')
+dist_paved_5000 <- file.path('data', 'derived', 'dist_disturb_5000m', 'paved_distance_5000m')
+dist_unpaved_5000 <- file.path('data', 'derived', 'dist_disturb_5000m', 'unpaved_distance_5000m')
+dist_lfother_5000 <- file.path('data', 'derived', 'dist_disturb_5000m', 'otherlf_distance_5000m')
+dist_placer_5000 <- file.path('data', 'derived', 'dist_disturb_5000m', 'placer_distance_5000m')
+dist_quartz_5000 <- file.path('data', 'derived', 'dist_disturb_5000m', 'quartz_distance_5000m')
+dist_othermines_5000 <- file.path('data', 'derived', 'dist_disturb_5000m', 'othermines_distance_5000m')
+dist_otherpoly_5000 <- file.path('data', 'derived', 'dist_disturb_5000m', 'otherpoly_distance_5000m')
+pa_paved_5000 <- file.path('data', 'derived', 'pa_disturb_5000m', 'paved_pa_5000m')
+pa_unpaved_5000 <- file.path('data', 'derived', 'pa_disturb_5000m', 'unpaved_pa_5000m')
+pa_lfother_5000 <- file.path('data', 'derived', 'pa_disturb_5000m', 'otherlf_pa_5000m')
+pa_placer_5000 <- file.path('data', 'derived', 'pa_disturb_5000m', 'placer_pa_5000m')
+pa_quartz_5000 <- file.path('data', 'derived', 'pa_disturb_5000m', 'quartz_pa_5000m')
+pa_othermines_5000 <- file.path('data', 'derived', 'pa_disturb_5000m', 'othermines_pa_5000m')
+pa_otherpoly_5000 <- file.path('data', 'derived', 'pa_disturb_5000m', 'otherpoly_pa_5000m')
+
+#Elevation and northness 5000
+elev_5000 <- file.path('data', 'derived','elevation', 'elevation_5000m.tif')
+north_5000 <- file.path('data', 'derived','elevation', 'northness_5000m.tif')
 
 
 id <- 'id'
@@ -164,10 +176,10 @@ sl.interval <- 50 # to round by 50m intervals
 
 
 # Resampling rate - explore fix rate median after new data
-rate <- hours(8)
+rate <- hours(11)
 
 # Tolerance
-tolerance <- minutes(60)
+tolerance <- minutes(120)
 
 
 # Targets: prep ----------------------------------------------------------------- (skip loading rasters for disturbance - all have years)
@@ -201,7 +213,7 @@ targets_prep <- c(
   # paved.sf,
   # load_sf(lf_paved.path, crs)
   #),
-
+  
   # load unpaved linear features **UPDATE**
   #tar_target(
   #  lf_unpaved.path,
@@ -212,7 +224,7 @@ targets_prep <- c(
   ##  unpaved.sf,
   #  load_sf(lf_unpaved.path, crs)
   #),
-
+  
   # load other linear features **UPDATE**
   #tar_target(
   #  lf_other.path,
@@ -246,43 +258,43 @@ targets_prep <- c(
   #  miningpolys,
   #  format = 'file'
   # ),
-#tar_target(
-# miningpolys.sf,
-#    load_sf(miningpolys.path, crs)
-#  ),
+  #tar_target(
+  # miningpolys.sf,
+  #    load_sf(miningpolys.path, crs)
+  #  ),
   
   # load miningpolys for just Yukon **UPDATE**
-# tar_target(
-#   miningpolys.yt.path,
-#   miningpolys.yt,
-#   format = 'file'
-# ),
-# tar_target(
-#   miningpolys.yt.sf,
-#   load_sf(miningpolys.yt.path, crs)
-# ),
-
+  # tar_target(
+  #   miningpolys.yt.path,
+  #   miningpolys.yt,
+  #   format = 'file'
+  # ),
+  # tar_target(
+  #   miningpolys.yt.sf,
+  #   load_sf(miningpolys.yt.path, crs)
+  # ),
+  
   # load harvest
-# tar_target( #OLD ***
-#   harv.path,
-#   harv,
-#   format = 'file'
-# ),
-# tar_target(
-#   harv.sf,
-#   make_harv_sf(harv.path)
-# ),
+  # tar_target( #OLD ***
+  #   harv.path,
+  #   harv,
+  #   format = 'file'
+  # ),
+  # tar_target(
+  #   harv.sf,
+  #   make_harv_sf(harv.path)
+  # ),
   
-# tar_target( #seperate target for each type (pa vs dist etc.)
-#   harv250.path,
-#   harv_250,
-#   format = "file"
-# ),
+  # tar_target( #seperate target for each type (pa vs dist etc.)
+  #   harv250.path,
+  #   harv_250,
+  #   format = "file"
+  # ),
   
-# tar_target(
-#   harv250.sf,
-#   make_harv_rast(harv250.path)
-# ),
+  # tar_target(
+  #   harv250.sf,
+  #   make_harv_rast(harv250.path)
+  # ),
   
   
   # load fires
@@ -290,13 +302,13 @@ targets_prep <- c(
   #   fires.path,
   #   list.files(path = fires_path, full.names = T)
   # ),
- 
+  
   # load forest age 
-# tar_target(
-#   for.age.path,
-#   for.age,
-#   format = 'file'
-# ),
+  # tar_target(
+  #   for.age.path,
+  #   for.age,
+  #   format = 'file'
+  # ),
   
   # track prop land
   # tar_files(
@@ -384,11 +396,15 @@ targets_tracks <- c(
     make_data_table(randsteps)
   ),
   
-  # add a year column
+  # add a year column, had to add a filter to get rid of older years, for some reason
   tar_target(
     addyear,
-    dattab[,`:=`(year=as.integer(lubridate::year(t2_)), 
-                 int.year=plyr::round_any(lubridate::year(t2_), interval, floor))]
+    dattab[
+      , `:=`(
+        year = as.integer(lubridate::year(t2_)), 
+        int.year = plyr::round_any(lubridate::year(t2_), interval, floor)
+      )
+    ][year >= 2012]
   )
 )
 
@@ -401,65 +417,65 @@ targets_propland <- c(
     buffer,
     plyr::round_any(median(addyear$sl_, na.rm = T), sl.interval, floor)
   ),
-
+  
   tar_target(
     extr_propwater,
-    extract_by_year(addyear, var = prop_water_250, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+    extract_by_year(addyear, var = prop_water_5000, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
-
+  
   tar_target(
     extr_propsnow,
-    extract_by_year(extr_propwater, var = prop_snow_250, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+    extract_by_year(extr_propwater, var = prop_snow_5000, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
-
+  
   tar_target(
     extr_proprock,
-    extract_by_year(extr_propsnow, var = prop_rock_250, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+    extract_by_year(extr_propsnow, var = prop_rock_5000, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
-
+  
   tar_target(
     extr_propbarren,
-    extract_by_year(extr_proprock, var = prop_barren_250, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+    extract_by_year(extr_proprock, var = prop_barren_5000, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
-
+  
   tar_target(
     extr_propbryoids,
-    extract_by_year(extr_propbarren, var = prop_bryoids_250, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+    extract_by_year(extr_propbarren, var = prop_bryoids_5000, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
-
+  
   tar_target(
     extr_propshrub,
-    extract_by_year(extr_propbryoids, var = prop_shrub_250, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+    extract_by_year(extr_propbryoids, var = prop_shrub_5000, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
-
+  
   tar_target(
     extr_propwetland,
-    extract_by_year(extr_propshrub, var = prop_wetland_250, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+    extract_by_year(extr_propshrub, var = prop_wetland_5000, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
-
+  
   tar_target(
     extr_propwettreed,
-    extract_by_year(extr_propwetland, var = prop_wettreed_250, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+    extract_by_year(extr_propwetland, var = prop_wettreed_5000, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
-
+  
   tar_target(
     extr_propherbs,
-    extract_by_year(extr_propwettreed, var = prop_herbs_250, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+    extract_by_year(extr_propwettreed, var = prop_herbs_5000, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
-
+  
   tar_target(
     extr_propneedle,
-    extract_by_year(extr_propherbs, var = prop_needleleaf_250, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+    extract_by_year(extr_propherbs, var = prop_needleleaf_5000, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
-
+  
   tar_target(
     extr_propdecid,
-    extract_by_year(extr_propneedle, var = prop_deciduous_250, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+    extract_by_year(extr_propneedle, var = prop_deciduous_5000, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
-
+  
   tar_target(
     extr_propmixed,
-    extract_by_year(extr_propdecid, var = prop_mixed_250, startyr = minyr, endyr = 2022, maxyr, where = 'both')
+    extract_by_year(extr_propdecid, var = prop_mixed_5000, startyr = minyr, endyr = 2022, maxyr, where = 'both')
   ),
   
   tar_target(
@@ -528,292 +544,315 @@ targets_propland <- c(
 targets_disturbance <- c(     
   tar_target(
     dist_paved,
-    extract_by_year(extr_propmixed1000, var = dist_paved_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+    extract_by_year(extr_propmixed1000, var = dist_paved_5000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
   tar_target(
     dist_unpaved,
-    extract_by_year(dist_paved, var = dist_unpaved_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+    extract_by_year(dist_paved, var = dist_unpaved_5000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
   tar_target(
     dist_other,
-    extract_by_year(dist_unpaved, var = dist_lfother_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+    extract_by_year(dist_unpaved, var = dist_lfother_5000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
   tar_target(
     dist_otherpolys,
-    extract_by_year(dist_other, var = dist_otherpoly_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+    extract_by_year(dist_other, var = dist_otherpoly_5000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
   tar_target(
     dist_miningpolys,
-    extract_by_year(dist_otherpolys, var = dist_othermines_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+    extract_by_year(dist_otherpolys, var = dist_othermines_5000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
   tar_target(
     dist_placer,
-    extract_by_year(dist_miningpolys, var = dist_placer_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+    extract_by_year(dist_miningpolys, var = dist_placer_5000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
   tar_target(
     dist_quartz,
-    extract_by_year(dist_placer, var = dist_quartz_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+    extract_by_year(dist_placer, var = dist_quartz_5000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
   
-#Presence/absence
+  #Presence/absence
   tar_target(
     pa_paved,
-    extract_by_year(dist_quartz, var = pa_paved_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+    extract_by_year(dist_quartz, var = pa_paved_5000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
   tar_target(
     pa_unpaved,
-    extract_by_year(pa_paved, var = pa_unpaved_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+    extract_by_year(pa_paved, var = pa_unpaved_5000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
   tar_target(
     pa_other,
-    extract_by_year(pa_unpaved, var = pa_lfother_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+    extract_by_year(pa_unpaved, var = pa_lfother_5000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
   tar_target(
     pa_otherpolys,
-    extract_by_year(pa_other, var = pa_otherpoly_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+    extract_by_year(pa_other, var = pa_otherpoly_5000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
   tar_target(
     pa_miningpolys,
-    extract_by_year(pa_otherpolys, var = pa_othermines_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+    extract_by_year(pa_otherpolys, var = pa_othermines_5000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
   tar_target(
     pa_placer,
-    extract_by_year(pa_miningpolys, var = pa_placer_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+    extract_by_year(pa_miningpolys, var = pa_placer_5000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
   tar_target(
     pa_quartz,
-    extract_by_year(pa_placer, var = pa_quartz_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+    extract_by_year(pa_placer, var = pa_quartz_5000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
   
-#Density
+  #Density
   tar_target(
     dens_paved,
-    extract_by_year(pa_quartz, var = dens_paved_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+    extract_by_year(pa_quartz, var = dens_paved_5000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
   tar_target(
     dens_unpaved,
-    extract_by_year(dens_paved, var = dens_unpaved_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+    extract_by_year(dens_paved, var = dens_unpaved_5000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
   tar_target(
     dens_other,
-    extract_by_year(dens_unpaved, var = dens_lfother_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+    extract_by_year(dens_unpaved, var = dens_lfother_5000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
-tar_target(
-  dens_placer,
-  extract_by_year(dens_other, var = dens_placer_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
-),
-
-tar_target(
-  dens_quartz,
-  extract_by_year(dens_placer, var = dens_quartz_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
-),
-
-tar_target(
-  dens_otherpoly,
-  extract_by_year(dens_quartz, var = dens_otherpoly_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
-),
-
-tar_target(
-  dens_othermines,
-  extract_by_year(dens_otherpoly, var = dens_othermines_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
-),
-
-#Distance to harv
+  tar_target(
+    dens_placer,
+    extract_by_year(dens_other, var = dens_placer_5000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    dens_quartz,
+    extract_by_year(dens_placer, var = dens_quartz_5000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    dens_otherpoly,
+    extract_by_year(dens_quartz, var = dens_otherpoly_5000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    dens_othermines,
+    extract_by_year(dens_otherpoly, var = dens_othermines_5000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  #Distance to harv
   tar_target(
     dist_harv,
-    extract_by_year(dens_othermines, var = harv_dist_250, startyr = minyr, endyr = 2020, maxyr, where = 'both')
+    extract_by_year(dens_othermines, var = harv_dist_5000, startyr = minyr, endyr = 2020, maxyr, where = 'both')
   ),
-#Harv presence/absence
-tar_target(
-  pa_harv,
-  extract_by_year(dist_harv, var = harv_pa_250, startyr = minyr, endyr = 2020, maxyr, where = 'both')
- ),
-
-#Harv density
-tar_target(
-  dens_harv,
-  extract_by_year(pa_harv, var = harv_dens_250, startyr = minyr, endyr = 2020, maxyr, where = 'both')
-),
-
-
-#1000
-tar_target(
-  dist_paved1000,
-  extract_by_year(dens_harv, var = dist_paved_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
-),
-
-tar_target(
-  dist_unpaved1000,
-  extract_by_year(dist_paved1000, var = dist_unpaved_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
-),
-
-tar_target(
-  dist_other1000,
-  extract_by_year(dist_unpaved1000, var = dist_lfother_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
-),
-
-tar_target(
-  dist_otherpolys1000,
-  extract_by_year(dist_other1000, var = dist_otherpoly_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
-),
-
-tar_target(
-  dist_miningpolys1000,
-  extract_by_year(dist_otherpolys1000, var = dist_othermines_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
-),
-
-tar_target(
-  dist_placer1000,
-  extract_by_year(dist_miningpolys1000, var = dist_placer_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
-),
-
-tar_target(
-  dist_quartz1000,
-  extract_by_year(dist_placer1000, var = dist_quartz_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
-),
-
-
-#Presence/absence
-tar_target(
-  pa_paved1000,
-  extract_by_year(dist_quartz1000, var = pa_paved_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
-),
-
-tar_target(
-  pa_unpaved1000,
-  extract_by_year(pa_paved1000, var = pa_unpaved_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
-),
-
-tar_target(
-  pa_other1000,
-  extract_by_year(pa_unpaved1000, var = pa_lfother_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
-),
-
-tar_target(
-  pa_otherpolys1000,
-  extract_by_year(pa_other1000, var = pa_otherpoly_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
-),
-
-tar_target(
-  pa_miningpolys1000,
-  extract_by_year(pa_otherpolys1000, var = pa_othermines_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
-),
-
-tar_target(
-  pa_placer1000,
-  extract_by_year(pa_miningpolys1000, var = pa_placer_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
-),
-
-tar_target(
-  pa_quartz1000,
-  extract_by_year(pa_placer1000, var = pa_quartz_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
-),
-
-
-#Density
-tar_target(
-  dens_paved1000,
-  extract_by_year(pa_quartz1000, var = dens_paved_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
-),
-
-tar_target(
-  dens_unpaved1000,
-  extract_by_year(dens_paved1000, var = dens_unpaved_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
-),
-
-tar_target(
-  dens_other1000,
-  extract_by_year(dens_unpaved1000, var = dens_lfother_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
-),
-
-tar_target(
-  dens_placer1000,
-  extract_by_year(dens_other1000, var = dens_placer_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
-),
-
-tar_target(
-  dens_quartz1000,
-  extract_by_year(dens_placer1000, var = dens_quartz_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
-),
-
-tar_target(
-  dens_otherpoly1000,
-  extract_by_year(dens_quartz1000, var = dens_otherpoly_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
-),
-
-tar_target(
-  dens_othermines1000,
-  extract_by_year(dens_otherpoly1000, var = dens_othermines_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
-),
-
-
-#Distance to harv
-tar_target(
-  dist_harv1000,
-  extract_by_year(dens_othermines1000, var = harv_dist_1000, startyr = minyr, endyr = 2020, maxyr, where = 'both')
-),
-#Harv presence/absence
-tar_target(
-  pa_harv1000,
-  extract_by_year(dist_harv1000, var = harv_pa_1000, startyr = minyr, endyr = 2020, maxyr, where = 'both')
-),
-
-tar_target(
-  dens_harv1000,
-  extract_by_year(pa_harv1000, var = harv_dens_1000, startyr = minyr, endyr = 2020, maxyr, where = 'both')
+  #Harv presence/absence
+  tar_target(
+    pa_harv,
+    extract_by_year(dist_harv, var = harv_pa_5000, startyr = minyr, endyr = 2020, maxyr, where = 'both')
+  ),
+  
+  #Harv density
+  tar_target(
+    dens_harv,
+    extract_by_year(pa_harv, var = harv_dens_5000, startyr = minyr, endyr = 2020, maxyr, where = 'both')
+  ),
+  
+  
+  #1000
+  tar_target(
+    dist_paved1000,
+    extract_by_year(dens_harv, var = dist_paved_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    dist_unpaved1000,
+    extract_by_year(dist_paved1000, var = dist_unpaved_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    dist_other1000,
+    extract_by_year(dist_unpaved1000, var = dist_lfother_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    dist_otherpolys1000,
+    extract_by_year(dist_other1000, var = dist_otherpoly_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    dist_miningpolys1000,
+    extract_by_year(dist_otherpolys1000, var = dist_othermines_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    dist_placer1000,
+    extract_by_year(dist_miningpolys1000, var = dist_placer_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    dist_quartz1000,
+    extract_by_year(dist_placer1000, var = dist_quartz_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  
+  #Presence/absence
+  tar_target(
+    pa_paved1000,
+    extract_by_year(dist_quartz1000, var = pa_paved_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    pa_unpaved1000,
+    extract_by_year(pa_paved1000, var = pa_unpaved_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    pa_other1000,
+    extract_by_year(pa_unpaved1000, var = pa_lfother_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    pa_otherpolys1000,
+    extract_by_year(pa_other1000, var = pa_otherpoly_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    pa_miningpolys1000,
+    extract_by_year(pa_otherpolys1000, var = pa_othermines_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    pa_placer1000,
+    extract_by_year(pa_miningpolys1000, var = pa_placer_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    pa_quartz1000,
+    extract_by_year(pa_placer1000, var = pa_quartz_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  
+  #Density
+  tar_target(
+    dens_paved1000,
+    extract_by_year(pa_quartz1000, var = dens_paved_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    dens_unpaved1000,
+    extract_by_year(dens_paved1000, var = dens_unpaved_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    dens_other1000,
+    extract_by_year(dens_unpaved1000, var = dens_lfother_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    dens_placer1000,
+    extract_by_year(dens_other1000, var = dens_placer_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    dens_quartz1000,
+    extract_by_year(dens_placer1000, var = dens_quartz_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    dens_otherpoly1000,
+    extract_by_year(dens_quartz1000, var = dens_otherpoly_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    dens_othermines1000,
+    extract_by_year(dens_otherpoly1000, var = dens_othermines_1000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+  ),
+  
+  
+  #Distance to harv
+  tar_target(
+    dist_harv1000,
+    extract_by_year(dens_othermines1000, var = harv_dist_1000, startyr = minyr, endyr = 2020, maxyr, where = 'both')
+  ),
+  #Harv presence/absence
+  tar_target(
+    pa_harv1000,
+    extract_by_year(dist_harv1000, var = harv_pa_1000, startyr = minyr, endyr = 2020, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    dens_harv1000,
+    extract_by_year(pa_harv1000, var = harv_dens_1000, startyr = minyr, endyr = 2020, maxyr, where = 'both')
+  ),
+  
+  #Elevation and Northness
+  tar_target(
+    elev_1000,
+    extract_pt(dens_harv1000, layer = elev_1000, name = "elevation1000", where = 'both')
+  ),
+  
+  tar_target(
+    elev_5000,
+    extract_pt(elev_1000, layer = elev_5000, name = "elevation5000", where = 'both')
+  ),
+  
+  tar_target(
+    north_1000,
+    extract_pt(elev_5000, layer = north_1000, name = "northness1000", where = 'both')
+  ),
+  
+  tar_target(
+    north_5000,
+    extract_pt(north_1000, layer = north_5000, name = "northness5000", where = 'both')
+  )
+  
 )
-)
+
+
 
 
 ## time since ----
 targets_timesince <- c(   
   # Extract forest age
   tar_target(
-    extr_for.age,
-    extract_by_year(pa_harv1000, var = for_age_250, startyr = minyr, endyr = 2024, maxyr, where = 'both')
+    extr_for_age,
+    extract_by_year(north_5000, var = for_age_5000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
   # Extract harvest
   tar_target(
     extr_harv,
-    extract_by_year(extr_for.age, var = harv250, startyr = minyr, endyr = 2020, maxyr, where = 'both')
+    extract_by_year(extr_for_age, var = harv5000, startyr = minyr, endyr = 2020, maxyr, where = 'both')
   ),
-
+  
   # calculate time since harvest
   tar_target(
     ts_harv,
-    calc_ts(extr_harv, var = 'harv250', where = 'both', no.data=100)
+    calc_ts(extr_harv, var = 'harv5000', where = 'both', no.data=100)
   ),
   
   # Extract fires
   tar_target(
     extr_fires,
-    extract_by_year(ts_harv, var = fires_250, startyr = minyr, endyr = 2023, maxyr, where = 'both')
+    extract_by_year(ts_harv, var = fires_5000, startyr = minyr, endyr = 2024, maxyr, where = 'both')
   ),
   
   # calculate time since fire
   tar_target(
     ts_fire,
-    calc_ts(extr_fires, var = 'fires_250', where = 'both', no.data=200) 
+    calc_ts(extr_fires, var = 'fires_5000', where = 'both', no.data=200) 
   ),
-  
   
   tar_target(
     extr_for.age1000,
@@ -842,7 +881,29 @@ targets_timesince <- c(
   tar_target(
     ts_fire1000,
     calc_ts(extr_fires1000, var = 'fires_1000', where = 'both', no.data=200) 
+  ),
+  
+  #perc fires
+  tar_target(
+    perc2fires1000,
+    extract_by_year(ts_fire1000, var = fire_2perc1000, startyr = minyr, endyr = 2023, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    perc60fires1000,
+    extract_by_year(perc2fires1000, var = fire_60perc1000, startyr = minyr, endyr = 2023, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    perc2fires5000,
+    extract_by_year(perc60fires1000, var = fire_2perc5000, startyr = minyr, endyr = 2023, maxyr, where = 'both')
+  ),
+  
+  tar_target(
+    perc60fires5000,
+    extract_by_year(perc2fires5000, var = fire_60perc5000, startyr = minyr, endyr = 2023, maxyr, where = 'both')
   )
+  
 )
 
 
@@ -852,7 +913,7 @@ targets_stepID <- c(
   # create step ID across individuals
   tar_target(
     stepID,
-    setDT(ts_fire1000)[,indiv_step_id := paste(id, step_id_, sep = '_')]
+    setDT(perc60fires5000)[,indiv_step_id := paste(id, step_id_, sep = '_')]
   )
 )
 
@@ -860,4 +921,3 @@ targets_stepID <- c(
 # Targets: all ------------------------------------------------------------------
 # Automatically grab and combine all the 'targets_*' lists above
 lapply(grep('targets', ls(), value = TRUE), get)
-
