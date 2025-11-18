@@ -73,6 +73,10 @@ for(i in names(pathLand250)){
 names(rastLand250) <- names(pathLand250)
 
 # add rasters we created to improve availability and test models
+#ref <- rastLand250[[1]]
+#rastLand250[['ts_harv250']] <- terra::project(rastLand250[['ts_harv250']], ref, method = "near")
+#rastLand250[['ts_harv250']] <- mask(rastLand250[['ts_harv250']], ref)
+
 rastLand250 <- append(rastLand250, list(ts_harv250 = (yr - rastLand250$harv250)))
 rastLand250[['ts_harv250']][is.na(rastLand250[['ts_harv250']])] <- 100
 rastLand250[['ts_harv250']] <- mask(rastLand250[['ts_harv250']], rastLand250[[1]])
@@ -88,7 +92,7 @@ rastLand250 <- append(rastLand250, list(prop_veg_250 = rastLand250$prop_bryoids_
 
 rastLand250 <- append(rastLand250, list(dist_lf_250 = min(c(rastLand250$dist_lfother_250, rastLand250$dist_paved_250, rastLand250$dist_unpaved_250), na.rm = T)))
 
-rastLand250 <- append(rastLand250, list(dist_poly_250 = min(c(rastLand250$dist_placer_250, rastLand250$dist_quartz_250, rastLand250$harv_dist_250, rastLand250$dist_othermines_250, rastLand250$dist_otherpoly), na.rm = T)))
+rastLand250 <- append(rastLand250, list(dist_poly_250 = min(c(rastLand250$dist_placer_250, rastLand250$dist_quartz_250, rastLand250$harv_dist_250, rastLand250$dist_othermines_250, rastLand250$dist_otherpoly_250), na.rm = T)))
 
 ### 1000 m ----
 # do same as above, but there are slightly different rasters at this resolution
@@ -151,6 +155,9 @@ for(i in names(pathLand1000)){
 names(rastLand1000) <- names(pathLand1000)
 
 # calc the other rasters
+#ref <- rastLand1000[[1]]
+#rastLand1000[['ts_harv1000']] <- terra::project(rastLand1000[['ts_harv1000']], ref, method = "near")
+
 rastLand1000 <- append(rastLand1000, list(ts_harv1000 = (yr - rastLand1000$harv1000)))
 rastLand1000[['ts_harv1000']][is.na(rastLand1000[['ts_harv1000']])] <- 100
 rastLand1000[['ts_harv1000']] <- mask(rastLand1000[['ts_harv1000']], rastLand1000[[1]])
@@ -212,15 +219,20 @@ studyArea.fill <- vect(file.path(dataDrive, 'studyArea_map.shp'))
 
 # load mod
 mod.fine <- prepInputs(url = "https://drive.google.com/file/d/1mOyoqH6Gj8SpMMNguTF-SxqI9GW_qEnc/view?usp=share_link",
-                       targetFile = "m.simple15step.RDS",
+                       targetFile = "simple.filt.RDS",
                        destinationPath = tempdir(),
                        fun = "readRDS")
 
+#simple.filt <- readRDS("simple.filt.RDS")
 
-pde.fine <- make_pde(mod = mod.fine, lsRasters = rastLand2020.fine, studyArea = studyArea.fill)
+
+pde.fine <- make_pde(mod = simple.filt, lsRasters = rastLand2020.fine, studyArea = studyArea.fill)
 plot(pde.fine)
+pde <- make_pde_map(pde.fine)
+plot(as.numeric(pde))
 
-writeRaster(pde.fine, file.path(dataDrive, 'pde_fine.tif'))
+
+writeRaster(pde.fine, file.path(dataDrive, 'pde_simple.tif'), overwrite = TRUE)
 
 gc()
 

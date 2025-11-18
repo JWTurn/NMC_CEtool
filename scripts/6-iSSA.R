@@ -362,7 +362,7 @@ m.simple.filt <- glmmTMB(case_ ~ -1 +
 
 summary(m.simple.filt)
 # save model output
-saveRDS(m.simple.filt, "simple.filt.seasonfixedint.RDS")
+saveRDS(m.simple.filt, "simple.filt.RDS")
 #m.simple <- readRDS("m.simple.RDS")
 
 
@@ -409,7 +409,6 @@ ggplot() +
 
 
 ## ---- Complex model ----
-#No scaling, dropped ts_harv, added dist_harv to dist_otherpoly 
 gc()
 m.complex <- glmmTMB(case_ ~ -1 +
                        I(log((sl_ + 1)/1000)) +
@@ -423,7 +422,7 @@ m.complex <- glmmTMB(case_ ~ -1 +
                        #I(log((dist_unpaved_250_end_adj + 1)/1000)) + I(log((dist_unpaved_250_end_adj + 1)/1000)) : I(log((dist_unpaved_1000_start_adj + 1)/1000)) +
                        I(log((dist_lfother_250_end + 1)/1000)) + #I(log((dist_lfother_250_end_adj + 1)/1000)) : I(log((dist_lfother_5000_start_adj + 1)/1000)) +
                        I(log((dist_otherpoly_250_end + 1)/1000)) + #I(log((dist_otherpoly_250_end_adj + 1)/1000)) : I(log((dist_otherpoly_5000_start_adj + 1)/1000)) +
-                       #I(log((dist_mines_250_end_adj + 1)/1000)) + I(log((dist_mines_250_end_adj + 1)/1000)) : I(log((dist_mines_1000_start_adj + 1)/1000)) +
+                       #I(log((dist_mines_250_end + 1)/1000)) + #I(log((dist_mines_250_end_adj + 1)/1000)) : I(log((dist_mines_1000_start_adj + 1)/1000)) +
                        I(log((dist_placer_250_end + 1)/1000)) + #I(log((dist_placer_250_end_adj + 1)/1000)) : I(log((dist_placer_5000_start_adj + 1)/1000)) +
                        I(log((dist_quartz_250_end + 1)/1000)) + #I(log((dist_quartz_250_end_adj + 1)/1000)) : I(log((dist_quartz_5000_start_adj + 1)/1000)) +
                        I(log((dist_othermines_250_end + 1)/1000)) + #I(log((dist_othermines_250_end_adj + 1)/1000)) : I(log((dist_othermines_5000_start_adj + 1)/1000)) +
@@ -440,12 +439,12 @@ m.complex <- glmmTMB(case_ ~ -1 +
                        #(0 + I(log((dist_unpaved_250_end_adj + 1)/1000)) | id) +
                        (0 + I(log((dist_lfother_250_end + 1)/1000)) | id) +
                        (0 + I(log((dist_otherpoly_250_end + 1)/1000)) | id) +
-                       #(0 + I(log((dist_mines_250_end_adj + 1)/1000)) | id) +
-                       (0 + I(log((dist_placer_250_end + 1)/1000)) | id) +
-                       (0 + I(log((dist_quartz_250_end + 1)/1000)) | id) +
-                       (0 + I(log((dist_othermines_250_end + 1)/1000)) | id) +
+                       #(0 + I(log((dist_mines_250_end + 1)/1000)) | id) +
+                       #(0 + I(log((dist_placer_250_end + 1)/1000)) | id) +
+                       #(0 + I(log((dist_quartz_250_end + 1)/1000)) | id) +
+                       #(0 + I(log((dist_othermines_250_end + 1)/1000)) | id) +
                        
-                       (1 | year),
+                       (1 | year:season),
                      
                      family = poisson(), 
                      data = dat.issa.10.filtered[, `:=`(
@@ -454,8 +453,8 @@ m.complex <- glmmTMB(case_ ~ -1 +
                        indiv_step_id = as.factor(indiv_step_id),
                        id = as.factor(id)
                      )],
-                     map = list(theta = factor(c(NA, 1:6))),
-                     start = list(theta = c(log(1000), rep(0, 6))), 
+                     map = list(theta = factor(c(NA, 1:9))),
+                     start = list(theta = c(log(1000), rep(0, 9))), 
                      verbose = TRUE, 
                      control = glmmTMBControl(rank_check = "adjust")
 )
@@ -506,12 +505,9 @@ ggplot() +
   labs(x = "", y = "Estimate") 
 
 
-
-
-
 # Winter-only models -----
 #create winter dataset
-dat.issa.10.winter <- dat.issa.10[season == "winter"]
+dat.issa.10.winter <- dat.issa.10.filtered[season == "winter"]
 
 #explore elevation difference to create groups to differentiate winter use 
 avg_elev_per_id <- aggregate(elevation250_end ~ id, data = dat.issa.10.winter, FUN = mean)
@@ -580,15 +576,15 @@ m.complex.winter <- glmmTMB(case_ ~ -1 +
                        prop_forest_250_end + prop_forest_250_end:elev_behav + #prop_forest_250_end:prop_forest_5000_start +
                        prop_veg_250_end + prop_veg_250_end:elev_behav + #prop_veg_250_end:prop_veg_5000_start +
                        I(log(ts_fires_250_end + 1)) + #I(log(ts_fires_250_end + 1)) : I(log(ts_fires_5000_start + 1)) +
-                       I(log((dist_road_250_end_adj + 1)/1000)) + I(log((dist_road_250_end_adj + 1)/1000)):elev_behav + #I(log((dist_road_250_end_adj + 1)/1000)) : I(log((dist_road_5000_start_adj + 1)/1000)) +
+                       I(log((dist_road_250_end + 1)/1000)) + I(log((dist_road_250_end + 1)/1000)):elev_behav + #I(log((dist_road_250_end_adj + 1)/1000)) : I(log((dist_road_5000_start_adj + 1)/1000)) +
                        #I(log((dist_paved_250_end_adj + 1)/1000)) + (log((dist_paved_250_end_adj + 1)/1000)):elev_behav + #I(log((dist_paved_250_end_adj + 1)/1000)) : I(log((dist_paved_1000_start_adj + 1)/1000)) +
                        #I(log((dist_unpaved_250_end_adj + 1)/1000)) + I(log((dist_unpaved_250_end_adj + 1)/1000)):elev_behav + #I(log((dist_unpaved_250_end_adj + 1)/1000)) : I(log((dist_unpaved_1000_start_adj + 1)/1000)) +
-                       I(log((dist_lfother_250_end_adj + 1)/1000)) + I(log((dist_lfother_250_end_adj + 1)/1000)):elev_behav + #I(log((dist_lfother_250_end_adj + 1)/1000)) : I(log((dist_lfother_5000_start_adj + 1)/1000)) +
-                       I(log((dist_otherpoly_250_end_adj + 1)/1000)) + #I(log((dist_otherpoly_250_end_adj + 1)/1000)):elev_behav + #I(log((dist_otherpoly_250_end_adj + 1)/1000)) : I(log((dist_otherpoly_5000_start_adj + 1)/1000)) +
+                       I(log((dist_lfother_250_end + 1)/1000)) + I(log((dist_lfother_250_end + 1)/1000)):elev_behav + #I(log((dist_lfother_250_end_adj + 1)/1000)) : I(log((dist_lfother_5000_start_adj + 1)/1000)) +
+                       I(log((dist_otherpoly_250_end + 1)/1000)) + I(log((dist_otherpoly_250_end + 1)/1000)):elev_behav + #I(log((dist_otherpoly_250_end_adj + 1)/1000)) : I(log((dist_otherpoly_5000_start_adj + 1)/1000)) +
                        #I(log((dist_mines_250_end_adj + 1)/1000)) + #I(log((dist_mines_250_end_adj + 1)/1000)):elev_behav + I(log((dist_mines_250_end_adj + 1)/1000)) : I(log((dist_mines_1000_start_adj + 1)/1000)) +
-                       I(log((dist_placer_250_end_adj + 1)/1000)) + #I(log((dist_placer_250_end_adj + 1)/1000)):elev_behav + #I(log((dist_placer_250_end_adj + 1)/1000)) : I(log((dist_placer_5000_start_adj + 1)/1000)) +
-                       I(log((dist_quartz_250_end_adj + 1)/1000)) + #I(log((dist_quartz_250_end_adj + 1)/1000)):elev_behav + #I(log((dist_quartz_250_end_adj + 1)/1000)) : I(log((dist_quartz_5000_start_adj + 1)/1000)) +
-                       I(log((dist_othermines_250_end_adj + 1)/1000)) + #I(log((dist_othermines_250_end_adj + 1)/1000)):elev_behav + #I(log((dist_othermines_250_end_adj + 1)/1000)) : I(log((dist_othermines_5000_start_adj + 1)/1000)) +
+                       I(log((dist_placer_250_end + 1)/1000)) + #I(log((dist_placer_250_end + 1)/1000)):elev_behav + #I(log((dist_placer_250_end_adj + 1)/1000)) : I(log((dist_placer_5000_start_adj + 1)/1000)) +
+                       I(log((dist_quartz_250_end + 1)/1000)) + #I(log((dist_quartz_250_end + 1)/1000)):elev_behav + #I(log((dist_quartz_250_end_adj + 1)/1000)) : I(log((dist_quartz_5000_start_adj + 1)/1000)) +
+                       I(log((dist_othermines_250_end + 1)/1000)) + #I(log((dist_othermines_250_end + 1)/1000)):elev_behav + #I(log((dist_othermines_250_end_adj + 1)/1000)) : I(log((dist_othermines_5000_start_adj + 1)/1000)) +
                        
                        (1 | indiv_step_id) +
                        (0 + I(log((sl_ + 1)/1000)) | id) +
@@ -597,11 +593,11 @@ m.complex.winter <- glmmTMB(case_ ~ -1 +
                        (0 + prop_forest_250_end | id) +
                        (0 + prop_veg_250_end | id) +
                        #(0 + I(log(ts_fires_250_end + 1)) | id) +
-                       (0 + I(log((dist_road_250_end_adj + 1)/1000)) | id) +
+                       (0 + I(log((dist_road_250_end + 1)/1000)) | id) +
                        #(0 + I(log((dist_paved_250_end_adj + 1)/1000)) | id) +
                        #(0 + I(log((dist_unpaved_250_end_adj + 1)/1000)) | id) +
-                       (0 + I(log((dist_lfother_250_end_adj + 1)/1000)) | id) +
-                       (0 + I(log((dist_otherpoly_250_end_adj + 1)/1000)) | id) +
+                       (0 + I(log((dist_lfother_250_end + 1)/1000)) | id) +
+                       (0 + I(log((dist_otherpoly_250_end + 1)/1000)) | id) +
                        #(0 + I(log((dist_mines_250_end_adj + 1)/1000)) | id) +
                        #(0 + I(log((dist_placer_250_end_adj + 1)/1000)) | id) +
                        #(0 + I(log((dist_quartz_250_end_adj + 1)/1000)) | id) +
@@ -670,18 +666,88 @@ ggplot() +
 
 
 
+#Simple winter
+gc()
+m.simple.winter <- glmmTMB(case_ ~ -1 +
+                           I(log((sl_ + 1)/1000)) +
+                           I(cos(ta_)) +
+                           I(log((sl_ + 1)/1000)):I(cos(ta_)) +
+                           prop_forest_250_end + prop_forest_250_end:elev_behav +
+                           prop_veg_250_end + prop_veg_250_end:elev_behav +
+                           I(log(ts_fires_250_end + 1)) + 
+                           I(log((dist_lf_250_end + 1)/1000)) + I(log((dist_lf_250_end + 1)/1000)):elev_behav +
+                           I(log((dist_poly_250_end + 1)/1000)) + I(log((dist_poly_250_end + 1)/1000)):elev_behav +
+                           
+                           (1 | indiv_step_id) +
+                           (0 + I(log((sl_ + 1)/1000)) | id) +
+                           (0 + I(cos(ta_)) | id) +
+                           (0 + I(log((sl_ + 1)/1000)) : I(cos(ta_)) | id) +
+                           (0 + prop_forest_250_end | id) +
+                           (0 + prop_veg_250_end | id) +
+                           #(0 + I(log(ts_fires_250_end + 1)) | id) +
+                           (0 + I(log((dist_lf_250_end + 1)/1000)) | id) +
+                           (0 + I(log((dist_poly_250_end + 1)/1000)) | id) +
+                           
+                           (1 | year),
+                         
+                         family = poisson(), 
+                         data = dat.issa.10.winter[, `:=`(
+                           year = as.factor(year), 
+                           #season = as.factor(season),
+                           indiv_step_id = as.factor(indiv_step_id),
+                           id = as.factor(id)
+                         )],
+                         map = list(theta = factor(c(NA, 1:8))),
+                         start = list(theta = c(log(1000), rep(0, 8))), 
+                         verbose = TRUE, 
+                         control = glmmTMBControl(rank_check = "adjust")
+)
+
+summary(m.simple.winter)
+# save model output
+saveRDS(m.simple.winter, "simple.winter.RDS")
+#m.simple.winter <- readRDS("simple.winter.RDS")
 
 
 
+m.simple.winter.indiv <- coef(m.simple.winter)$cond$id %>% rownames_to_column("id") %>%
+  pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
+  mutate(method = "ME")
+indivs <- setDT(m.simple.winter.indiv)[term!='(Intercept)']
+pop <- setDT(tidy(m.simple.winter, effects = 'fixed'))
 
 
+require(ggplot2)
+ggplot() +
+  geom_jitter(data = indivs[term %like% "dist"], aes(x = term, y = estimate),
+              width = 0.15, height = 0, alpha = 0.2, color = "#9467bd") +
+  geom_point(data = pop[term %like% "dist"], aes(x = term, y = estimate),
+             color = "black", size = 2.5) +
+  geom_errorbar(data = pop[term %like% "dist"],
+                aes(x = term,
+                    ymin = estimate - 1.96 * std.error,
+                    ymax = estimate + 1.96 * std.error),
+                width = 0.2, color = "black") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray30") +
+  coord_flip() +
+  theme_minimal(base_size = 14) +
+  labs(x = "", y = "Estimate") 
 
 
-
-
-
-
-
+ggplot() +
+  geom_jitter(data = indivs[!(term %like% "dist")], aes(x = term, y = estimate),
+              width = 0.15, height = 0, alpha = 0.2, color = "#9467bd") +
+  geom_point(data = pop[!(term %like% "dist")], aes(x = term, y = estimate),
+             color = "black", size = 2.5) +
+  geom_errorbar(data = pop[!(term %like% "dist")],
+                aes(x = term,
+                    ymin = estimate - 1.96 * std.error,
+                    ymax = estimate + 1.96 * std.error),
+                width = 0.2, color = "black") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray30") +
+  coord_flip() +
+  theme_minimal(base_size = 14) +
+  labs(x = "", y = "Estimate") 
 
 
 

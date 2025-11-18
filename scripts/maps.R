@@ -18,7 +18,7 @@ canada <- file.path('C:','Users', 'julie', 'Dropbox', 'ActiveDocs', 'Git-local',
 dataDrive <- file.path('G:', 'Shared drives', 'WSC_Yukon', 'CEtool_component3', 'data_models_new', 'Fine_Models', 'data')
 
 canPoly <- st_read(file.path(canada, 'CanadaPoly', 'lpr_000b16a_e.shp'))
-
+#canPoly <- st_read('lpr_000b16a_e.shp')
 dat <- readRDS(file.path(derived, 'clean_NMC.RDS'))
 
 
@@ -105,7 +105,7 @@ ftNelBuff <- towns |>
   st_buffer(30000)
 
 
-pdeFine <- rast(file.path(dataDrive, 'pde_fine.tif'))
+pdeFine <- rast(file.path(dataDrive, 'pde_simple.tif'))
 pdeFine <- project(pdeFine, mapCRS)
 ytbcVect <- vect(ytbc.wgs)
 nmcherdsVect <- vect(nmcherds)
@@ -124,7 +124,7 @@ ggplot() +
   scale_fill_viridis(option = 'plasma', na.value = NA) +
   # name = 'Intensity of selection', 
   # breaks = c(minPde, maxPde), 
-  # labels = c('low', 'high')) +
+   #labels = c('low', 'high')) +
   geom_spatvector(data = nmcherdsVect, fill = NA, color = "lightblue", alpha = 0.6) +
   geom_sf(data = towns, size = 1, color = "black") +
   geom_text(data = town_labels, aes(x = x, y = y, label = `Town.Name`), size = 3) +
