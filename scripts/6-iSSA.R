@@ -363,7 +363,7 @@ m.simple.filt <- glmmTMB(case_ ~ -1 +
 summary(m.simple.filt)
 # save model output
 saveRDS(m.simple.filt, "simple.filt.RDS")
-#m.simple <- readRDS("m.simple.RDS")
+#m.simple.filt <- readRDS("simple.filt.RDS")
 
 
 
