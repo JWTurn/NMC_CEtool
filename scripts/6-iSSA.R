@@ -322,6 +322,7 @@ ids_to_keep <- dat.issa.10.close %>%
 # Step 2: Filter the main dataset to only those IDs
 dat.issa.10.filtered <- dat.issa.10 %>%
   filter(id %in% ids_to_keep)
+#dat.issa.10.filtered <- readRDS(file.path(derived, 'dat_iSSA_10_filtered.RDS'))
 
 
 gc()
@@ -364,8 +365,6 @@ summary(m.simple.filt)
 # save model output
 saveRDS(m.simple.filt, "simple.filt.RDS")
 #m.simple.filt <- readRDS("simple.filt.RDS")
-
-
 
 m.simple.indiv <- coef(m.simple.filt)$cond$id %>% rownames_to_column("id") %>%
   pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
@@ -516,6 +515,18 @@ avg_elev_per_id$elev_behav <- ifelse(avg_elev_per_id$elevation250_end >= 1300, "
 dat.issa.10.winter <- merge(dat.issa.10.winter, avg_elev_per_id[, c("id", "elev_behav")],
                             by = "id", all.x = TRUE)
 
+dat.issa.10.winter[, elev_bin := cut(elevation250_end, breaks = seq(300, 2600, by = 100))]
+
+ggplot(dat.issa.10.winter, aes(x = elev_bin, y = prop_veg_250_end)) +
+  geom_violin(fill = "lightblue", alpha = 0.5) +         # distribution shape per elevation bin
+  geom_jitter(width = 0.1, alpha = 0.05, size = 0.5) +   # show individual points with jitter
+  labs(x = "Elevation (binned, 100m intervals)",
+       y = "Proportion vegetation",
+       title = "Variation of vegetation proportion across elevation bins") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
 plot(density(avg_elev_per_id$elevation250_end, na.rm = TRUE),
      main = "Density of Average Elevation per ID",
      xlab = "Average Elevation (m)",
@@ -567,20 +578,32 @@ ggplot() +
 
 
 
+#Trying to center
+dat.issa.10.winter[, log_sl_c := scale(log(sl_ + 1) / 1000, center = TRUE, scale = FALSE)]
+dat.issa.10.winter[, cos_ta_c := scale(cos(ta_), center = TRUE, scale = FALSE)]
+dat.issa.10.winter[, prop_veg_c := scale(prop_veg_250_end, center = TRUE, scale = FALSE)]
+
+dat.issa.10.winter[, elev_behav := factor(elev_behav, levels = c("low", "high"))]
+
+dat.issa.10.winter[, elev01 := as.integer(elev_behav == "high")]
+
+
 #Models with elevation behavior included
 gc()
 m.complex.winter <- glmmTMB(case_ ~ -1 +
                        I(log((sl_ + 1)/1000)) +
                        I(cos(ta_)) +
                        I(log((sl_ + 1)/1000)):I(cos(ta_)) +
-                       prop_forest_250_end + prop_forest_250_end:elev_behav + #prop_forest_250_end:prop_forest_5000_start +
-                       prop_veg_250_end + prop_veg_250_end:elev_behav + #prop_veg_250_end:prop_veg_5000_start +
+                       I(log((sl_ + 1)/1000)):elev01 +
+                       I(cos(ta_)):elev01 +
+                       prop_forest_250_end + #prop_forest_250_end:elev_behav + #prop_forest_250_end:prop_forest_5000_start +
+                       prop_veg_250_end + prop_veg_250_end:elev01 + #prop_veg_250_end:prop_veg_5000_start +
                        I(log(ts_fires_250_end + 1)) + #I(log(ts_fires_250_end + 1)) : I(log(ts_fires_5000_start + 1)) +
-                       I(log((dist_road_250_end + 1)/1000)) + I(log((dist_road_250_end + 1)/1000)):elev_behav + #I(log((dist_road_250_end_adj + 1)/1000)) : I(log((dist_road_5000_start_adj + 1)/1000)) +
+                       I(log((dist_road_250_end + 1)/1000)) + #I(log((dist_road_250_end + 1)/1000)):elev_behav + #I(log((dist_road_250_end_adj + 1)/1000)) : I(log((dist_road_5000_start_adj + 1)/1000)) +
                        #I(log((dist_paved_250_end_adj + 1)/1000)) + (log((dist_paved_250_end_adj + 1)/1000)):elev_behav + #I(log((dist_paved_250_end_adj + 1)/1000)) : I(log((dist_paved_1000_start_adj + 1)/1000)) +
                        #I(log((dist_unpaved_250_end_adj + 1)/1000)) + I(log((dist_unpaved_250_end_adj + 1)/1000)):elev_behav + #I(log((dist_unpaved_250_end_adj + 1)/1000)) : I(log((dist_unpaved_1000_start_adj + 1)/1000)) +
-                       I(log((dist_lfother_250_end + 1)/1000)) + I(log((dist_lfother_250_end + 1)/1000)):elev_behav + #I(log((dist_lfother_250_end_adj + 1)/1000)) : I(log((dist_lfother_5000_start_adj + 1)/1000)) +
-                       I(log((dist_otherpoly_250_end + 1)/1000)) + I(log((dist_otherpoly_250_end + 1)/1000)):elev_behav + #I(log((dist_otherpoly_250_end_adj + 1)/1000)) : I(log((dist_otherpoly_5000_start_adj + 1)/1000)) +
+                       I(log((dist_lfother_250_end + 1)/1000)) + #I(log((dist_lfother_250_end + 1)/1000)):elev_behav + #I(log((dist_lfother_250_end_adj + 1)/1000)) : I(log((dist_lfother_5000_start_adj + 1)/1000)) +
+                       I(log((dist_otherpoly_250_end + 1)/1000)) + #I(log((dist_otherpoly_250_end + 1)/1000)):elev_behav + #I(log((dist_otherpoly_250_end_adj + 1)/1000)) : I(log((dist_otherpoly_5000_start_adj + 1)/1000)) +
                        #I(log((dist_mines_250_end_adj + 1)/1000)) + #I(log((dist_mines_250_end_adj + 1)/1000)):elev_behav + I(log((dist_mines_250_end_adj + 1)/1000)) : I(log((dist_mines_1000_start_adj + 1)/1000)) +
                        I(log((dist_placer_250_end + 1)/1000)) + #I(log((dist_placer_250_end + 1)/1000)):elev_behav + #I(log((dist_placer_250_end_adj + 1)/1000)) : I(log((dist_placer_5000_start_adj + 1)/1000)) +
                        I(log((dist_quartz_250_end + 1)/1000)) + #I(log((dist_quartz_250_end + 1)/1000)):elev_behav + #I(log((dist_quartz_250_end_adj + 1)/1000)) : I(log((dist_quartz_5000_start_adj + 1)/1000)) +
@@ -622,7 +645,7 @@ m.complex.winter <- glmmTMB(case_ ~ -1 +
 summary(m.complex.winter)
 # save model output
 saveRDS(m.complex.winter, "m.complex.winter.RDS")
-#m.complex <- readRDS("m.complex.RDS")
+#m.complex.winter <- readRDS("m.complex.winter.RDS")
 
 m.complex.winter.indiv <- coef(m.complex.winter)$cond$id %>% rownames_to_column("id") %>%
   pivot_longer(-id, names_to = "term", values_to = "estimate") %>%
@@ -633,11 +656,11 @@ pop <- setDT(tidy(m.complex.winter, effects = 'fixed'))
 
 require(ggplot2)
 ggplot() +
-  geom_jitter(data = indivs[term %like% "dist"], aes(x = term, y = estimate),
+  geom_jitter(data = indivs, aes(x = term, y = estimate),
               width = 0.15, height = 0, alpha = 0.2, color = "#9467bd") +
-  geom_point(data = pop[term %like% "dist"], aes(x = term, y = estimate),
+  geom_point(data = pop, aes(x = term, y = estimate),
              color = "black", size = 2.5) +
-  geom_errorbar(data = pop[term %like% "dist"],
+  geom_errorbar(data = pop,
                 aes(x = term,
                     ymin = estimate - 1.96 * std.error,
                     ymax = estimate + 1.96 * std.error),
@@ -672,11 +695,13 @@ m.simple.winter <- glmmTMB(case_ ~ -1 +
                            I(log((sl_ + 1)/1000)) +
                            I(cos(ta_)) +
                            I(log((sl_ + 1)/1000)):I(cos(ta_)) +
-                           prop_forest_250_end + prop_forest_250_end:elev_behav +
-                           prop_veg_250_end + prop_veg_250_end:elev_behav +
+                           I(log((sl_ + 1)/1000)):elev01 +
+                           I(cos(ta_)):elev01 +
+                           prop_forest_250_end + #prop_forest_250_end:elev_behav +
+                           prop_veg_250_end + prop_veg_250_end:elev01 +
                            I(log(ts_fires_250_end + 1)) + 
-                           I(log((dist_lf_250_end + 1)/1000)) + I(log((dist_lf_250_end + 1)/1000)):elev_behav +
-                           I(log((dist_poly_250_end + 1)/1000)) + I(log((dist_poly_250_end + 1)/1000)):elev_behav +
+                           I(log((dist_lf_250_end + 1)/1000)) + #I(log((dist_lf_250_end + 1)/1000)):elev_behav +
+                           I(log((dist_poly_250_end + 1)/1000)) + #I(log((dist_poly_250_end + 1)/1000)):elev_behav +
                            
                            (1 | indiv_step_id) +
                            (0 + I(log((sl_ + 1)/1000)) | id) +
@@ -719,11 +744,11 @@ pop <- setDT(tidy(m.simple.winter, effects = 'fixed'))
 
 require(ggplot2)
 ggplot() +
-  geom_jitter(data = indivs[term %like% "dist"], aes(x = term, y = estimate),
+  geom_jitter(data = indivs, aes(x = term, y = estimate),
               width = 0.15, height = 0, alpha = 0.2, color = "#9467bd") +
-  geom_point(data = pop[term %like% "dist"], aes(x = term, y = estimate),
+  geom_point(data = pop, aes(x = term, y = estimate),
              color = "black", size = 2.5) +
-  geom_errorbar(data = pop[term %like% "dist"],
+  geom_errorbar(data = pop,
                 aes(x = term,
                     ymin = estimate - 1.96 * std.error,
                     ymax = estimate + 1.96 * std.error),

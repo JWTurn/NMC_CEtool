@@ -19,10 +19,9 @@ lapply(dir('R', '*.R', full.names = TRUE), source)
 raw <- file.path('data', 'raw')
 derived <- file.path('data', 'derived')
 
-finedat <- readRDS(file.path(derived, 'dat_iSSA_updated.RDS'))
-finedat.20 <- finedat[,.SD[1:21], by = .(indiv_step_id)]
-finedat.15 <- finedat[,.SD[1:16], by = .(indiv_step_id)]
-finedat.10 <- finedat[,.SD[1:11], by = .(indiv_step_id)]
+dat.issa <- readRDS(file.path(derived, 'dat_iSSA_updated2.RDS'))
+gc()
+dat.issa.10 <- dat.issa[,.SD[1:11], by = .(indiv_step_id)]
 
 coarsedat <- readRDS(file.path(derived, 'dat_iSSA_coarse.RDS'))
 coarsedat.20 <- coarsedat[,.SD[1:21], by = .(indiv_step_id)]
