@@ -7,6 +7,7 @@ library(sf)
 library(viridis)
 library(rnaturalearth)
 library(dplyr)
+library(ggspatial)
 
 # --- World boundaries in WGS84 ---
 world_wgs84 <- ne_countries(scale = "large", returnclass = "sf")
@@ -68,9 +69,14 @@ ggplot() +
     aes(x = x, y = y, label = Town.Name),
     size = 3
   ) +
+  annotation_scale(
+    location = "bl",       # bottom-left
+    width_hint = 0.25,     # adjust size relative to plot width
+    text_cex = 0.7         # label size
+  ) +
   coord_sf(
     crs = 4326,
-    xlim = c(-142.5, -121),
+    xlim = c(-142.5, -120),
     ylim = c(56, 66)
   ) +
   theme_minimal() +
