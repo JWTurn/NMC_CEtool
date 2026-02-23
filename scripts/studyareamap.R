@@ -89,41 +89,41 @@ inset_map <- ggplot() +
   )
 
 # ---------------------------
-# 6. Final map (NO ROTATION)
+# Graticule (true projected grid lines)
+# ---------------------------
+grat <- st_graticule(
+  lon = seq(-180, 180, by = 5),
+  lat = seq(  40,  90, by = 5)
+) %>%
+  st_transform(crs_main)
+
+# ---------------------------
+# 6. Final map 
 # ---------------------------
 ggplot() +
   geom_sf(data = world_3578, fill = "grey95", color = "grey80", linewidth = 0.3) +
   geom_sf(data = prov_3578,  fill = NA,      color = "grey80", linewidth = 0.3) +
-  geom_sf(
-    data  = nmcherds_3578,
-    fill  = "#6A00A8FF",
-    color = "white",
-    alpha = 0.2
-  ) +
-  geom_sf_text(
-    data = nmcherds_3578,
-    aes(label = HERD_FINAL),
-    color = "#6A00A8FF",
-    size  = 3
-  ) +
+  
+  # True projected graticules
+  geom_sf(data = grat, color = "grey90", linewidth = 0.2) +
+  
+  geom_sf(data = nmcherds_3578, fill = "#6A00A8FF", color = "white", alpha = 0.2) +
+  geom_sf_text(data = nmcherds_3578, aes(label = HERD_FINAL),
+               color = "#6A00A8FF", size = 3) +
   geom_sf(data = towns_3578, size = 1, color = "black") +
-  geom_text(
-    data = town_labels,
-    aes(x = x, y = y, label = Town.Name),
-    size = 3
-  ) +
-  annotation_scale(
-    location   = "bl",
-    width_hint = 0.25,
-    text_cex   = 0.7
-  ) +
+  geom_text(data = town_labels, aes(x = x, y = y, label = Town.Name), size = 3) +
+  
+  annotation_scale(location = "bl", width_hint = 0.25, text_cex = 0.7) +
+  
+  # Smaller inset, above scale bar
   annotation_custom(
     grob = ggplotGrob(inset_map),
     xmin = bb["xmin"],
-    xmax = bb["xmin"] + (bb["xmax"] - bb["xmin"]) * 0.26,   # smaller width
-    ymin = bb["ymin"] + (bb["ymax"] - bb["ymin"]) * 0.12,   # slightly higher
-    ymax = bb["ymin"] + (bb["ymax"] - bb["ymin"]) * 0.34    # smaller height
+    xmax = bb["xmin"] + (bb["xmax"] - bb["xmin"]) * 0.26,
+    ymin = bb["ymin"] + (bb["ymax"] - bb["ymin"]) * 0.12,
+    ymax = bb["ymin"] + (bb["ymax"] - bb["ymin"]) * 0.34
   ) +
+  
   coord_sf(
     xlim  = c(bb["xmin"], bb["xmax"]),
     ylim  = c(bb["ymin"], bb["ymax"]),
