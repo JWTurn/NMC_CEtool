@@ -29,7 +29,7 @@ towns <- st_read("G:/Shared drives/WSC_Yukon/CEtool_component3/data_models_new/F
 # ---------------------------
 main_bbox_wgs84 <- st_as_sfc(
   st_bbox(
-    c(xmin = -142.5, xmax = -120, ymin = 56, ymax = 66),
+    c(xmin = -142.5, xmax = -120, ymin = 55, ymax = 66),
     crs = st_crs(4326)
   )
 )
@@ -63,14 +63,32 @@ town_labels <- towns_3578 %>%
       TRUE ~ x
     ),
     y = case_when(
-      `Town.Name` == "Fort Simpson" ~ y - 2000,
-      `Town.Name` == "Fort St John" ~ y - 2000,
-      `Town.Name` == "Fort Nelson"  ~ y - 2000,
-      `Town.Name` == "Whitehorse"   ~ y - 2000,
+      `Town.Name` == "Fort Simpson" ~ y - 10000,
+      `Town.Name` == "Fort St John" ~ y - 10000,
+      `Town.Name` == "Fort Nelson"  ~ y - 10000,
+      `Town.Name` == "Whitehorse"   ~ y - 10000,
       TRUE ~ y
     )
   ) %>%
   st_drop_geometry()
+
+# ---------------------------
+# Province labels (Yukon, NWT, BC)
+# ---------------------------
+
+province_labels_wgs84 <- data.frame(
+  name = c("Yukon", "Northwest\nTerritories", "British Columbia"),
+  lon  = c(-136.6, -120, -125),
+  lat  = c(65.6,   64,  55.8)
+)
+
+province_labels_sf <- st_as_sf(
+  province_labels_wgs84,
+  coords = c("lon", "lat"),
+  crs = 4326
+) %>%
+  st_transform(crs_main)
+
 
 # ---------------------------
 # 6. Build inset map (NO ROTATION)
@@ -102,11 +120,11 @@ grat <- st_graticule(
 # 8. Final map 
 # ---------------------------
 ggplot() +
-  geom_sf(data = world_3578, fill = "grey95", color = "grey80", linewidth = 0.3) +
-  geom_sf(data = prov_3578,  fill = NA,      color = "grey80", linewidth = 0.3) +
+  geom_sf(data = world_3578, fill = "grey95", color = "grey70", linewidth = 0.3) +
+  geom_sf(data = prov_3578,  fill = NA,      color = "grey70", linewidth = 0.3) +
   
   # True projected graticules
-  geom_sf(data = grat, color = "grey90", linewidth = 0.2) +
+  geom_sf(data = grat, color = "grey70", linewidth = 0.5, linetype = "dotted") +
   
   geom_sf(data = nmcherds_3578, fill = "#6A00A8FF", color = "white", alpha = 0.2) +
   geom_sf_text(data = nmcherds_3578, aes(label = HERD_FINAL),
@@ -124,11 +142,28 @@ ggplot() +
     ymin = bb["ymin"] + (bb["ymax"] - bb["ymin"]) * 0.12,
     ymax = bb["ymin"] + (bb["ymax"] - bb["ymin"]) * 0.34
   ) +
-  
+  # North arrow
+  annotation_north_arrow(
+    location = "tl",
+    which_north = "true",
+    style = north_arrow_fancy_orienteering,
+    height = unit(1.2, "cm"),
+    width  = unit(1.2, "cm")
+  ) +
+  # Province/Territory labels
+  geom_sf_text(
+    data = province_labels_sf,
+    aes(label = name),
+    color = "grey20",
+    size = 5,
+    fontface = "bold", alpha = 0.5
+  ) +
   coord_sf(
     xlim  = c(bb["xmin"], bb["xmax"]),
     ylim  = c(bb["ymin"], bb["ymax"]),
     expand = FALSE
   ) +
   theme_minimal() +
-  theme(axis.title = element_blank())
+  theme(axis.title = element_blank(),
+        panel.border = element_rect(color = "grey40", fill = NA, linewidth = 0.5))
+
