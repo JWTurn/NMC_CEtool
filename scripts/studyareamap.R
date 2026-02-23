@@ -63,10 +63,10 @@ town_labels <- towns_3578 %>%
       TRUE ~ x
     ),
     y = case_when(
-      `Town.Name` == "Fort Simpson" ~ y - 10000,
-      `Town.Name` == "Fort St John" ~ y - 10000,
-      `Town.Name` == "Fort Nelson"  ~ y - 10000,
-      `Town.Name` == "Whitehorse"   ~ y - 10000,
+      `Town.Name` == "Fort Simpson" ~ y - 15000,
+      `Town.Name` == "Fort St John" ~ y - 15000,
+      `Town.Name` == "Fort Nelson"  ~ y - 15000,
+      `Town.Name` == "Whitehorse"   ~ y - 15000,
       TRUE ~ y
     )
   ) %>%
@@ -100,7 +100,7 @@ inset_map <- ggplot() +
           fill = "#6A00A8FF",
           color = "#6A00A8FF",
           alpha = 0.4,
-          linewidth = 1) +
+          linewidth = 0.5) +
   theme_void() +
   theme(
     panel.background = element_rect(fill = "white", color = NA),
@@ -119,7 +119,7 @@ grat <- st_graticule(
 # ---------------------------
 # 8. Final map 
 # ---------------------------
-ggplot() +
+p <- ggplot() +
   geom_sf(data = world_3578, fill = "grey95", color = "grey70", linewidth = 0.3) +
   geom_sf(data = prov_3578,  fill = NA,      color = "grey70", linewidth = 0.3) +
   
@@ -139,8 +139,8 @@ ggplot() +
     grob = ggplotGrob(inset_map),
     xmin = bb["xmin"],
     xmax = bb["xmin"] + (bb["xmax"] - bb["xmin"]) * 0.26,
-    ymin = bb["ymin"] + (bb["ymax"] - bb["ymin"]) * 0.12,
-    ymax = bb["ymin"] + (bb["ymax"] - bb["ymin"]) * 0.34
+    ymin = bb["ymin"] + (bb["ymax"] - bb["ymin"]) * 0.08,
+    ymax = bb["ymin"] + (bb["ymax"] - bb["ymin"]) * 0.30
   ) +
   # North arrow
   annotation_north_arrow(
@@ -166,4 +166,15 @@ ggplot() +
   theme_minimal() +
   theme(axis.title = element_blank(),
         panel.border = element_rect(color = "grey40", fill = NA, linewidth = 0.5))
+
+# ---------------------------
+# Save the map
+# ---------------------------
+ggsave(
+  filename = "study_area_map.png",
+  plot = p,
+  width = 8,       # adjust as needed
+  height = 6.5,       # adjust as needed
+  dpi = 300
+)
 
