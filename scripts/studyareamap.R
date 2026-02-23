@@ -1,7 +1,3 @@
-### --- Study area map ---
-# Katie Florko
-# started Feb 20, 2026
-
 library(ggplot2)
 library(sf)
 library(viridis)
@@ -24,32 +20,9 @@ nmcherds <- st_read("G:/Shared drives/WSC_Yukon/CEtool_component3/demogData/nmc_
 nmcherds$HERD_FINAL <- dplyr::coalesce(nmcherds$HERD, nmcherds$HERD_NAME)
 
 # ---------------------------
-# 3. Load towns
+# 3. Load towns (WGS84)
 # ---------------------------
 towns <- st_read("G:/Shared drives/WSC_Yukon/CEtool_component3/data_models_new/Fine_Models/data/raw/towns.shp")
-
-coords <- st_coordinates(towns)
-
-town_labels <- towns %>%
-  mutate(
-    x = coords[,1],
-    y = coords[,2],
-    x = case_when(
-      `Town.Name` == "Fort Simpson" ~ x + 0,
-      `Town.Name` == "Fort St John" ~ x + 0,
-      `Town.Name` == "Fort Nelson"  ~ x + 1.8,
-      `Town.Name` == "Whitehorse"   ~ x - 1.4,
-      TRUE ~ x
-    ),
-    y = case_when(
-      `Town.Name` == "Fort Simpson" ~ y - 0.2,
-      `Town.Name` == "Fort St John" ~ y - 0.2,
-      `Town.Name` == "Fort Nelson"  ~ y - 0.2,
-      `Town.Name` == "Whitehorse"   ~ y - 0.2,
-      TRUE ~ y
-    )
-  ) %>%
-  st_drop_geometry()
 
 # ---------------------------
 # 4. Define main map extent (WGS84 → 3578)
@@ -72,7 +45,35 @@ main_bbox_3578 <- st_transform(main_bbox_wgs84, crs_main)
 bb <- st_bbox(main_bbox_3578)
 
 # ---------------------------
-# 5. Build inset map (NO ROTATION)
+# 5. Town labels (NOW PROJECTED CORRECTLY)
+# ---------------------------
+coords_3578 <- st_coordinates(towns_3578)
+
+town_labels <- towns_3578 %>%
+  mutate(
+    x = coords_3578[,1],
+    y = coords_3578[,2],
+    
+    # Offsets now in METERS (EPSG:3578)
+    x = case_when(
+      `Town.Name` == "Fort Simpson" ~ x + 0,
+      `Town.Name` == "Fort St John" ~ x + 0,
+      `Town.Name` == "Fort Nelson"  ~ x + 18000,
+      `Town.Name` == "Whitehorse"   ~ x - 14000,
+      TRUE ~ x
+    ),
+    y = case_when(
+      `Town.Name` == "Fort Simpson" ~ y - 2000,
+      `Town.Name` == "Fort St John" ~ y - 2000,
+      `Town.Name` == "Fort Nelson"  ~ y - 2000,
+      `Town.Name` == "Whitehorse"   ~ y - 2000,
+      TRUE ~ y
+    )
+  ) %>%
+  st_drop_geometry()
+
+# ---------------------------
+# 6. Build inset map (NO ROTATION)
 # ---------------------------
 inset_map <- ggplot() +
   geom_sf(data = st_transform(canada_wgs84, crs_main),
@@ -89,7 +90,7 @@ inset_map <- ggplot() +
   )
 
 # ---------------------------
-# Graticule (true projected grid lines)
+# 7. Graticule (true projected grid lines)
 # ---------------------------
 grat <- st_graticule(
   lon = seq(-180, 180, by = 5),
@@ -98,7 +99,7 @@ grat <- st_graticule(
   st_transform(crs_main)
 
 # ---------------------------
-# 6. Final map 
+# 8. Final map 
 # ---------------------------
 ggplot() +
   geom_sf(data = world_3578, fill = "grey95", color = "grey80", linewidth = 0.3) +
