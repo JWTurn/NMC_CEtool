@@ -8,28 +8,32 @@ library(viridis)
 library(rnaturalearth)
 library(dplyr)
 library(ggspatial)
+library(grid)
 
-# --- World boundaries in WGS84 ---
+# ---------------------------
+# 1. Load world + provinces (WGS84)
+# ---------------------------
 world_wgs84 <- ne_countries(scale = "large", returnclass = "sf")
+prov_wgs84  <- ne_states(country = "canada", returnclass = "sf")
+canada_wgs84 <- prov_wgs84
 
-# --- Province/territories boundaries ---
-prov_wgs84 <- ne_states(country = "canada", returnclass = "sf")
-
-# --- Get herd data ----
+# ---------------------------
+# 2. Load herd data
+# ---------------------------
 nmcherds <- st_read("G:/Shared drives/WSC_Yukon/CEtool_component3/demogData/nmc_herds_updated/nmc_herds_updated_merged.shp")
-nmcherds <- st_transform(nmcherds, crs = st_crs(prov_wgs84))
-
-# Combine HERD and HERD_NAME into one clean label column
 nmcherds$HERD_FINAL <- dplyr::coalesce(nmcherds$HERD, nmcherds$HERD_NAME)
 
-# --- Get and prep town data ---
+# ---------------------------
+# 3. Load towns
+# ---------------------------
 towns <- st_read("G:/Shared drives/WSC_Yukon/CEtool_component3/data_models_new/Fine_Models/data/raw/towns.shp")
 
-# Extract coordinates + apply manual nudges
+coords <- st_coordinates(towns)
+
 town_labels <- towns %>%
   mutate(
-    x = st_coordinates(.)[,1],
-    y = st_coordinates(.)[,2],
+    x = coords[,1],
+    y = coords[,2],
     x = case_when(
       `Town.Name` == "Fort Simpson" ~ x + 0,
       `Town.Name` == "Fort St John" ~ x + 0,
@@ -45,41 +49,85 @@ town_labels <- towns %>%
       TRUE ~ y
     )
   ) %>%
-  st_drop_geometry()   # <-- critical so labels use your adjusted x/y
+  st_drop_geometry()
 
-# --- Plot! ---
+# ---------------------------
+# 4. Define main map extent (WGS84 → 3578)
+# ---------------------------
+main_bbox_wgs84 <- st_as_sfc(
+  st_bbox(
+    c(xmin = -142.5, xmax = -120, ymin = 56, ymax = 66),
+    crs = st_crs(4326)
+  )
+)
+
+crs_main <- 3578   # Canada Albers Equal Area
+
+world_3578    <- st_transform(world_wgs84,  crs_main)
+prov_3578     <- st_transform(prov_wgs84,   crs_main)
+nmcherds_3578 <- st_transform(nmcherds,     crs_main)
+towns_3578    <- st_transform(towns,        crs_main)
+
+main_bbox_3578 <- st_transform(main_bbox_wgs84, crs_main)
+bb <- st_bbox(main_bbox_3578)
+
+# ---------------------------
+# 5. Build inset map (NO ROTATION)
+# ---------------------------
+inset_map <- ggplot() +
+  geom_sf(data = st_transform(canada_wgs84, crs_main),
+          fill = "grey90", color = "white") +
+  geom_sf(data = main_bbox_3578,
+          fill = "#6A00A8FF",
+          color = "#6A00A8FF",
+          alpha = 0.4,
+          linewidth = 1) +
+  theme_void() +
+  theme(
+    panel.background = element_rect(fill = "white", color = NA),
+    panel.border = element_rect(color = "black", fill = NA, linewidth = 0.8)
+  )
+
+# ---------------------------
+# 6. Final map (NO ROTATION)
+# ---------------------------
 ggplot() +
-  geom_sf(data = world_wgs84, fill = "grey95", color = "grey80", size = 0.3) +
-  geom_sf(data = prov_wgs84, fill = NA, color = "grey80", size = 0.3) +
+  geom_sf(data = world_3578, fill = "grey95", color = "grey80", linewidth = 0.3) +
+  geom_sf(data = prov_3578,  fill = NA,      color = "grey80", linewidth = 0.3) +
   geom_sf(
-    data = nmcherds,
-    fill = "#6A00A8FF",
+    data  = nmcherds_3578,
+    fill  = "#6A00A8FF",
     color = "white",
     alpha = 0.2
   ) +
   geom_sf_text(
-    data = nmcherds,
+    data = nmcherds_3578,
     aes(label = HERD_FINAL),
     color = "#6A00A8FF",
-    size = 3
+    size  = 3
   ) +
-  geom_sf(data = towns, size = 1, color = "black") +
+  geom_sf(data = towns_3578, size = 1, color = "black") +
   geom_text(
     data = town_labels,
     aes(x = x, y = y, label = Town.Name),
     size = 3
   ) +
   annotation_scale(
-    location = "bl",       # bottom-left
-    width_hint = 0.25,     # adjust size relative to plot width
-    text_cex = 0.7         # label size
+    location   = "bl",
+    width_hint = 0.25,
+    text_cex   = 0.7
+  ) +
+  annotation_custom(
+    grob = ggplotGrob(inset_map),
+    xmin = bb["xmin"],
+    xmax = bb["xmin"] + (bb["xmax"] - bb["xmin"]) * 0.26,   # smaller width
+    ymin = bb["ymin"] + (bb["ymax"] - bb["ymin"]) * 0.12,   # slightly higher
+    ymax = bb["ymin"] + (bb["ymax"] - bb["ymin"]) * 0.34    # smaller height
   ) +
   coord_sf(
-    crs = 4326,
-    xlim = c(-142.5, -120),
-    ylim = c(56, 66)
+    xlim  = c(bb["xmin"], bb["xmax"]),
+    ylim  = c(bb["ymin"], bb["ymax"]),
+    expand = FALSE
   ) +
   theme_minimal() +
   theme(axis.title = element_blank())
-
-
