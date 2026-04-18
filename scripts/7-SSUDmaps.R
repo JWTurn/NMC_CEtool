@@ -8,8 +8,8 @@ require(data.table)
 # using a folder where I already saved the NTEMS files so not eating up space
 canada <- file.path('C:','Users', 'julie', 'Documents', 'git', 'reproducibleInputs')
 
-dataDrive <- file.path('G:', 'Shared drives', 'WSC_Yukon', 'CEtool_component3', 'data_models_new', 'Fine_Models', 'data')
-
+#dataDrive <- file.path('G:', 'Shared drives', 'WSC_Yukon', 'CEtool_component3', 'data_models_new', 'Fine_Models', 'data')
+dataDrive <- '/Users/jwt/Library/CloudStorage/GoogleDrive-jwturner@ualberta.ca/Shared drives/WSC_Yukon/CEtool_component3/data_models_new/Fine_Models/data'
 # pick year of layers need, can make a loop/Map to go over the years
 yr =2020
 
@@ -66,11 +66,16 @@ pathLand250 <- list(prop_water_250 = file.path(dataDrive, 'derived', 'prop_land'
                     pa_otherpoly_250 = file.path(dataDrive, 'derived', 'pa_disturb_250m', 'otherpoly_pa_250m'))
 
 # reat in all the paths to make a list of rasters
-rastLand250 <- list()
+rastLand250.raw <- list()
 for(i in names(pathLand250)){
-  rastLand250 <- c(rastLand250, rast(paste0(pathLand250[[i]], '_', yr, '.tif')))
+  rastLand250.raw  <- c(rastLand250.raw , rast(paste0(pathLand250[[i]], '_', yr, '.tif')))
 }
-names(rastLand250) <- names(pathLand250)
+names(rastLand250.raw ) <- names(pathLand250)
+
+# make sure all are same extent and shape
+rastLand250 <- lapply(rastLand250.raw, function(x){
+  postProcess(x, rastLand250.raw[[1]])
+})
 
 # add rasters we created to improve availability and test models
 #ref <- rastLand250[[1]]
@@ -78,12 +83,12 @@ names(rastLand250) <- names(pathLand250)
 #rastLand250[['ts_harv250']] <- mask(rastLand250[['ts_harv250']], ref)
 
 rastLand250 <- append(rastLand250, list(ts_harv250 = (yr - rastLand250$harv250)))
-rastLand250[['ts_harv250']][is.na(rastLand250[['ts_harv250']])] <- 100
-rastLand250[['ts_harv250']] <- mask(rastLand250[['ts_harv250']], rastLand250[[1]])
+rastLand250[['ts_harv250']][rastLand250[['ts_harv250']]==2020] <- 100
+#rastLand250[['ts_harv250']] <- maskTo(rastLand250[['ts_harv250']], rastLand250[[1]])
 
 rastLand250 <- append(rastLand250, list(ts_fires_250 = (yr - rastLand250$fires_250)))
 rastLand250[['ts_fires_250']][is.na(rastLand250[['ts_fires_250']])] <- 200
-rastLand250[['ts_fires_250']] <- mask(rastLand250[['ts_fires_250']], rastLand250[[1]])
+#rastLand250[['ts_fires_250']] <- maskTo(rastLand250[['ts_fires_250']], rastLand250[[1]])
 
 rastLand250 <- append(rastLand250, list(prop_forest_250 = rastLand250$prop_wettreed_250 + rastLand250$prop_needleleaf_250 + 
                                           rastLand250$prop_deciduous_250 + rastLand250$prop_mixed_250))
@@ -154,36 +159,40 @@ for(i in names(pathLand1000)){
 }
 names(rastLand1000) <- names(pathLand1000)
 
-# calc the other rasters
-#ref <- rastLand1000[[1]]
-#rastLand1000[['ts_harv1000']] <- terra::project(rastLand1000[['ts_harv1000']], ref, method = "near")
-
-rastLand1000 <- append(rastLand1000, list(ts_harv1000 = (yr - rastLand1000$harv1000)))
-rastLand1000[['ts_harv1000']][is.na(rastLand1000[['ts_harv1000']])] <- 100
-rastLand1000[['ts_harv1000']] <- mask(rastLand1000[['ts_harv1000']], rastLand1000[[1]])
-
-rastLand1000 <- append(rastLand1000, list(ts_fires_1000 = (yr - rastLand1000$fires_1000)))
-rastLand1000[['ts_fires_1000']][is.na(rastLand1000[['ts_fires_1000']])] <- 200
-rastLand1000[['ts_fires_1000']] <- mask(rastLand1000[['ts_fires_1000']], rastLand1000[[1]])
-
-rastLand1000 <- append(rastLand1000, list(prop_forest_1000 = rastLand1000$prop_wettreed_1000 + rastLand1000$prop_needleleaf_1000 + 
-                                            rastLand1000$prop_deciduous_1000 + rastLand1000$prop_mixed_1000))
-
-rastLand1000 <- append(rastLand1000, list(prop_veg_1000 = rastLand1000$prop_bryoids_1000 + rastLand1000$prop_herbs_1000 + rastLand1000$prop_shrub_1000))
-
-rastLand1000 <- append(rastLand1000, list(dist_lf_1000 = min(c(rastLand1000$dist_lfother_1000, rastLand1000$dist_paved_1000, rastLand1000$dist_unpaved_1000), na.rm = T)))
-
-rastLand1000 <- append(rastLand1000, list(dist_poly_1000 = min(c(rastLand1000$dist_placer_1000, rastLand1000$dist_quartz_1000, rastLand1000$harv_dist_1000, rastLand1000$dist_othermines_1000, rastLand1000$dist_otherpoly), na.rm = T)))
-
-
 # rasterize coarse rasters to matching resolution as fine for math
 rastLand1000fine <- lapply(rastLand1000, function(x){
   postProcess(x, to = rastLand250[[1]])
 })
+# calc the other rasters
+#ref <- rastLand1000[[1]]
+#rastLand1000[['ts_harv1000']] <- terra::project(rastLand1000[['ts_harv1000']], ref, method = "near")
+
+rastLand1000fine <- append(rastLand1000fine, list(ts_harv1000 = (yr - rastLand1000fine$harv1000)))
+rastLand1000fine[['ts_harv1000']][is.na(rastLand1000fine[['ts_harv1000']])] <- 100
+rastLand1000fine[['ts_harv1000']] <- maskTo(rastLand1000fine[['ts_harv1000']], rastLand1000fine[[1]])
+
+rastLand1000fine <- append(rastLand1000fine, list(ts_fires_1000 = (yr - rastLand1000fine$fires_1000)))
+rastLand1000fine[['ts_fires_1000']][is.na(rastLand1000fine[['ts_fires_1000']])] <- 200
+rastLand1000fine[['ts_fires_1000']] <- maskTo(rastLand1000fine[['ts_fires_1000']], rastLand1000fine[[1]])
+
+rastLand1000fine <- append(rastLand1000fine, list(prop_forest_1000 = rastLand1000fine$prop_wettreed_1000 + rastLand1000fine$prop_needleleaf_1000 + 
+                                            rastLand1000fine$prop_deciduous_1000 + rastLand1000fine$prop_mixed_1000))
+
+rastLand1000fine <- append(rastLand1000fine, list(prop_veg_1000 = rastLand1000fine$prop_bryoids_1000 + rastLand1000fine$prop_herbs_1000 + rastLand1000fine$prop_shrub_1000))
+
+rastLand1000fine <- append(rastLand1000fine, list(dist_lf_1000 = min(c(rastLand1000fine$dist_lfother_1000, rastLand1000fine$dist_paved_1000, rastLand1000fine$dist_unpaved_1000), na.rm = T)))
+
+rastLand1000fine <- append(rastLand1000fine, list(dist_poly_1000 = min(c(rastLand1000fine$dist_placer_1000, rastLand1000fine$dist_quartz_1000, rastLand1000fine$harv_dist_1000, rastLand1000fine$dist_othermines_1000, rastLand1000fine$dist_otherpoly), na.rm = T)))
+
+
+
 
 # combine coarse and fine lists
 rastLand2020.fine <- append(rastLand250, rastLand1000fine)
+saveRDS(rastLand2020.fine, file.path(dataDrive, 'derived', 'ls_rast2020fine.RDS'))
 
+rstLand2020.fine <- rast(rastLand2020.fine)
+writeRaster(rstLand2020.fine, file.path(dataDrive, 'derived', 'rastLand2020fine.tif'))
 ### model ----
 ## prepping a study area for mapping, filling some holes within polygon
 # TODO need to remove Fort St. John erroneous blob
