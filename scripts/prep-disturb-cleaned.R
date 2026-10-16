@@ -1,4 +1,4 @@
-# Prepare and clean disturbance data
+# Prepare and clean disturbance data for BC, Yukon, and NWT
 # Peter Baker
 # October 15, 2026
 
@@ -14,12 +14,18 @@ crs     <- st_crs(3154)$wkt
 ###### YUKON ###########
 
 #### Inputs ####
-reclass_xlsx <- "C:/Users/peteb/Downloads/NMC_Surface_disturbance_Reclass_2026-10-13 (1).xlsx"
-upd_mines    <- "C:/Users/peteb/Downloads/Past_Present_Quartz_Mines-20261015T205046Z-1-001/Past_Present_Quartz_Mines/Past_Present_Quartz_Mines.shp"
-wp_dir       <- "C:/Users/peteb/Downloads/sd_data_oct2026_cleaned-20261015T182444Z-1-001/sd_data_oct2026_cleaned"
+# Pathway to reclassification table (.xlsx)
+reclass_xlsx <- ""
+
+# Pathway to updated mine shapefile from Megan (on drive)
+upd_mines    <- "/Past_Present_Quartz_Mines/Past_Present_Quartz_Mines.shp" 
+
+# Pathway to new workpackages from Gov YT
+wp_dir       <- "sd_data_oct2026_cleaned" 
 gdb          <- file.path(wp_dir, "sd_data_oct2026.gdb")
 
-gy_srv    <- "https://mapservices.gov.yk.ca/arcgis/rest/services/GeoYukon/GY_EnvironmentalMonitoring/MapServer/"
+#Pathway to GeoYukon server for new data pull. Shouldn't need to update
+gy_srv    <- "https://mapservices.gov.yk.ca/arcgis/rest/services/GeoYukon/GY_EnvironmentalMonitoring/MapServer/" #Server for 
 pull_date <- format(Sys.Date(), "%Y-%m-%d")
 this_year <- as.integer(format(Sys.Date(), "%Y"))
 
@@ -136,7 +142,7 @@ wp_tab <- tibble(layer = st_layers(gdb)$name) |>
 
 read_wp <- function(t) {
   ly <- filter(wp_tab, type == t)
-  gtype <- if (t == "polys") 6 else 5  # force MULTIPOLYGON / MULTILINESTRING (linearizes curves)
+  gtype <- if (t == "polys") 6 else 5  # force multipolygon or multilinestring 
   do.call(rbind, unname(Map(\(l, w) prep(st_read(gdb, l, type = gtype, quiet = TRUE), t, w), ly$layer, ly$wp)))
 }
 
@@ -146,14 +152,14 @@ wp_poly <- read_wp("polys") |> st_make_valid()
 table(st_geometry_type(wp_lin))   
 table(st_geometry_type(wp_poly))  
 
-# Bring in the AOIs
+# Bring in the AOIs to dictate the replacement areas
 read_aoi <- function(w) {
   l <- wp_tab$layer[wp_tab$wp == w & wp_tab$type == "aoi"]
   st_read(gdb, l, type = 6, quiet = TRUE) |> st_zm() |> st_transform(crs) |> st_make_valid() |> st_union()
 }
 aois <- st_sf(wp = unique(wp_tab$wp), geometry = do.call(c, lapply(unique(wp_tab$wp), read_aoi)))
 
-#### Replace WP areas from GeoYukon ####
+#### Replace WP areas from GeoYukon data ####
 
 aoi_lines <- st_union(aois[aois$wp %in% wp_tab$wp[wp_tab$type == "lines"], ])
 aoi_polys <- st_union(aois[aois$wp %in% wp_tab$wp[wp_tab$type == "polys"], ])
@@ -180,7 +186,7 @@ table(poly$DATABASE,           poly$schema, useNA = "ifany")
 table(lin$FEATURE_VISIBILITY,  lin$schema,  useNA = "ifany")
 table(poly$FEATURE_VISIBILITY, poly$schema, useNA = "ifany")
 
-#### Manual year updates from Gov YT ####
+#### Manual year updates from Gov YT emails ####
 lin  <- mutate(lin,  year_start = NA_integer_, year_end = NA_integer_, year_source = NA_character_)
 poly <- mutate(poly, year_start = NA_integer_, year_end = NA_integer_, year_source = NA_character_)
 
@@ -385,23 +391,10 @@ st_write(all_lin,  file.path(derived, "NMC_linear_combined.gpkg"), delete_dsn = 
 st_write(all_poly, file.path(derived, "NMC_areal_combined.gpkg"),  delete_dsn = TRUE)
 
 
-### Save shapefiles by feature type ----
-shp_dir <- file.path(derived, "feature_types")
-dir.create(shp_dir, showWarnings = FALSE)
-
-write_ftype <- function(x, cast_to) {
-  x <- st_cast(x, cast_to)  # shapefiles need one geometry type
-  for (ft in unique(x$feature_type)) {
-    st_write(
-      rename(x[x$feature_type == ft, ], ftype = feature_type),  # avoid 10-char name truncation
-      file.path(shp_dir, paste0(ft, ".shp")),
-      delete_dsn = TRUE, quiet = TRUE
-    )
-  }
+### Save by jurisdiction
+for (r in c("YT", "BC", "NWT")) {
+  st_write(all_lin[all_lin$region == r, ],
+           file.path(derived, paste0(r, "_linear.gpkg")), delete_dsn = TRUE)
+  st_write(all_poly[all_poly$region == r, ],
+           file.path(derived, paste0(r, "_areal.gpkg")),  delete_dsn = TRUE)
 }
-
-write_ftype(all_lin,  "MULTILINESTRING")
-write_ftype(all_poly, "MULTIPOLYGON")
-
-list.files(shp_dir, pattern = "\\.shp$")
-
